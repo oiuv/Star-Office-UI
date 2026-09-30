@@ -1,4 +1,6 @@
 {
-  "gemini_api_key": "YOUR_GEMINI_API_KEY",
-  "gemini_model": "nanobanana-pro"
+  "api_key": "YOUR_IMAGE_API_KEY",
+  "base_url": "https://api.openai.com/v1",
+  "model": "gpt-image-2",
+  "image_mode": "edit"
 }

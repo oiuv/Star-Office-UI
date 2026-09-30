@@ -11,6 +11,10 @@ import json
 import os
 import sys
 from datetime import datetime
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent / "backend"))
+from event_store import EventStore
+from store_utils import _save_json
 
 STATE_FILE = os.environ.get(
     "STAR_OFFICE_STATE_FILE",
@@ -40,8 +44,7 @@ def load_state():
     }
 
 def save_state(state):
-    with open(STATE_FILE, "w", encoding="utf-8") as f:
-        json.dump(state, f, ensure_ascii=False, indent=2)
+    _save_json(STATE_FILE, state)
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
@@ -53,7 +56,7 @@ if __name__ == "__main__":
         print("  python set_state.py writing \"在写热点日报模板...\"")
         sys.exit(1)
     
-    state_name = sys.argv[1]
+    state_name = {"receiving": "researching", "replying": "writing"}.get(sys.argv[1], sys.argv[1])
     detail = sys.argv[2] if len(sys.argv) > 2 else ""
     
     if state_name not in VALID_STATES:
@@ -64,7 +67,10 @@ if __name__ == "__main__":
     state = load_state()
     state["state"] = state_name
     state["detail"] = detail
+    state.pop("hook_session_id", None)
+    state.pop("actor_id", None)
     state["updated_at"] = datetime.now().isoformat()
     
+    EventStore().record_state(state_name, detail, source="cli")
     save_state(state)
     print(f"状态已更新: {state_name} - {detail}")

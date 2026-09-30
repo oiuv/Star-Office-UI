@@ -1220,18 +1220,23 @@
                         <textarea id="asset-broker-prompt" placeholder="例如：像素风赛博东京夜景，霓虹灯、雨夜地面反光、蓝紫主色"></textarea>
                         <div class="asset-toolbar" style="margin-top:6px; gap:8px; align-items:center; justify-content:flex-start;">
                             <span id="speed-mode-label" class="asset-sub" style="min-width:62px;">生成模式</span>
-                            <button id="speed-fast-btn" type="button" onclick="setSpeedMode('fast')" style="background:#22c55e;color:#052e16;border-color:#16a34a;">🍌2</button>
-                            <button id="speed-quality-btn" type="button" onclick="setSpeedMode('quality')" style="background:#334155;color:#e5e7eb;border-color:#475569;">🍌Pro</button>
+                            <button id="speed-fast-btn" type="button" onclick="setSpeedMode('fast')" style="background:#22c55e;color:#052e16;border-color:#16a34a;">⚡ Fast</button>
+                            <button id="speed-quality-btn" type="button" onclick="setSpeedMode('quality')" style="background:#334155;color:#e5e7eb;border-color:#475569;">✦ Fine</button>
                         </div>
                         <details id="asset-gemini-panel" style="margin-top:6px; border:0; border-top:1px solid rgba(148,163,184,.18); border-radius:0; padding:8px 0 0; background:transparent;">
                             <summary id="gemini-panel-summary" style="cursor:pointer; color:#cbd5e1;">🔐 API 设置（可折叠）</summary>
                             <div id="asset-gemini-config" style="display:block; margin-top:6px;">
                                 <div id="gemini-config-hint" class="asset-sub" style="margin-bottom:4px;">可选：填写你的生图 API Key（留空不影响基础功能）</div>
-                                <div class="asset-sub" style="margin-bottom:6px;"><a id="gemini-api-doc-link" href="https://ai.google.dev/gemini-api/docs/api-key?hl=zh-cn" target="_blank" rel="noopener noreferrer">📘 如何申请 Google API Key</a></div>
+                                <div class="asset-sub" style="margin-bottom:6px;"><a id="gemini-api-doc-link" href="https://developers.openai.com/api/docs/guides/image-generation" target="_blank" rel="noopener noreferrer">📘 如何申请 Google API Key</a></div>
                                 <div id="gemini-mask-status" class="asset-sub" style="margin-bottom:6px; color:#a7f3d0;"></div>
                                 <div class="asset-toolbar" style="gap:6px; flex-wrap:wrap;">
-                                    <input id="gemini-api-key-input" type="password" placeholder="粘贴 GEMINI_API_KEY（不会回显）" style="min-width:220px; flex:1;" autocomplete="new-password" />
+                                    <input id="gemini-api-key-input" type="password" placeholder="粘贴 API Key（不会回显）" style="min-width:220px; flex:1;" autocomplete="new-password" />
                                     <button id="btn-save-gemini-key" onclick="saveGeminiConfigFromUI()">保存 Key</button>
+                                </div>
+                                <div class="asset-toolbar" style="display:grid; gap:8px; margin-top:8px;">
+                                    <label><span id="image-base-label" class="asset-sub">API 地址</span><input id="image-base-url-input" type="url" placeholder="https://api.openai.com/v1" style="display:block;width:100%;" /></label>
+                                    <label><span id="image-model-label" class="asset-sub">图片模型</span><input id="image-model-input" type="text" placeholder="gpt-image-2" style="display:block;width:100%;" /></label>
+                                    <label><span id="image-mode-label" class="asset-sub">生成方式</span><select id="image-mode-input" style="display:block;width:100%;background:#1e293b;color:#e5e7eb;padding:8px;"><option id="image-mode-edit" value="edit">参考图编辑</option><option id="image-mode-generate" value="generate">纯文生图</option></select></label>
                                 </div>
                                 <div id="gemini-config-msg" class="asset-sub" style="margin-top:4px;"></div>
                             </div>
@@ -1287,6 +1292,8 @@
         <button id="lang-btn-cn" onclick="setUILanguage('zh')" style="padding:8px 10px; font-family:ArkPixel,monospace; font-size:13px; cursor:pointer; border:2px solid #333; border-radius:5px; background:#333; color:#fff;">CN</button>
     </div>
 
+    <a id="office-stats-link" href="/stats" target="_blank" rel="noopener noreferrer" style="position:fixed;right:12px;top:calc(env(safe-area-inset-top, 0px) + 52px);z-index:1000002;padding:8px 10px;background:#283b35;color:#c3efcd;border:2px solid #446d54;border-radius:5px;text-decoration:none;font:13px monospace;">📊 活动档案</a>
+    <script src="/static/image-settings.js?v={{VERSION_TIMESTAMP}}"></script>
     <script src="/static/vendor/phaser-3.80.1.min.js?v={{VERSION_TIMESTAMP}}"></script>
     <script>
         // 简易中英文切换
@@ -1310,8 +1317,8 @@
                 brokerDone: '✅ 已按中介方案生成并替换底图，正在刷新房间...',
                 moveSuccess: '✅ 搬家成功！',
                 brokerMissingKey: '❌ 生图失败：缺少 GEMINI API Key，请在下方填写并保存后重试',
-                geminiPanelTitle: '🔐 API 设置（可折叠）', geminiHint: '可选：填写你的生图 API Key（留空不影响基础功能）', geminiApiDoc: '📘 如何申请 Google API Key', geminiInputPh: '粘贴 GEMINI_API_KEY（不会回显）', geminiSaveKey: '保存 Key', geminiMaskNoKey: '当前状态：未配置 Key', geminiMaskHasKey: '当前已配置：',
-                speedModeLabel: '生成模式', speedFast: '🍌2', speedQuality: '🍌Pro',
+                geminiPanelTitle: '🔐 API 设置（可折叠）', geminiHint: '可选：填写你的生图 API Key（留空不影响基础功能）', geminiApiDoc: '📘 Image API 文档', geminiInputPh: '粘贴 API Key（不会回显）', geminiSaveKey: '保存设置', geminiMaskNoKey: '当前状态：未配置 Key', geminiMaskHasKey: '当前已配置：',
+                speedModeLabel: '生成模式', speedFast: '⚡ Fast', speedQuality: '✦ Fine',
                 searchPlaceholder: '搜索资产名（如 desk / sofa / star）', loaded: '已加载', allAssets: '全部资产',
                 chooseImage: '上传素材', confirmUpload: '确认刷新', resetToDefault: '重置默认', restorePrevAsset: '恢复上版', uploadPending: '待上传', uploadTarget: '目标',
                 assetHintNotInScene: '当前场景未检测到此对象，仍可替换文件（刷新后生效）',
@@ -1338,8 +1345,8 @@
                 brokerDone: '✅ Broker plan applied and background replaced, refreshing room...',
                 moveSuccess: '✅ Move successful!',
                 brokerMissingKey: '❌ Generation failed: missing GEMINI API key. Fill it below and retry.',
-                geminiPanelTitle: '🔐 API Settings (collapsible)', geminiHint: 'Optional: set your image API key (base features work without it)', geminiApiDoc: '📘 How to get a Google API Key', geminiInputPh: 'Paste GEMINI_API_KEY (input hidden)', geminiSaveKey: 'Save Key', geminiMaskNoKey: 'Current: no key configured', geminiMaskHasKey: 'Configured key:',
-                speedModeLabel: 'Render Mode', speedFast: '🍌2', speedQuality: '🍌Pro',
+                geminiPanelTitle: '🔐 API Settings (collapsible)', geminiHint: 'Optional: set your image API key (base features work without it)', geminiApiDoc: '📘 Image API documentation', geminiInputPh: 'Paste API Key (input hidden)', geminiSaveKey: 'Save settings', geminiMaskNoKey: 'Current: no key configured', geminiMaskHasKey: 'Configured key:',
+                speedModeLabel: 'Render Mode', speedFast: '⚡ Fast', speedQuality: '✦ Fine',
                 searchPlaceholder: 'Search assets (desk / sofa / star)', loaded: 'Loaded', allAssets: 'All Assets',
                 chooseImage: 'Upload Asset', confirmUpload: 'Apply Refresh', resetToDefault: 'Reset Default', restorePrevAsset: 'Restore Prev', uploadPending: 'Pending Upload', uploadTarget: 'Target',
                 assetHintNotInScene: 'This object is not detected in current scene; you can still replace file (effective after refresh)',
@@ -1366,8 +1373,8 @@
                 brokerDone: '✅ 仲介プランを適用して背景を更新しました。部屋を更新中...',
                 moveSuccess: '✅ 引っ越し成功！',
                 brokerMissingKey: '❌ 生成失敗：GEMINI APIキーが未設定です。下で入力して保存してください。',
-                geminiPanelTitle: '🔐 API設定（折りたたみ）', geminiHint: '任意：画像生成APIキーを設定（未設定でも基本機能は利用可）', geminiApiDoc: '📘 Google API Keyの取得方法', geminiInputPh: 'GEMINI_API_KEY を貼り付け（入力は非表示）', geminiSaveKey: 'Keyを保存', geminiMaskNoKey: '現在：キー未設定', geminiMaskHasKey: '設定済みキー：',
-                speedModeLabel: '生成モード', speedFast: '🍌2', speedQuality: '🍌Pro',
+                geminiPanelTitle: '🔐 API設定（折りたたみ）', geminiHint: '任意：画像生成APIキーを設定（未設定でも基本機能は利用可）', geminiApiDoc: '📘 Image API ドキュメント', geminiInputPh: 'API Key を貼り付け（入力は非表示）', geminiSaveKey: '設定を保存', geminiMaskNoKey: '現在：キー未設定', geminiMaskHasKey: '設定済みキー：',
+                speedModeLabel: '生成モード', speedFast: '⚡ Fast', speedQuality: '✦ Fine',
                 searchPlaceholder: 'アセット検索（desk / sofa / star）', loaded: '読み込み済み', allAssets: '全アセット',
                 chooseImage: '素材アップロード', confirmUpload: '確定して更新', resetToDefault: '初期に戻す', restorePrevAsset: '前版に戻す', uploadPending: 'アップロード待ち', uploadTarget: '対象',
                 assetHintNotInScene: '現在のシーンでこのオブジェクトは未検出です。ファイル差し替えは可能（更新後に反映）',
@@ -2847,58 +2854,15 @@ function toggleBrokerPanel() {
         }
 
         async function ensureGeminiConfigLoaded() {
-            try {
-                const authRes = await fetch('/assets/auth/status', { cache: 'no-store' });
-                const authData = await authRes.json();
-                assetDrawerAuthed = !!(authData && authData.ok && authData.authed);
-                updateAssetAuthUI();
-                if (!assetDrawerAuthed) return;
-
-                const res = await fetch('/config/gemini', { cache: 'no-store' });
-                const data = await res.json();
-                if (data && data.ok) {
-                    window.geminiConfig = {
-                        hasKey: !!data.has_api_key,
-                        model: data.gemini_model || 'nanobanana-pro'
-                    };
-                    const box = document.getElementById('asset-gemini-config');
-                    if (box) box.style.display = 'block';
-                    const ms = document.getElementById('gemini-mask-status');
-                    if (ms) {
-                        ms.textContent = data.has_api_key
-                            ? `${t('geminiMaskHasKey')} ${data.api_key_masked || ''}`
-                            : t('geminiMaskNoKey');
-                    }
-                }
-            } catch (e) {}
+            try { await window.StarImageSettings.load(); }
+            catch (error) {
+                const message = document.getElementById('gemini-config-msg');
+                if (message) message.textContent = error.message;
+            }
         }
 
         async function saveGeminiConfigFromUI() {
-            const input = document.getElementById('gemini-api-key-input');
-            const msg = document.getElementById('gemini-config-msg');
-            const key = (input?.value || '').trim();
-            if (!key) {
-                if (msg) msg.textContent = '请输入有效 API Key';
-                return;
-            }
-            try {
-                const res = await fetch('/config/gemini', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ api_key: key, model: 'nanobanana-pro' })
-                });
-                const data = await res.json();
-                if (!data.ok) {
-                    if (msg) msg.textContent = `保存失败：${data.msg || res.status}`;
-                    return;
-                }
-                if (msg) msg.textContent = '✅ 已保存，可重新点击搬家/中介';
-                const box = document.getElementById('asset-gemini-config');
-                if (box) box.style.display = 'none';
-                await ensureGeminiConfigLoaded();
-            } catch (e) {
-                if (msg) msg.textContent = `保存失败：${e}`;
-            }
+            await window.StarImageSettings.save();
         }
 
         function flashButtonActive(el, ms = 180) {
@@ -3421,50 +3385,32 @@ function toggleBrokerPanel() {
         function renderGuestAgentList() {
             const list = document.getElementById('guest-agent-list');
             if (!list) return;
-
+            list.replaceChildren();
             const visitors = getMergedVisitors();
-            if (visitors.length === 0) {
-                list.innerHTML = '<div style="color:#9ca3af;font-size:12px;text-align:center;padding:20px 0;">暂无访客</div>';
-                return;
+            if (!visitors.length) {
+                const empty = document.createElement('div');
+                empty.textContent = '暂无访客'; empty.style.cssText = 'color:#9ca3af;font-size:12px;text-align:center;padding:20px';
+                list.append(empty); return;
             }
-
-            list.innerHTML = visitors.map(agent => {
+            const statuses = {approved:'已授权', pending:'待授权', rejected:'已拒绝', offline:'离线'};
+            const states = {idle:'待命', writing:'工作', researching:'调研', executing:'执行', syncing:'同步', error:'报警'};
+            visitors.forEach(agent => {
                 const name = agent.name || '未命名访客';
-                const authStatus = agent.authStatus || 'pending';
-                const state = agent.state || 'idle';
-                const statusMap = {
-                    approved: '已授权',
-                    pending: '待授权',
-                    rejected: '已拒绝',
-                    offline: '离线'
-                };
-                const stateMap = {
-                    idle: '待命',
-                    writing: '工作',
-                    researching: '调研',
-                    executing: '执行',
-                    syncing: '同步',
-                    error: '报警'
-                };
-
-                const statusText = statusMap[authStatus] || authStatus;
-                const stateText = stateMap[state] || state;
-                const subtitle = `${statusText} · ${stateText}`;
-
-                const pendingActions = `<button onclick="alert('交换 skill 功能开发中')">交换skill</button><button class="leave-btn" onclick="leaveGuestAgent('${agent.agentId}','${name}')">离开房间</button>`;
-
-                return `
-                  <div class="guest-agent-item" data-name="${name}">
-                    <div>
-                      <div class="guest-agent-name">${name}</div>
-                      <div style="font-size:11px;color:#cbd5e1;">${subtitle}</div>
-                    </div>
-                    <div class="guest-agent-buttons">
-                      ${pendingActions}
-                    </div>
-                  </div>
-                `;
-            }).join('');
+                const row = document.createElement('div'); row.className = 'guest-agent-item'; row.dataset.name = name;
+                const info = document.createElement('div'), title = document.createElement('div'), subtitle = document.createElement('div');
+                title.className = 'guest-agent-name'; title.textContent = name;
+                subtitle.style.cssText = 'font-size:11px;color:#cbd5e1';
+                subtitle.textContent = (statuses[agent.authStatus] || agent.authStatus || '待授权') + ' · ' + (states[agent.state] || agent.state || '待命');
+                info.append(title, subtitle); row.append(info);
+                const actions = document.createElement('div'); actions.className = 'guest-agent-buttons';
+                if (agent.source === 'codex') {
+                    const label = document.createElement('span'); label.textContent = 'Codex hooks'; label.style.fontSize = '11px'; actions.append(label);
+                } else {
+                    const leave = document.createElement('button'); leave.className = 'leave-btn'; leave.textContent = '离开房间';
+                    leave.addEventListener('click', () => leaveGuestAgent(agent.agentId, name)); actions.append(leave);
+                }
+                row.append(actions); list.append(row);
+            });
         }
 
         function getAreaRect(area) {

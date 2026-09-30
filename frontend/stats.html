@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Star Office · Activity</title>
+  <link rel="stylesheet" href="/static/stats.css?v={{VERSION_TIMESTAMP}}">
+  <script src="/static/stats.js?v={{VERSION_TIMESTAMP}}" defer></script>
+</head>
+<body>
+  <main class="dashboard">
+    <header class="topbar">
+      <a class="brand" href="/">✦ STAR OFFICE <span data-i18n="back">返回办公室 ↗</span></a>
+      <div class="language" aria-label="Language"><button data-lang="zh">中文</button><button data-lang="en">EN</button><button data-lang="ja">日本語</button></div>
+    </header>
+    <section class="intro">
+      <div><div class="eyebrow">OFFICE FIELD NOTES / 01</div><h1 data-i18n="title">每一次行动，都留下足迹。</h1><p data-i18n="subtitle">从像素办公室，到你的 AI 活动档案。</p></div>
+      <div class="live"><span class="live-dot"></span><span id="connection" role="status" data-i18n="loading">正在读取记录…</span></div>
+    </section>
+    <div class="toolbar">
+      <div class="periods" aria-label="Date range"><button data-period="today" data-i18n="today" aria-pressed="true">今日</button><button data-period="7d" data-i18n="week" aria-pressed="false">近 7 天</button><button data-period="30d" data-i18n="month" aria-pressed="false">近 30 天</button><button data-period="all" data-i18n="all" aria-pressed="false">全部</button></div>
+      <button id="export" class="outline" data-i18n="export">导出最近 200 条</button>
+    </div>
+    <div id="error" class="error" role="alert" hidden></div>
+    <section class="metrics" id="metrics" aria-label="Overview"></section>
+    <section class="panel journey">
+      <div><div class="eyebrow" data-i18n="journey">办公室成长记录</div><h2 id="level">LV. 1</h2><p id="xp-text">0 XP</p></div>
+      <div class="growth"><div class="progress-label"><span data-i18n="next">下一等级</span><span id="level-progress">0 / 100 XP</span></div><progress id="xp-progress" max="100" value="0" aria-label="Level experience"></progress><div id="badges" class="badges"></div></div>
+    </section>
+    <div class="two-columns">
+      <section class="panel"><div class="panel-title"><h2 data-i18n="states">角色状态</h2><span data-i18n="countTime">次数 / 观测时长</span></div><div id="states" class="state-bars"></div></section>
+      <section class="panel"><div class="panel-title"><h2 data-i18n="trend">每日活动</h2><span data-i18n="events">接收事件</span></div><div id="daily" class="daily-chart"></div><p class="muted" data-i18n="trendNote">全部视图显示最近 30 天趋势。</p></section>
+    </div>
+    <section class="panel"><div class="panel-title"><h2 data-i18n="hooks">Codex 生命周期</h2><span data-i18n="hookNote">12 类事件 · 6 种动画状态</span></div><div id="hooks" class="hook-grid"></div></section>
+    <section class="panel">
+      <div class="panel-title"><h2 data-i18n="details">运行概览</h2><span id="tool-duration"></span></div>
+      <div id="details" class="detail-grid"></div>
+      <div id="actors" class="actors"></div>
+    </section>
+    <section class="panel">
+      <div class="panel-title"><h2 data-i18n="log">活动日志</h2><div class="filters"><label><span class="sr-only" data-i18n="stateFilter">状态筛选</span><select id="state-filter"></select></label><label><span class="sr-only" data-i18n="hookFilter">事件筛选</span><select id="hook-filter"></select></label></div></div>
+      <div id="event-list" class="event-list"></div>
+    </section>
+    <footer><p data-i18n="measurement">次数按实际接收事件统计，心跳单独标记；多 Agent 时长累加，每次状态最多观测 5 分钟，断联时间不累加。</p><p data-i18n="scoreNote">经验值是活动纪念：回合结束 +20，工具成功 +2，子 Agent 收尾 +10。次数与经验值不代表任务质量或 Token 用量。</p><span>STAR OFFICE / KEEP BUILDING, KEEP A RECORD.</span></footer>
+  </main>
+</body>
+</html>

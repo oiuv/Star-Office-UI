@@ -1,0 +1,162 @@
+{
+  "description": "Star Office UI Codex lifecycle integration; replace paths, or generate with scripts/codex_hooks_config.py",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
+            "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
+            "timeout": 3,
+            "statusMessage": "Star Office: SessionStart"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
+            "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
+            "timeout": 3,
+            "statusMessage": "Star Office: SessionEnd"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
+            "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
+            "timeout": 3,
+            "statusMessage": "Star Office: UserPromptSubmit"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
+            "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
+            "timeout": 3,
+            "statusMessage": "Star Office: PreToolUse"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
+            "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
+            "timeout": 3,
+            "statusMessage": "Star Office: PermissionRequest"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
+            "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
+            "timeout": 3,
+            "async": true,
+            "statusMessage": "Star Office: PostToolUse"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
+            "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
+            "timeout": 3,
+            "statusMessage": "Star Office: PreCompact"
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
+            "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
+            "timeout": 3,
+            "statusMessage": "Star Office: PostCompact"
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
+            "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
+            "timeout": 3,
+            "statusMessage": "Star Office: SubagentStart"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
+            "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
+            "timeout": 3,
+            "statusMessage": "Star Office: SubagentStop"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
+            "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
+            "timeout": 3,
+            "statusMessage": "Star Office: Stop"
+          }
+        ]
+      }
+    ],
+    "Interrupt": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
+            "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
+            "timeout": 3,
+            "statusMessage": "Star Office: Interrupt"
+          }
+        ]
+      }
+    ]
+  }
+}

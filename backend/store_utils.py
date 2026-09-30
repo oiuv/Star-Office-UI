@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import json
 import os
+import tempfile
+from pathlib import Path
 
 
 def _load_json(path: str):
@@ -18,8 +20,20 @@ def _load_json(path: str):
 
 def _save_json(path: str, data):
     """Write data as JSON with UTF-8 and indent=2."""
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=target.parent,
+                                         prefix=target.name + ".", suffix=".tmp", delete=False) as f:
+            temporary = f.name
+            json.dump(data, f, ensure_ascii=False, indent=2)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(temporary, target)
+    finally:
+        if temporary and os.path.exists(temporary):
+            os.unlink(temporary)
 
 
 def load_agents_state(path: str, default_agents: list) -> list:
@@ -73,43 +87,36 @@ def save_asset_defaults(path: str, data: dict):
     _save_json(path, data)
 
 
-def _normalize_user_model(model_name: str) -> str:
-    """Map provider model names to canonical user-facing options (nanobanana-pro / nanobanana-2)."""
-    m = (model_name or "").strip().lower()
-    if m in {"nanobanana-pro", "nanobanana-2"}:
-        return m
-    if m in {"nano-banana-pro-preview", "gemini-3-pro-image-preview"}:
-        return "nanobanana-pro"
-    if m in {"gemini-2.5-flash-image", "gemini-2.0-flash-exp-image-generation"}:
-        return "nanobanana-2"
-    return "nanobanana-pro"
-
-
 def load_runtime_config(path: str) -> dict:
-    """Load runtime config (gemini_api_key, gemini_model) from env and optional JSON file."""
+    """OpenAI-compatible image configuration with migration of legacy key fields."""
+    from image_client import DEFAULT_BASE_URL, DEFAULT_MODEL
     base = {
-        "gemini_api_key": os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or "",
-        "gemini_model": _normalize_user_model(os.getenv("GEMINI_MODEL") or "nanobanana-pro"),
+        "api_key": os.getenv("OPENAI_API_KEY") or "",
+        "base_url": os.getenv("AI_BASE_URL") or os.getenv("OPENAI_BASE_URL") or DEFAULT_BASE_URL,
+        "model": os.getenv("AI_IMAGE_MODEL") or DEFAULT_MODEL,
+        "image_mode": os.getenv("AI_IMAGE_MODE") or "edit",
     }
     if os.path.exists(path):
         try:
             data = _load_json(path)
             if isinstance(data, dict):
-                base.update({k: data.get(k, base.get(k)) for k in ["gemini_api_key", "gemini_model"]})
-                base["gemini_model"] = _normalize_user_model(base.get("gemini_model") or "nanobanana-pro")
-        except Exception:
+                for key in base:
+                    if key in data and isinstance(data[key], str):
+                        base[key] = data[key]
+                if "api_key" not in data and isinstance(data.get("gemini_api_key"), str):
+                    base["api_key"] = data["gemini_api_key"]
+        except (OSError, ValueError):
             pass
     return base
 
 
 def save_runtime_config(path: str, data: dict):
-    """Merge data into current runtime config and save to path; chmod 0o600 on path."""
     cfg = load_runtime_config(path)
     cfg.update(data or {})
     _save_json(path, cfg)
     try:
         os.chmod(path, 0o600)
-    except Exception:
+    except OSError:
         pass
 
 

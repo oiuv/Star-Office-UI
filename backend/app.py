@@ -12,6 +12,16 @@ import shutil
 import subprocess
 import tempfile
 import threading
+import sys
+import hmac
+import ipaddress
+import time
+from event_store import EventStore, period_bounds
+from hook_events import HOOKS, STATES
+from image_client import DEFAULT_MODEL, generate_image, validate_base_url
+from io import BytesIO
+from activity_service import apply_hook
+from store_utils import _save_json
 from pathlib import Path
 from security_utils import is_production_mode, is_strong_secret, is_strong_drawer_pass
 from memo_utils import get_yesterday_date_str, sanitize_content, extract_memo_from_file
@@ -39,7 +49,7 @@ MEMORY_DIR = os.path.join(os.path.dirname(ROOT_DIR), "memory")
 FRONTEND_DIR = os.path.join(ROOT_DIR, "frontend")
 FRONTEND_INDEX_FILE = os.path.join(FRONTEND_DIR, "index.html")
 FRONTEND_ELECTRON_STANDALONE_FILE = os.path.join(FRONTEND_DIR, "electron-standalone.html")
-STATE_FILE = os.path.join(ROOT_DIR, "state.json")
+STATE_FILE = os.getenv("STAR_OFFICE_STATE_FILE") or os.path.join(ROOT_DIR, "state.json")
 AGENTS_STATE_FILE = os.path.join(ROOT_DIR, "agents-state.json")
 JOIN_KEYS_FILE = os.path.join(ROOT_DIR, "join-keys.json")
 FRONTEND_PATH = Path(FRONTEND_DIR)
@@ -48,8 +58,6 @@ ASSET_TEMPLATE_ZIP = os.path.join(ROOT_DIR, "assets-replace-template.zip")
 WORKSPACE_DIR = os.path.dirname(ROOT_DIR)
 OPENCLAW_WORKSPACE = os.environ.get("OPENCLAW_WORKSPACE") or os.path.join(os.path.expanduser("~"), ".openclaw", "workspace")
 IDENTITY_FILE = os.path.join(OPENCLAW_WORKSPACE, "IDENTITY.md")
-GEMINI_SCRIPT = os.path.join(WORKSPACE_DIR, "skills", "gemini-image-generate", "scripts", "gemini_image_generate.py")
-GEMINI_PYTHON = os.path.join(WORKSPACE_DIR, "skills", "gemini-image-generate", ".venv", "bin", "python")
 ROOM_REFERENCE_IMAGE = (
     os.path.join(ROOT_DIR, "assets", "room-reference.webp")
     if os.path.exists(os.path.join(ROOT_DIR, "assets", "room-reference.webp"))
@@ -94,6 +102,7 @@ app.config.update(
 
 # Guard join-agent critical section to enforce per-key concurrency under parallel requests
 join_lock = threading.Lock()
+event_store = EventStore()
 
 # Async background task registry for long-running operations (e.g. image generation)
 # Avoids Cloudflare 524 timeout (100s limit) by letting frontend poll for completion.
@@ -219,8 +228,7 @@ def get_office_name_from_identity():
 
 def save_state(state: dict):
     """Save state to file"""
-    with open(STATE_FILE, "w", encoding="utf-8") as f:
-        json.dump(state, f, ensure_ascii=False, indent=2)
+    _save_json(STATE_FILE, state)
 
 
 def ensure_electron_standalone_snapshot():
@@ -582,230 +590,35 @@ def normalize_agent_state(s):
 
 
 # User-facing model aliases -> provider model ids
-USER_MODEL_TO_PROVIDER_MODELS = {
-    # 严格按用户要求：仅两种官方模型映射
-    "nanobanana-pro": [
-        "nano-banana-pro-preview",
-    ],
-    "nanobanana-2": [
-        "gemini-2.5-flash-image",
-    ],
-}
-
-PROVIDER_MODEL_TO_USER_MODEL = {
-    provider: user
-    for user, providers in USER_MODEL_TO_PROVIDER_MODELS.items()
-    for provider in providers
-}
-
-
-def _normalize_user_model(model_name: str) -> str:
-    m = (model_name or "").strip()
-    if not m:
-        return "nanobanana-pro"
-    low = m.lower()
-    if low in USER_MODEL_TO_PROVIDER_MODELS:
-        return low
-    if low in PROVIDER_MODEL_TO_USER_MODEL:
-        return PROVIDER_MODEL_TO_USER_MODEL[low]
-    return "nanobanana-pro"
-
-
-def _provider_model_candidates(user_model: str):
-    normalized = _normalize_user_model(user_model)
-    return list(USER_MODEL_TO_PROVIDER_MODELS.get(normalized, USER_MODEL_TO_PROVIDER_MODELS["nanobanana-pro"]))
-
-
-def _generate_rpg_background_to_webp(out_webp_path: str, width: int = 1280, height: int = 720, custom_prompt: str = "", speed_mode: str = "fast"):
-    """Generate RPG-style room background and save as webp.
-
-    speed_mode:
-      - fast: use nanobanana-2 + 1024x576 intermediate + downscaled reference (faster)
-      - quality: use configured model (fallback nanobanana-pro) + full 1280x720 path
-    """
-    runtime_cfg = load_runtime_config()
-    api_key = (runtime_cfg.get("gemini_api_key") or "").strip()
-    if not api_key:
-        raise RuntimeError("MISSING_API_KEY")
-    themes = [
-        "8-bit dungeon guild room",
-        "8-bit stardew-valley inspired cozy farm tavern",
-        "8-bit nordic fantasy tavern",
-        "8-bit magitech workshop",
-        "8-bit elven forest inn",
-        "8-bit pixel cyber tavern",
-        "8-bit desert caravan inn",
-        "8-bit snow mountain lodge",
-    ]
-    theme = random.choice(themes)
-
-    if not (os.path.exists(GEMINI_PYTHON) and os.path.exists(GEMINI_SCRIPT)):
-        raise RuntimeError("生图脚本环境缺失：gemini-image-generate 未安装")
-
-    style_hint = (custom_prompt or "").strip()
-    if not style_hint:
-        style_hint = theme
-
-    # 默认使用更稳妥的 quality 档，避免 fast 模型在部分 API 通道不可用
-    mode = (speed_mode or "quality").strip().lower()
-    if mode not in {"fast", "quality"}:
-        mode = "quality"
-
-    configured_user_model = _normalize_user_model(runtime_cfg.get("gemini_model") or "nanobanana-pro")
-    if mode == "fast":
-        preferred_user_model = "nanobanana-2"
-        # fast 也提高基础清晰度：从 1024x576 提升到 1152x648（牺牲少量速度）
-        gen_width, gen_height = 1152, 648
-        ref_width, ref_height = 1152, 648
-    else:
-        preferred_user_model = configured_user_model
-        gen_width, gen_height = width, height
-        ref_width, ref_height = width, height
-
-    # 同时规避可能触发 400 的特殊能力参数：
-    # 仅 nanobanana-2 走 aspect-ratio，nanobanana-pro 交给模型默认比例（后续再标准化到 1280x720）
-    allow_aspect_ratio = (preferred_user_model == "nanobanana-2")
-
-    prompt = (
-        "Use a top-down pixel room composition compatible with an office game scene. "
-        "STRICTLY preserve the same room geometry, camera angle, wall/floor boundaries and major object placement as the provided reference image. "
-        "Keep region layout stable (left work area, center lounge, right error area). "
-        "Only change visual style/theme/material/lighting according to: " + style_hint + ". "
-        "Do not add text or watermark. Retro 8-bit RPG style."
-    )
-
-    tmp_dir = tempfile.mkdtemp(prefix="rpg-bg-")
-    cmd = [
-        GEMINI_PYTHON,
-        GEMINI_SCRIPT,
-        "--prompt", prompt,
-        "--model", configured_user_model,
-        "--out-dir", tmp_dir,
-        "--cleanup",
-    ]
-    if allow_aspect_ratio:
-        cmd.extend(["--aspect-ratio", "16:9"])
-
-    # 强约束：每次都带固定参考图，保持房间区域布局不漂移
-    ref_for_call = None
-    if os.path.exists(ROOM_REFERENCE_IMAGE):
-        ref_for_call = ROOM_REFERENCE_IMAGE
-        if mode == "fast" and Image is not None:
-            try:
-                ref_fast = os.path.join(tmp_dir, "room-reference-fast.webp")
-                with Image.open(ROOM_REFERENCE_IMAGE) as rim:
-                    rim = rim.convert("RGBA").resize((ref_width, ref_height), Image.Resampling.LANCZOS)
-                    rim.save(ref_fast, "WEBP", quality=85, method=4)
-                ref_for_call = ref_fast
-            except Exception:
-                ref_for_call = ROOM_REFERENCE_IMAGE
-
-    if ref_for_call:
-        cmd.extend(["--reference-image", ref_for_call])
-
-    env = os.environ.copy()
-    # 运行时配置优先：只保留 GEMINI_API_KEY，避免脚本因双 key 报错
-    env.pop("GOOGLE_API_KEY", None)
-    env["GEMINI_API_KEY"] = api_key
-
-    def _run_cmd(cmd_args):
-        return subprocess.run(cmd_args, capture_output=True, text=True, env=env, timeout=240)
-
-    def _is_model_unavailable_error(text: str) -> bool:
-        low = (text or "").strip().lower()
-        return (
-            ("not found" in low and "models/" in low)
-            or ("model_not_available" in low)
-            or ("model is not available" in low)
-            or ("configured model is not available" in low)
-            or ("this model is not available" in low)
-            or ("not supported for generatecontent" in low)
-        )
-
-    def _with_model(cmd_args, model_name: str):
-        m = cmd_args[:]
-        if "--model" in m:
-            idx = m.index("--model")
-            if idx + 1 < len(m):
-                m[idx + 1] = model_name
-        else:
-            m.extend(["--model", model_name])
-        return m
-
-    # 模型多级回退（仅允许两类用户模型：nanobanana-pro / nanobanana-2）
-    # 每个用户模型映射到若干 provider 真实模型。
-    user_model_order = [preferred_user_model, configured_user_model]
-    user_model_order = [m for i, m in enumerate(user_model_order) if m and m not in user_model_order[:i]]
-
-    model_candidates = []
-    for um in user_model_order:
-        model_candidates.extend(_provider_model_candidates(um))
-    # 去重并清理空项
-    model_candidates = [m for i, m in enumerate(model_candidates) if m and m not in model_candidates[:i]]
-
-    proc = None
-    last_err_text = ""
-    model_unavailable_count = 0
-
-    for mname in model_candidates:
-        env["GEMINI_MODEL"] = mname
-        try_cmd = _with_model(cmd, mname)
-        proc = _run_cmd(try_cmd)
-        if proc.returncode == 0:
-            break
-
-        err_text = (proc.stderr or proc.stdout or "").strip()
-        last_err_text = err_text
-
-        # key 失效/泄漏：立即终止，不继续尝试
-        low = err_text.lower()
-        if "your api key was reported as leaked" in low or "permission_denied" in low:
-            raise RuntimeError("API_KEY_REVOKED_OR_LEAKED")
-
-        if _is_model_unavailable_error(err_text):
-            model_unavailable_count += 1
-            continue
-
-        # 非模型不可用错误，直接返回真实错误
-        raise RuntimeError(f"生图失败: {err_text}")
-
-    if proc is None or proc.returncode != 0:
-        err_text = (last_err_text or "").strip()
-        if model_unavailable_count >= len(model_candidates) or _is_model_unavailable_error(err_text):
-            brief = (err_text or "").replace("\n", " ")[:240]
-            raise RuntimeError(f"MODEL_NOT_AVAILABLE::{brief}")
-        raise RuntimeError(f"生图失败: {err_text}")
-
-    try:
-        result = json.loads(proc.stdout.strip().splitlines()[-1])
-    except Exception:
-        raise RuntimeError("生图结果解析失败")
-
-    files = result.get("files") or []
-    if not files:
-        raise RuntimeError("生图未返回文件")
-
-    gen_path = files[0]
-    if not os.path.exists(gen_path):
-        raise RuntimeError("生图文件不存在")
-
+def _generate_rpg_background_to_webp(out_webp_path: str, width: int = 1280, height: int = 720, custom_prompt: str = "", speed_mode: str = "quality"):
+    """Generate or edit via the configured OpenAI-compatible Image API."""
     if Image is None:
-        raise RuntimeError("Pillow 不可用，无法做尺寸标准化")
-
-    with Image.open(gen_path) as im:
-        im = im.convert("RGBA")
-        # 质量模式优先保细节；快速模式优先速度
-        if mode == "fast":
-            im = im.resize((gen_width, gen_height), Image.Resampling.LANCZOS)
-            if (gen_width, gen_height) != (width, height):
-                # fast 的放大改为 LANCZOS，牺牲少量速度换更高细节
-                im = im.resize((width, height), Image.Resampling.LANCZOS)
-            im.save(out_webp_path, "WEBP", quality=96, method=6)
-        else:
-            # quality：确保输出标准尺寸，同时使用无损 webp，减少压缩损失
-            if im.size != (width, height):
-                im = im.resize((width, height), Image.Resampling.LANCZOS)
-            im.save(out_webp_path, "WEBP", lossless=True, quality=100, method=6)
+        raise RuntimeError("Pillow unavailable")
+    cfg = load_runtime_config()
+    theme = custom_prompt.strip() or random.choice([
+        "cozy pixel fantasy tavern", "pixel cyberpunk workshop",
+        "elven forest office", "snow mountain lodge",
+    ])
+    prompt = (
+        "Create a top-down pixel room for an office game. "
+        "Preserve the reference room geometry, camera angle, wall and floor boundaries "
+        "and furniture placement. Keep the left work area, central lounge and right error area. "
+        "Change only style, materials and lighting according to: " + theme + ". "
+        "No text or watermark. Retro pixel art. Target display aspect ratio 16:9."
+    )
+    data = generate_image(cfg, prompt, ROOM_REFERENCE_IMAGE, speed_mode)
+    with Image.open(BytesIO(data)) as image:
+        image = image.convert("RGBA").resize((width, height), Image.Resampling.LANCZOS)
+        target = Path(out_webp_path)
+        temporary = None
+        try:
+            with tempfile.NamedTemporaryFile(dir=target.parent, suffix=".webp", delete=False) as file:
+                temporary = file.name
+            image.save(temporary, "WEBP", quality=96, method=6)
+            os.replace(temporary, target)
+        finally:
+            if temporary and os.path.exists(temporary):
+                os.unlink(temporary)
 
 
 def state_to_area(state):
@@ -839,10 +652,12 @@ if os.path.exists(RUNTIME_CONFIG_FILE):
 def get_agents():
     """Get full agents list (for multi-agent UI), with auto-cleanup on access"""
     agents = load_agents_state()
+    agents_before = json.dumps(agents, sort_keys=True)
     now = datetime.now()
 
     cleaned_agents = []
     keys_data = load_join_keys()
+    keys_before = json.dumps(keys_data, sort_keys=True)
 
     for a in agents:
         if a.get("isMain"):
@@ -882,10 +697,28 @@ def get_agents():
 
         cleaned_agents.append(a)
 
-    save_agents_state(cleaned_agents)
-    save_join_keys(keys_data)
+    if json.dumps(cleaned_agents, sort_keys=True) != agents_before:
+        save_agents_state(cleaned_agents)
+    if json.dumps(keys_data, sort_keys=True) != keys_before:
+        save_join_keys(keys_data)
 
-    return jsonify(cleaned_agents)
+    # Credentials stay server-side. Codex actors have their own durable snapshots.
+    public_agents = [{k: v for k, v in a.items() if k != "joinKey"} for a in cleaned_agents]
+    primary = (event_store.main_state() or {}).get("actor_id")
+    for actor in event_store.actors():
+        if actor["source"] != "codex" or actor["actor_id"] == primary:
+            continue
+        if time.time() - actor["updated_at"] > 300:
+            continue
+        public_agents.append({
+            "agentId": actor["actor_id"], "name": actor["actor_name"], "isMain": False,
+            "state": actor["state"] if actor["online"] else "idle", "detail": actor["detail"],
+            "area": state_to_area(actor["state"] if actor["online"] else "idle"),
+            "source": "codex", "authStatus": "approved" if actor["online"] else "offline",
+            "updated_at": datetime.fromtimestamp(actor["updated_at"]).isoformat(),
+            "avatar": "guest_role_" + str(int(actor["actor_id"][-2:], 16) % 6 + 1),
+        })
+    return jsonify(public_agents)
 
 
 @app.route("/agent-approve", methods=["POST"])
@@ -1146,7 +979,7 @@ def leave_agent():
 @app.route("/status", methods=["GET"])
 def get_status():
     """Get current main state (backward compatibility). Optionally include officeName from IDENTITY.md."""
-    state = load_state()
+    state = event_store.main_state() or load_state()
     office_name = get_office_name_from_identity()
     if office_name:
         state["officeName"] = office_name
@@ -1225,6 +1058,8 @@ def agent_push():
         target["source"] = "remote-openclaw"
         target["lastPushAt"] = datetime.now().isoformat()
 
+        event_store.record_state(state, detail, actor_id=agent_id,
+                                 actor_name=target.get("name", agent_id), source="agent")
         save_agents_state(agents)
         return jsonify({"ok": True, "agentId": agent_id, "area": target.get("area")})
     except Exception as e:
@@ -1297,15 +1132,81 @@ def set_state_endpoint():
         state = load_state()
         if "state" in data:
             s = data["state"]
-            if s in VALID_AGENT_STATES:
-                state["state"] = s
+            if not isinstance(s, str) or s not in VALID_AGENT_STATES:
+                return jsonify({"status": "error", "msg": "invalid state"}), 400
+            state["state"] = s
         if "detail" in data:
+            if not isinstance(data["detail"], str) or len(data["detail"]) > 500:
+                return jsonify({"status": "error", "msg": "detail must be a string of at most 500 characters"}), 400
             state["detail"] = data["detail"]
+        state.pop("hook_session_id", None)
+        state.pop("actor_id", None)
         state["updated_at"] = datetime.now().isoformat()
+        event_store.record_state(state["state"], state.get("detail", ""))
         save_state(state)
         return jsonify({"status": "ok"})
     except Exception as e:
         return jsonify({"status": "error", "msg": str(e)}), 500
+
+
+@app.route("/hooks/codex", methods=["POST"])
+def codex_hook_endpoint():
+    token = os.getenv("STAR_OFFICE_HOOK_TOKEN", "")
+    if token:
+        auth = request.headers.get("Authorization", "")
+        if not hmac.compare_digest(auth, "Bearer " + token):
+            return jsonify({"ok": False, "msg": "Hook authentication required"}), 401
+    else:
+        try:
+            local = ipaddress.ip_address(request.remote_addr or "").is_loopback
+        except ValueError:
+            local = False
+        if not local:
+            return jsonify({"ok": False, "msg": "Set STAR_OFFICE_HOOK_TOKEN for remote hooks"}), 403
+    if request.content_length and request.content_length > 2_000_000:
+        return jsonify({"ok": False, "msg": "Hook input too large"}), 413
+    try:
+        return jsonify(apply_hook(request.get_json(silent=True), event_store, STATE_FILE))
+    except ValueError as error:
+        return jsonify({"ok": False, "msg": str(error)}), 400
+    except Exception:
+        app.logger.exception("Codex event ingestion failed")
+        return jsonify({"ok": False, "msg": "Activity store unavailable"}), 503
+
+
+@app.route("/stats", methods=["GET"])
+def stats_page():
+    with open(os.path.join(FRONTEND_DIR, "stats.html"), encoding="utf-8") as f:
+        html = f.read().replace("{{VERSION_TIMESTAMP}}", VERSION_TIMESTAMP)
+    response = make_response(html)
+    response.headers["Content-Type"] = "text/html; charset=utf-8"
+    return response
+
+
+@app.route("/api/stats", methods=["GET"])
+def activity_stats():
+    try:
+        since, until = period_bounds(request.args.get("period", "today"))
+        return jsonify({"ok": True, **event_store.stats(since, until)})
+    except ValueError as error:
+        return jsonify({"ok": False, "msg": str(error)}), 400
+
+
+@app.route("/api/events", methods=["GET"])
+def activity_events():
+    try:
+        since, until = period_bounds(request.args.get("period", "today"))
+        limit = int(request.args.get("limit", "50"))
+        if not 1 <= limit <= 200:
+            raise ValueError("limit must be between 1 and 200")
+        state, hook = request.args.get("state"), request.args.get("hook")
+        if state and state not in STATES:
+            raise ValueError("Invalid state")
+        if hook and hook not in HOOKS and hook != "StateUpdate":
+            raise ValueError("Invalid hook")
+        return jsonify({"ok": True, "events": event_store.events(since, until, limit, state, hook)})
+    except ValueError as error:
+        return jsonify({"ok": False, "msg": str(error)}), 400
 
 
 @app.route("/assets/template.zip", methods=["GET"])
@@ -1374,6 +1275,7 @@ def _bg_generate_worker(task_id: str, custom_prompt: str, speed_mode: str):
         with _bg_tasks_lock:
             _bg_tasks[task_id] = {
                 "status": "done",
+                "created_at": time.time(),
                 "result": {
                     "ok": True,
                     "path": "office_bg_small.webp",
@@ -1388,7 +1290,7 @@ def _bg_generate_worker(task_id: str, custom_prompt: str, speed_mode: str):
         error_result = {"ok": False, "msg": msg}
         if msg == "MISSING_API_KEY":
             error_result["code"] = "MISSING_API_KEY"
-            error_result["msg"] = "Missing GEMINI_API_KEY or GOOGLE_API_KEY"
+            error_result["msg"] = "Configure an image API key first"
         elif msg == "API_KEY_REVOKED_OR_LEAKED":
             error_result["code"] = "API_KEY_REVOKED_OR_LEAKED"
             error_result["msg"] = "API key is revoked or flagged as leaked. Please rotate to a new key."
@@ -1398,7 +1300,7 @@ def _bg_generate_worker(task_id: str, custom_prompt: str, speed_mode: str):
             if "::" in msg:
                 error_result["detail"] = msg.split("::", 1)[1]
         with _bg_tasks_lock:
-            _bg_tasks[task_id] = {"status": "error", "result": error_result}
+            _bg_tasks[task_id] = {"status": "error", "created_at": time.time(), "result": error_result}
 
 
 @app.route("/assets/generate-rpg-background", methods=["POST"])
@@ -1420,23 +1322,27 @@ def assets_generate_rpg_background():
 
         # Pre-flight checks that can fail fast (before spawning thread)
         runtime_cfg = load_runtime_config()
-        api_key = (runtime_cfg.get("gemini_api_key") or "").strip()
+        api_key = (runtime_cfg.get("api_key") or "").strip()
         if not api_key:
-            return jsonify({"ok": False, "code": "MISSING_API_KEY", "msg": "Missing GEMINI_API_KEY or GOOGLE_API_KEY"}), 400
-        if not (os.path.exists(GEMINI_PYTHON) and os.path.exists(GEMINI_SCRIPT)):
-            return jsonify({"ok": False, "msg": "生图脚本环境缺失：gemini-image-generate 未安装"}), 500
+            return jsonify({"ok": False, "code": "MISSING_API_KEY", "msg": "Configure an image API key first"}), 400
+        if Image is None:
+            return jsonify({"ok": False, "msg": "Pillow unavailable"}), 500
+        validate_base_url(runtime_cfg.get("base_url", ""))
+        if runtime_cfg.get("image_mode") == "edit" and not os.path.isfile(ROOM_REFERENCE_IMAGE):
+            return jsonify({"ok": False, "msg": "Reference image missing"}), 400
 
-        # Check if another generation is already running
+        import uuid
         with _bg_tasks_lock:
+            # Drop completed tasks whose browser no longer polls.
+            for tid in list(_bg_tasks):
+                item = _bg_tasks[tid]
+                if item.get("status") != "pending" and time.time() - item.get("created_at", 0) > 3600:
+                    _bg_tasks.pop(tid, None)
             for tid, task in _bg_tasks.items():
                 if task.get("status") == "pending":
                     return jsonify({"ok": True, "async": True, "task_id": tid, "msg": "已有生图任务进行中，请等待完成"}), 200
-
-        # Create async task
-        import string as _string
-        task_id = "gen_" + str(int(datetime.now().timestamp() * 1000)) + "_" + "".join(random.choices(_string.ascii_lowercase + _string.digits, k=4))
-        with _bg_tasks_lock:
-            _bg_tasks[task_id] = {"status": "pending", "created_at": datetime.now().isoformat()}
+            task_id = "gen_" + uuid.uuid4().hex
+            _bg_tasks[task_id] = {"status": "pending", "created_at": time.time()}
 
         t = threading.Thread(target=_bg_generate_worker, args=(task_id, custom_prompt, speed_mode), daemon=True)
         t.start()
@@ -1814,42 +1720,55 @@ def assets_defaults_set():
         return jsonify({"ok": False, "msg": str(e)}), 500
 
 
+@app.route("/config/ai", methods=["GET"])
 @app.route("/config/gemini", methods=["GET"])
 def gemini_config_get():
     guard = _require_asset_editor_auth()
     if guard:
         return guard
-    try:
-        cfg = load_runtime_config()
-        key = (cfg.get("gemini_api_key") or "").strip()
-        masked = ("*" * max(0, len(key) - 4)) + key[-4:] if key else ""
-        return jsonify({
-            "ok": True,
-            "has_api_key": bool(key),
-            "api_key_masked": masked,
-            "gemini_model": _normalize_user_model(cfg.get("gemini_model") or "nanobanana-pro"),
-        })
-    except Exception as e:
-        return jsonify({"ok": False, "msg": str(e)}), 500
+    cfg = load_runtime_config()
+    key = cfg.get("api_key", "")
+    masked = ("*" * max(4, len(key) - 4) + key[-4:]) if len(key) > 4 else ("*" * len(key))
+    return jsonify({
+        "ok": True, "provider": "openai", "has_api_key": bool(key),
+        "api_key_masked": masked, "base_url": cfg["base_url"],
+        "model": cfg["model"], "gemini_model": cfg["model"],
+        "image_mode": cfg["image_mode"],
+    })
 
 
+@app.route("/config/ai", methods=["POST"])
 @app.route("/config/gemini", methods=["POST"])
 def gemini_config_set():
     guard = _require_asset_editor_auth()
     if guard:
         return guard
     try:
-        data = request.get_json(silent=True) or {}
-        api_key = (data.get("api_key") or "").strip()
-        model = _normalize_user_model((data.get("model") or "").strip() or "nanobanana-pro")
-        payload = {"gemini_model": model}
-        if api_key:
-            payload["gemini_api_key"] = api_key
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            raise ValueError("Configuration must be a JSON object")
+        cfg = load_runtime_config()
+        payload = {}
+        if "api_key" in data:
+            if not isinstance(data["api_key"], str):
+                raise ValueError("api_key must be a string")
+            # Blank preserves the existing key, allowing URL/model-only changes.
+            if data["api_key"].strip():
+                payload["api_key"] = data["api_key"].strip()
+        if "base_url" in data:
+            payload["base_url"] = validate_base_url(data["base_url"])
+        if "model" in data:
+            if not isinstance(data["model"], str) or not 1 <= len(data["model"].strip()) <= 200:
+                raise ValueError("model must be a nonempty string of at most 200 characters")
+            payload["model"] = data["model"].strip()
+        if "image_mode" in data:
+            if data["image_mode"] not in {"edit", "generate"}:
+                raise ValueError("image_mode must be edit or generate")
+            payload["image_mode"] = data["image_mode"]
         save_runtime_config(payload)
-        return jsonify({"ok": True, "msg": "Gemini 配置已保存"})
-    except Exception as e:
-        return jsonify({"ok": False, "msg": str(e)}), 500
-
+        return jsonify({"ok": True, "msg": "Image API configuration saved"})
+    except ValueError as error:
+        return jsonify({"ok": False, "msg": str(error)}), 400
 
 @app.route("/assets/restore-default", methods=["POST"])
 def assets_restore_default():

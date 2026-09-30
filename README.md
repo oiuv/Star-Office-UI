@@ -80,7 +80,7 @@ python3 set_state.py idle "待命中"
 3. **多 Agent 协作** —— 通过 join key 邀请其他 Agent 加入你的办公室，实时查看多人状态
 4. **中英日三语** —— CN / EN / JP 一键切换，界面文案、气泡、加载提示全部联动
 5. **美术资产自定义** —— 侧边栏管理角色 / 场景 / 装饰素材，支持动态帧同步，避免闪烁
-6. **AI 生图装修** —— 接入 Gemini API，用 AI 给办公室换背景；不接入 API 也能正常使用核心功能
+6. **AI 生图装修** —— 接入 OpenAI 兼容图片 API，用 AI 给办公室换背景；不接入 API 也能正常使用核心功能
 7. **移动端适配** —— 手机直接打开即可查看，适合外出时快速瞄一眼
 8. **安全加固** —— 侧边栏密码保护、生产环境弱密码拦截、Session Cookie 加固
 9. **灵活公网访问** —— 推荐 Cloudflare Tunnel 一键公网化，也可用自有域名 / 反向代理
@@ -196,6 +196,96 @@ python3 office-agent-push.py
 
 ---
 
+## Codex hooks 接入与活动档案
+
+这版采用 **6 种动画状态 + 12 种生命周期事件**。状态表示角色动作，事件表示触发原因；事件名称、描述、会话和工具标识分别记录，不需要增加 12 套动画。
+
+| Hook | 动画状态 | 展示含义 |
+|------|----------|----------|
+| SessionStart | idle；压缩后恢复前一状态 | 新会话 / 恢复会话 |
+| UserPromptSubmit | researching | 理解任务 |
+| PreToolUse | writing / researching / executing | 根据工具类型修改文件、查资料或执行 |
+| PermissionRequest | idle | 等待执行权限；不会显示成报错 |
+| PostToolUse | executing；明确失败时 error | 处理结果 / 工具失败 |
+| PreCompact | syncing | 整理上下文 |
+| PostCompact | 恢复压缩前状态 | 继续工作 |
+| SubagentStart | 子角色 executing | 子 Agent 独立开始工作 |
+| SubagentStop | 子角色 idle | 子 Agent 本轮收尾 |
+| Stop | idle | 主角色本轮结束 |
+| Interrupt | idle | 中断，同时结束当前子角色的在线状态 |
+| SessionEnd | idle | 会话结束 |
+
+参考 [Codex 官方 hooks 文档](https://learn.chatgpt.com/docs/hooks)。脚本只观察事件，统一输出合法 JSON 空对象，不批准权限、不改写工具输入、不要求继续任务。失败和超时不会影响 Codex。
+
+### 生成 hooks.json
+
+在 Star Office 项目根目录执行：
+
+~~~powershell
+python scripts/codex_hooks_config.py
+~~~
+
+将输出合并到希望接入的项目 .codex/hooks.json，或用户目录的 ~/.codex/hooks.json。已有配置应合并各事件数组，避免覆盖原有 hooks。生成器只输出配置，不会修改已有文件，可用 --python 指定解释器。
+
+也可使用 [hooks.example.json](./integrations/codex/hooks.example.json)，将脚本路径替换成实际路径。Windows 路径会加引号，支持空格。
+
+配置后在 Codex 中使用 **/hooks** 检查并信任新配置。官方要求信任确切的 hook 定义，改动后需重新审核；项目级 hooks 还需要项目被信任。脚本无需额外安装 Python 包，必须能访问这份源码。
+
+### 本地与远程模式
+
+- **本地默认模式**：codex_hook.py 直接写 SQLite 与状态文件，无需启动 Flask 即可保存记录；启动后端后查看动画和历史。
+- **远程模式**：Codex 进程环境设置 STAR_OFFICE_URL，例如 https://your-office.example；客户端与后端设置相同 STAR_OFFICE_HOOK_TOKEN。未设置 Token 时仅接受直接来自 loopback 的 hook 请求，反向代理部署应始终设置 Token。
+- 默认数据库是 data/office-events.sqlite3，支持 STAR_OFFICE_EVENTS_DB 指定位置，数据库及 WAL/SHM 文件不会提交到 Git。备份时使用 SQLite 备份机制或停止写入后备份。
+- STAR_OFFICE_STATE_FILE 可指定兼容状态文件位置。STAR_OFFICE_HOOK_DEBUG=1 仅将失败类别写到 stderr。
+- 不读取或保存 prompt、命令正文、完整工具输出、transcript 或 cwd；保留事件名、工具名、会话/回合/子 Agent 标识及少量运行元数据。
+- 异步 PostToolUse 迟到仍留日志，但不会复活已结束回合；多会话、子 Agent 分别记录。
+- 五分钟未更新的状态回到待命。长工具调用可能暂时视为离线，直到下一次 hook；时长是保守观测值。
+
+### 查看统计
+
+访问 **http://127.0.0.1:19000/stats**，或点击办公室的「活动档案」。
+
+支持今日、近 7 天、近 30 天、全部的事件、会话、回合和工具统计，六类状态的次数与观测时长，十二类 hooks 计数，权限等待、中断、压缩、子 Agent、每日趋势、筛选日志，以及最新 200 条 JSON 导出。
+
+工具耗时通过 tool_use_id 配对开始/结束；只有明确错误标记或非零退出码才计为失败。回合结束 +20 XP、工具成功 +2、子 Agent 收尾 +10，100 XP 升一级，并解锁四个纪念成就。重复回放同一回合/工具不会重复领奖，主动状态心跳不产生经验值。
+
+已有 set_state.py、POST /set_state 和 POST /agent-push 同样记录。页面轮询不增加事件，相同状态描述的重复推送标记为心跳。hook 接收次数和去重后的结束回合数分别展示。
+
+日期按后端本地时区分组，Agent 时长累加，每次更新最多观测 300 秒；断联时间不无限累计。回合数表示收到 Stop，不代表任务质量。没有 Token 数据时不推算 Token 或费用。升级前的历史不自动生成，绕过脚本手工修改状态文件不产生记录。
+
+| 新增端点 | 说明 |
+|----------|------|
+| POST /hooks/codex | Codex hook JSON；远程使用 Bearer Token |
+| GET /api/stats?period=today | period 支持 today / 7d / 30d / all |
+| GET /api/events?period=7d&limit=50 | limit 为 1–200，可加 state / hook 筛选 |
+| GET /config/ai | 已认证的图片设置；Key 脱敏 |
+| POST /config/ai | 保存图片地址、模型、生成方式和 Key |
+
+### OpenAI 兼容图片接口
+
+在装修侧边栏的 API 设置中填写：
+
+- **API 地址**：例如 https://api.openai.com/v1 或 http://127.0.0.1:8000/v1。包含服务所需的完整前缀，后端追加 /images/edits 或 /images/generations。
+- **API Key**：保存后只显示末四位；留空保存会保留已有密钥。
+- **图片模型**：填写服务实际支持的名称，允许自定义。
+- **生成方式**：默认通过 multipart 上传参考图进行编辑。仅支持文生图的服务可明确选择「纯文生图」，布局保持效果相应改变。
+
+服务必须支持 OpenAI **Image API**，只有 /chat/completions 的服务不能接入。支持 data[].b64_json 和 data[].url 返回方式，图片下载不附带 API Key。参考 [Image API 官方文档](https://developers.openai.com/api/docs/guides/image-generation)。
+
+环境变量为 OPENAI_API_KEY、AI_BASE_URL（或 OPENAI_BASE_URL）、AI_IMAGE_MODEL、AI_IMAGE_MODE，文件/UI 的值优先。默认地址 https://api.openai.com/v1，默认模型 gpt-image-2，可按服务替换。
+
+按本次需求，生图改为 OpenAI 兼容协议。旧 /config/gemini 路径保留为别名，旧文件中的 Key 保留；原 Gemini Key 不一定可用于新服务，请重新确认 Key、地址和模型。不再依赖仓库外的 Gemini skill 或 Google SDK。
+
+### 验证
+
+~~~powershell
+python -B -m unittest discover -s tests -v
+~~~
+
+测试使用临时数据库和模拟图片接口，不消耗 API 额度。
+
+---
+
 ## 📡 常用 API
 
 | 端点 | 说明 |
@@ -208,15 +298,15 @@ python3 office-agent-push.py
 | `POST /agent-push` | 访客推送状态 |
 | `POST /leave-agent` | 访客离开 |
 | `GET /yesterday-memo` | 获取昨日小记 |
-| `GET /config/gemini` | 获取 Gemini API 配置 |
-| `POST /config/gemini` | 设置 Gemini API 配置 |
+| `GET /config/gemini` | 获取图片 API 配置（/config/gemini 为兼容别名） |
+| `POST /config/gemini` | 设置 OpenAI 兼容图片 API 配置 |
 | `GET /assets/generate-rpg-background/poll` | 轮询生图进度 |
 
 ---
 
 ## 🖥 桌面宠物版（可选）
 
-`desktop-pet/` 目录提供了一个基于 **Electron** 的桌面封装版本，可以把像素办公室变成一个透明窗口的桌面宠物。
+`desktop-pet/` 提供 **Tauri** 桌面版本，`electron-shell/` 提供 **Electron** 桌面版本，可以把像素办公室变成一个透明窗口的桌面宠物。
 
 ```bash
 cd desktop-pet
@@ -277,7 +367,8 @@ Star-Office-UI/
 │   ├── join.html
 │   ├── invite.html
 │   └── layout.js
-├── desktop-pet/        # Electron 桌面宠物版（可选）
+├── desktop-pet/        # Tauri 桌面宠物版（可选）
+├── electron-shell/     # Electron 桌面壳（可选）
 ├── docs/               # 文档与截图
 │   └── screenshots/
 ├── office-agent-push.py  # 访客推送脚本
