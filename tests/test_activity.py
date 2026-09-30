@@ -14,6 +14,7 @@ import time
 import unittest
 import urllib.error
 from pathlib import Path
+from contextlib import redirect_stdout
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -256,6 +257,18 @@ class AppTests(unittest.TestCase):
         self.assertNotIn("fixture-secret",json.dumps(config))
         self.client.post("/config/ai",json={"api_key":"","base_url":"http://localhost:9998/v1"})
         self.assertEqual(store_utils.load_runtime_config(self.app.RUNTIME_CONFIG_FILE)["api_key"],"fixture-secret")
+    def test_removed_provider_endpoint_is_not_registered(self):
+        self.unlock()
+        self.assertEqual(self.client.get("/config/gemini").status_code, 404)
+        self.assertEqual(self.client.post("/config/gemini", json={"api_key": "fixture-key"}).status_code, 404)
+        config = self.client.get("/config/ai").json
+        self.assertEqual(set(config), {"ok", "provider", "has_api_key", "api_key_masked", "base_url", "model", "image_mode"})
+        self.assertEqual(config["provider"], "openai")
+    def test_image_config_rejects_unsupported_fields(self):
+        self.unlock()
+        response = self.client.post("/config/ai", json={"gemini_api_key": "old-key"})
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(Path(self.app.RUNTIME_CONFIG_FILE).exists())
     def test_short_key_never_echoed(self):
         self.unlock()
         self.client.post("/config/ai",json={"api_key":"abcd"})
@@ -330,11 +343,16 @@ class ImageTransportTests(unittest.TestCase):
         self.config["image_mode"]="edit"
         with self.assertRaisesRegex(RuntimeError,"Reference image missing"):
             generate_image(self.config,"prompt",opener=self.opener)
-    def test_config_migrates_legacy_key(self):
-        with tempfile.TemporaryDirectory() as directory:
-            path=Path(directory)/"runtime.json"
-            path.write_text(json.dumps({"gemini_api_key":"old-key","gemini_model":"nanobanana-pro"}))
-            self.assertEqual(store_utils.load_runtime_config(str(path))["api_key"],"old-key")
+    def test_config_ignores_unsupported_provider_fields(self):
+        with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, {}, clear=True):
+            path = Path(directory) / "runtime.json"
+            path.write_text(json.dumps({"gemini_api_key": "old-key", "gemini_model": "old-model"}))
+            config = store_utils.load_runtime_config(str(path))
+            self.assertEqual(config, {"api_key": "", "base_url": "https://api.openai.com/v1", "model": "gpt-image-2", "image_mode": "edit"})
+            store_utils.save_runtime_config(str(path), {"api_key": "new-key", "gemini_api_key": "ignored-key"})
+            saved = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(set(saved), {"api_key", "base_url", "model", "image_mode"})
+            self.assertEqual(saved["api_key"], "new-key")
     def test_url_validation(self):
         for value in ("ftp://example.com","https://example.com/v1?secret=x","https://example.com/#key"):
             with self.assertRaises(ValueError): validate_base_url(value)
@@ -358,6 +376,21 @@ class ScriptTests(unittest.TestCase):
         self.assertEqual(set(config["hooks"]),set(HOOKS))
         self.assertEqual(config["hooks"]["SessionEnd"][0]["hooks"][0]["timeout"],3)
         self.assertTrue(config["hooks"]["PostToolUse"][0]["hooks"][0]["async"])
+    def test_image_cli_uses_openai_configuration(self):
+        spec = importlib.util.spec_from_file_location("image_generate_cli", ROOT / "scripts/image_generate.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        with tempfile.TemporaryDirectory() as directory:
+            arguments = ["image_generate.py", "--prompt", "forest", "--out-dir", directory, "--mode", "generate", "--base-url", "https://relay.example/v1", "--model", "gpt-image-2", "--speed-mode", "fast"]
+            output = io.StringIO()
+            with patch.object(sys, "argv", arguments), patch.dict(os.environ, {"OPENAI_API_KEY": "fixture-key"}), patch.object(module, "generate_image", return_value=b"fixture-image") as transport, redirect_stdout(output):
+                self.assertEqual(module.main(), 0)
+            config, prompt, reference, speed = transport.call_args[0]
+            self.assertEqual(config, {"api_key": "fixture-key", "model": "gpt-image-2", "base_url": "https://relay.example/v1", "image_mode": "generate"})
+            self.assertEqual((prompt, reference, speed), ("forest", "", "fast"))
+            target = Path(directory) / "generated_0.png"
+            self.assertEqual(target.read_bytes(), b"fixture-image")
+            self.assertEqual(json.loads(output.getvalue()), {"files": [str(target)]})
     def test_cli_state_records_and_aliases(self):
         with tempfile.TemporaryDirectory() as directory:
             db=Path(directory)/"events.sqlite3"; state=Path(directory)/"state.json"

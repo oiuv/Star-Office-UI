@@ -7,83 +7,112 @@
 **ピクセルアート風 AI オフィスダッシュボード** —— AI アシスタントの作業状態をリアルタイムで可視化し、「誰が何をしているか」「昨日何をしたか」「今オンラインか」を直感的に把握できます。
 
 マルチ Agent 協調、中英日 3 言語、AI 画像生成による模様替え、デスクトップペットモードに対応。
-[OpenClaw](https://github.com/openclaw/openclaw) との統合で最高の体験が得られますが、単体でもステータスダッシュボードとして利用可能です。
+推奨の接続方法は **Codex hooks**。キャラクターの状態を自動更新し、セッション、ツール、子 Agent の活動を記録します。他の AI Agent もスクリプトや HTTP API で接続できます。
 
 > 本プロジェクトは **[Ring Hyacinth](https://x.com/ring_hyacinth)** と **[Simon Lee](https://x.com/simonxxoo)** の共同制作（co-created project）であり、コミュニティの開発者（[@Zhaohan-Wang](https://github.com/Zhaohan-Wang)、[@Jah-yee](https://github.com/Jah-yee)、[@liaoandi](https://github.com/liaoandi)）とともに継続的にメンテナンス・改善を行っています。
 > Issue や PR を歓迎します。貢献してくださるすべての方に感謝いたします。
 
 ---
 
-## ✨ クイックスタート
+## ✨ クイックスタート：Codex hooks（推奨）
 
-### 方法 1：ロブスターにデプロイしてもらう（OpenClaw ユーザー向け）
+ダッシュボードを起動して hooks を設定すると、Codex の作業がアニメーションと活動記録に反映されます。
 
-[OpenClaw](https://github.com/openclaw/openclaw) をご利用中なら、以下のメッセージをロブスターに送るだけ：
+> **Python 3.10+ が必要です**。環境に応じて `python` を `python3` に置き換えてください。状態ファイルのコピーは初回のみ行い、既存の設定は保持してください。
 
-```text
-この SKILL.md に従って Star Office UI をデプロイしてください：
-https://github.com/ringhyacinth/Star-Office-UI/blob/master/SKILL.md
-```
-
-ロブスターが自動的にリポジトリのクローン、依存関係のインストール、バックエンドの起動、ステータス同期の設定を行い、アクセス URL をお知らせします。
-
-### 方法 2：30 秒手動セットアップ
-
-> **Python 3.10+ が必要です**（コードベースは `X | Y` ユニオン型構文を使用しており、3.9 以前のバージョンではサポートされていません）
+### 1) ダッシュボードを起動
 
 ```bash
-# 1) リポジトリをクローン
 git clone https://github.com/ringhyacinth/Star-Office-UI.git
 cd Star-Office-UI
-
-# 2) 依存関係をインストール（Python 3.10+ が必要）
-python3 -m pip install -r backend/requirements.txt
-
-# 3) 状態ファイルを初期化（初回のみ）
+python -m pip install -r backend/requirements.txt
 cp state.sample.json state.json
-
-# 4) バックエンドを起動
-cd backend
-python3 app.py
+python backend/app.py
 ```
 
-**http://127.0.0.1:19000** を開き、状態を切り替えてみましょう：
+[http://127.0.0.1:19000](http://127.0.0.1:19000) を開きます。バックエンドを起動したまま、別のターミナルで Star Office のプロジェクトルートに移動してください。
+
+### 2) Codex hooks を設定
 
 ```bash
-python3 set_state.py writing "ドキュメント整理中"
-python3 set_state.py error "問題を検出、調査中"
-python3 set_state.py idle "待機中"
+python scripts/codex_hooks_config.py
 ```
+
+出力を Codex で使用するプロジェクトの `.codex/hooks.json`、またはユーザー設定の `~/.codex/hooks.json` に統合します。既存の hooks がある場合はイベント配列をマージしてください。Codex の `/hooks` で内容を確認して信頼を承認します。
+
+生成されるスクリプトパスは絶対パスなので、別のプロジェクトからも呼び出せます。必要に応じて `--python` で Python のパスを指定してください。
+
+### 3) タスクを送信して活動を確認
+
+Codex にタスクを送信すると状態が自動更新され、ターン終了や中断後は待機に戻ります。[活動記録](http://127.0.0.1:19000/stats) でイベント、ツール統計、セッション、経験値、ログを確認できます。
+
+AI アシスタントに、このリポジトリの [SKILL.md](./SKILL.md) に従って起動と hooks 設定を依頼することもできます。
 
 ![Star Office UI プレビュー](docs/screenshots/readme-cover-1.jpg)
 
 ---
 
+## 🔌 Codex hooks 設定
+
+**6 種類のアニメーション状態 + 12 種類のライフサイクルイベント**を使用します。状態は動作を、イベントはその理由を表します。生成される設定は全 12 イベントに対応しています。
+
+| Hook | アニメーション / 意味 |
+|------|-----------------------|
+| `SessionStart` | 開始・再開時は待機、圧縮後は作業状態を復元 |
+| `UserPromptSubmit` | 調査状態でタスクを理解 |
+| `PreToolUse` | ツールに応じて執筆・調査・実行 |
+| `PermissionRequest` | 権限待ちの間は待機 |
+| `PostToolUse` | 実行状態、明示的な失敗時のみエラー |
+| `PreCompact` | 同期状態でコンテキストを整理 |
+| `PostCompact` | 圧縮前の状態を復元 |
+| `SubagentStart` | 子キャラクターが独立して作業開始 |
+| `SubagentStop` | 子キャラクターが待機に戻る |
+| `Stop` | メインのターン終了、待機に戻る |
+| `Interrupt` | 待機に戻り、子キャラクターのオンライン状態を終了 |
+| `SessionEnd` | セッション終了、待機に戻る |
+
+[Codex 公式 hooks ドキュメント](https://learn.chatgpt.com/docs/hooks)と[設定例](./integrations/codex/hooks.example.json)を参照してください。スクリプトはイベントを記録し、空の JSON オブジェクトを出力します。権限の承認は行いません。設定変更後は再度信頼を承認し、プロジェクト hooks ではプロジェクト自体も信頼する必要があります。
+
+### ローカルとリモート
+
+- **既定のローカル方式**：`codex_hook.py` が SQLite と状態ファイルに直接書き込みます。Flask が停止中でも記録でき、起動後に閲覧できます。
+- **リモート方式**：Codex の環境に `STAR_OFFICE_URL`（例：`https://your-office.example`）を設定し、クライアントとバックエンドに同じ `STAR_OFFICE_HOOK_TOKEN` を設定します。トークンなしでは直接の loopback 接続のみ許可されます。リバースプロキシ環境ではトークンを使用してください。
+- データベースは `data/office-events.sqlite3`。`STAR_OFFICE_EVENTS_DB` で変更できます。状態ファイルは `STAR_OFFICE_STATE_FILE` で指定できます。
+- Prompt、コマンド本文、完全なツール出力、transcript、作業ディレクトリは保存しません。遅れて届いた非同期結果はログに残りますが、終了済みターンを再開しません。
+- 5 分間更新がないと待機に戻ります。長いツール処理では次の hook まで一時的にオフライン扱いになる場合があります。
+
+---
+
 ## 🤔 誰に向いている？
 
-### OpenClaw / AI Agent をお持ちの方
-これが**フル体験**です。Agent が作業中に自動でステータスを切り替え、ピクセルキャラクターがリアルタイムで対応エリアに移動します。ページを開くだけで、AI が今何をしているかがわかります。
+### AI でコーディングや自動化を行う方
 
-### OpenClaw をお持ちでない方
-デプロイして使うことも全く問題ありません：
-- `set_state.py` や API で手動 / スクリプトからステータスを更新
-- ピクセルアート風の個人ステータスページやリモートワークダッシュボードとして利用
-- HTTP リクエストを送れるシステムなら何でもステータスを駆動可能
+AI が執筆、調査、ツール実行、権限待ちのどの状態かを確認できます。Codex hooks で自動同期でき、他の Agent はスクリプトや API を利用できます。
+
+### 複数の Agent を使う個人やチーム
+
+Agent と子 Agent を一つのオフィスで確認し、活動記録からツール実行、協調、ターン完了を振り返れます。
+
+### ピクセル看板と作業記録を使いたい方
+
+手動やスクリプトで状態を送信し、個人の作業ログ、リモート協調、自動化システムの表示に利用できます。基本機能は画像生成 API を必要としません。
 
 ---
 
 ## 📋 機能一覧
 
-1. **ステータス可視化** —— 6 種類の状態（`idle` / `writing` / `researching` / `executing` / `syncing` / `error`）がオフィスの各エリアに自動マッピングされ、アニメーションと吹き出しでリアルタイム表示
-2. **昨日メモ** —— `memory/*.md` から直近の作業記録を自動取得し、匿名化して「昨日メモ」カードとして表示
-3. **マルチ Agent 協調** —— join key で他の Agent をオフィスに招待し、全員のステータスをリアルタイム確認
-4. **中英日 3 言語対応** —— CN / EN / JP をワンクリック切替、UI テキスト・吹き出し・ローディング表示すべてが連動
-5. **アート資産カスタマイズ** —— サイドバーからキャラクター / 背景 / 装飾素材を管理、動的フレーム同期でちらつき防止
-6. **AI 画像生成による模様替え** —— Gemini API を接続してオフィス背景を AI 生成; API 未接続でもコア機能は利用可能
-7. **モバイル対応** —— スマホからそのまま閲覧可能、外出先からのクイックチェックに最適
-8. **セキュリティ強化** —— サイドバーのパスワード保護、本番環境での弱パスワード拒否、Session Cookie 強化
-9. **柔軟な公開アクセス** —— Cloudflare Tunnel でワンステップ公開、独自ドメイン / リバースプロキシにも対応
-10. **デスクトップペット版** —— オプションの Electron デスクトップラッパーで、オフィスを透明ウィンドウのデスクトップペットに（下記参照）
+1. **Codex hooks 自動接続** —— 12 種類のイベントでアニメーションと記録を更新。セッション、ツール、圧縮、中断、子 Agent に対応
+2. **活動記録と成長** —— 状態回数と観測時間、推移、ツール統計、ログ絞り込み、JSON 出力、経験値、レベル、実績
+3. **ステータス可視化** —— 6 種類の状態（`idle` / `writing` / `researching` / `executing` / `syncing` / `error`）がオフィスの各エリアに自動マッピングされ、アニメーションと吹き出しでリアルタイム表示
+4. **昨日メモ** —— `memory/*.md` から直近の作業記録を自動取得し、匿名化して「昨日メモ」カードとして表示
+5. **マルチ Agent 協調** —— join key で他の Agent をオフィスに招待し、全員のステータスをリアルタイム確認
+6. **中英日 3 言語対応** —— CN / EN / JP をワンクリック切替、UI テキスト・吹き出し・ローディング表示すべてが連動
+7. **アート資産カスタマイズ** —— サイドバーからキャラクター / 背景 / 装飾素材を管理、動的フレーム同期でちらつき防止
+8. **AI 画像生成による模様替え** —— OpenAI 互換 Image API（既定モデル：`gpt-image-2`）を接続してオフィス背景を AI 生成; API 未接続でもコア機能は利用可能
+9. **モバイル対応** —— スマホからそのまま閲覧可能、外出先からのクイックチェックに最適
+10. **セキュリティ強化** —— サイドバーのパスワード保護、本番環境での弱パスワード拒否、Session Cookie 強化
+11. **柔軟な公開アクセス** —— Cloudflare Tunnel でワンステップ公開、独自ドメイン / リバースプロキシにも対応
+12. **デスクトップペット版** —— オプションの Electron デスクトップラッパーで、オフィスを透明ウィンドウのデスクトップペットに（下記参照）
 
 ---
 
@@ -109,11 +138,13 @@ cd backend
 python3 app.py
 ```
 
-`http://127.0.0.1:19000` を開く
+[http://127.0.0.1:19000](http://127.0.0.1:19000) を開く
 
 > ✅ ローカル開発ではデフォルト設定のままで構いませんが、本番環境では `.env.example` を `.env` にコピーし、`FLASK_SECRET_KEY` と `ASSET_DRAWER_PASS` に十分な長さのランダム値を設定してください。
 
-### 4) ステータス切替
+### 4) 手動で状態確認（任意）
+
+別のターミナルでプロジェクトルートから実行してください。通常の Codex 状態更新は hooks が自動で行います。
 
 ```bash
 python3 set_state.py writing "ドキュメント整理中"
@@ -140,13 +171,13 @@ python3 scripts/smoke_test.py --base-url http://127.0.0.1:19000
 
 ---
 
-## 🦞 OpenClaw 連携
+## 🤝 他の AI Agent の接続
 
-> 以下は [OpenClaw](https://github.com/openclaw/openclaw) ユーザー向けの内容です。OpenClaw を使用していない場合はスキップしてください。
+スクリプトを実行できる、または HTTP リクエストを送信できる Agent は従来の接続方式を利用できます。Codex hooks 設定済みなら手動同期ルールの追加は不要です。
 
 ### ステータス自動同期
 
-`SOUL.md`（またはエージェント設定ファイル）に以下のルールを追加すると、Agent がステータスを自動で更新します：
+Agent のルールファイルに次の手順を追加し、Star Office のプロジェクトルートから `set_state.py` を実行します。または `state` と `detail` を指定して `POST /set_state` を送信できます：
 
 ```markdown
 ## Star Office ステータス同期ルール
@@ -177,8 +208,8 @@ python3 scripts/smoke_test.py --base-url http://127.0.0.1:19000
 
 ```python
 JOIN_KEY = "ocj_starteam02"          # あなたが割り当てたキー
-AGENT_NAME = "太郎のロブスター"        # 表示名
-OFFICE_URL = "https://office.hyacinth.im"  # あなたのオフィス URL
+AGENT_NAME = "太郎の Agent"        # 表示名
+OFFICE_URL = "https://your-office.example"  # あなたのオフィス URL
 ```
 
 ```bash
@@ -195,10 +226,31 @@ python3 office-agent-push.py
 
 ---
 
+## 📊 活動記録と成長
+
+[活動記録](http://127.0.0.1:19000/stats)で今日、7 日、30 日、全期間を選べます。状態の回数と観測時間、12 種類の hooks、セッション、完了ターン、ツール、日別推移、絞り込みログを確認し、最新 200 件を JSON 出力できます。
+
+ツール時間は `tool_use_id` で開始と終了を対応付けます。重複しないターン完了は 20 XP、ツール成功は 2 XP、子 Agent 完了は 10 XP。100 XP ごとにレベルが上がります。重複イベントの再送や状態 heartbeat は追加の XP を発生させません。
+
+`set_state.py`、`POST /set_state`、`POST /agent-push` も記録されます。セッション・ターン・ツール別の統計には対応するイベントが必要です。日付はバックエンドのローカル時刻を使用し、観測時間は更新ごとに最大 300 秒です。状態ファイルの直接編集は記録を作成しません。
+
+---
+
+## 🎨 OpenAI 画像生成（gpt-image-2）
+
+素材サイドバーで API キー、URL、モデル、編集・生成方式を設定します。既定は `https://api.openai.com/v1`、`gpt-image-2`、参照画像の編集です。URL とモデルはカスタマイズできます。
+
+サービスは `/images/edits` または `/images/generations` に対応する必要があります。設定 API は認証済みの `GET /config/ai` と `POST /config/ai` です。環境変数は `OPENAI_API_KEY`、`AI_BASE_URL`（または `OPENAI_BASE_URL`）、`AI_IMAGE_MODEL`、`AI_IMAGE_MODE`。ページ・ファイルに保存した設定が優先されます。CLI は `scripts/image_generate.py` です。
+
+---
+
 ## 📡 API リファレンス
 
 | エンドポイント | 説明 |
 |--------------|------|
+| `POST /hooks/codex` | Codex イベント受信、リモートでは Bearer Token |
+| `GET /api/stats?period=today` | 活動統計、`today` / `7d` / `30d` / `all` |
+| `GET /api/events?period=7d&limit=50` | 活動ログ、1–200 件、`state` / `hook` で絞り込み |
 | `GET /health` | ヘルスチェック |
 | `GET /status` | メイン Agent のステータス取得 |
 | `POST /set_state` | メイン Agent のステータス設定 |
@@ -207,15 +259,15 @@ python3 office-agent-push.py
 | `POST /agent-push` | ゲストステータスプッシュ |
 | `POST /leave-agent` | ゲスト退出 |
 | `GET /yesterday-memo` | 昨日メモ取得 |
-| `GET /config/gemini` | Gemini API 設定取得 |
-| `POST /config/gemini` | Gemini API 設定変更 |
+| `GET /config/ai` | OpenAI Image API 設定取得（キーをマスク） |
+| `POST /config/ai` | OpenAI Image API 設定を保存 |
 | `GET /assets/generate-rpg-background/poll` | 画像生成の進捗確認 |
 
 ---
 
 ## 🖥 デスクトップペット版（任意）
 
-`desktop-pet/` ディレクトリには **Electron** ベースのデスクトップラッパーが含まれており、ピクセルオフィスを透明ウィンドウのデスクトップペットにできます。
+`desktop-pet/` は **Tauri** 版、`electron-shell/` は **Electron** 版を提供します。ピクセルオフィスをデスクトップペットとして利用できます。
 
 ```bash
 cd desktop-pet
@@ -276,14 +328,18 @@ Star-Office-UI/
 │   ├── join.html
 │   ├── invite.html
 │   └── layout.js
-├── desktop-pet/        # Electron デスクトップラッパー（任意）
+├── desktop-pet/        # Tauri デスクトップ版（任意）
+├── electron-shell/     # Electron デスクトップ版（任意）
 ├── docs/               # ドキュメント & スクリーンショット
 │   └── screenshots/
 ├── office-agent-push.py  # ゲストプッシュスクリプト
 ├── set_state.py          # ステータス切替スクリプト
 ├── state.sample.json     # 状態ファイルテンプレート
 ├── join-keys.sample.json # Join Key テンプレート（起動時に join-keys.json を生成）
-├── SKILL.md              # OpenClaw Skill
+├── codex_hook.py         # Codex hooks イベント処理
+├── integrations/codex/   # hooks 設定例
+├── scripts/              # hooks 設定生成と画像生成 CLI
+├── SKILL.md              # 汎用 Agent デプロイ手順
 └── LICENSE               # MIT ライセンス
 ```
 

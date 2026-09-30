@@ -749,8 +749,8 @@
         .home-fav-meta { color:#9ca3af; font-size:10px; margin-top:4px; line-height:1.3; min-height:24px; }
         .home-fav-item button { width:100%; margin-top:4px; border:1px solid #4b5563; background:#1f2937; color:#fff; border-radius:6px; padding:4px 6px; font-family:'ArkPixel', monospace; cursor:pointer; }
         .home-fav-item button:hover { border-color:#22c55e; }
-        #gemini-api-doc-link { color:#86efac; text-decoration: underline; text-underline-offset: 2px; }
-        #gemini-api-doc-link:hover { color:#bbf7d0; }
+        #image-api-doc-link { color:#86efac; text-decoration: underline; text-underline-offset: 2px; }
+        #image-api-doc-link:hover { color:#bbf7d0; }
 
 
         #asset-move-panel { border:1px solid #334155; background:#0b1220; border-radius:10px; padding:10px; margin-bottom:10px; }
@@ -1695,22 +1695,22 @@
                             <button id="speed-fast-btn" type="button" onclick="setSpeedMode('fast')" style="background:#22c55e;color:#052e16;border-color:#16a34a;">⚡ Fast</button>
                             <button id="speed-quality-btn" type="button" onclick="setSpeedMode('quality')" style="background:#334155;color:#e5e7eb;border-color:#475569;">✦ Fine</button>
                         </div>
-                        <details id="asset-gemini-panel" style="margin-top:6px; border:1px dashed #334155; border-radius:8px; padding:8px; background:#0b1220;">
-                            <summary id="gemini-panel-summary" style="cursor:pointer; color:#cbd5e1;">🔐 API 设置（可折叠）</summary>
-                            <div id="asset-gemini-config" style="display:block; margin-top:6px;">
-                                <div id="gemini-config-hint" class="asset-sub" style="margin-bottom:4px;">可选：填写你的生图 API Key（留空不影响基础功能）</div>
-                                <div class="asset-sub" style="margin-bottom:6px;"><a id="gemini-api-doc-link" href="https://developers.openai.com/api/docs/guides/image-generation" target="_blank" rel="noopener noreferrer">📘 如何申请 Google API Key</a></div>
-                                <div id="gemini-mask-status" class="asset-sub" style="margin-bottom:6px; color:#a7f3d0;"></div>
+                        <details id="asset-image-panel" style="margin-top:6px; border:1px dashed #334155; border-radius:8px; padding:8px; background:#0b1220;">
+                            <summary id="image-panel-summary" style="cursor:pointer; color:#cbd5e1;">🔐 API 设置（可折叠）</summary>
+                            <div id="asset-image-config" style="display:block; margin-top:6px;">
+                                <div id="image-config-hint" class="asset-sub" style="margin-bottom:4px;">可选：填写你的生图 API Key（留空不影响基础功能）</div>
+                                <div class="asset-sub" style="margin-bottom:6px;"><a id="image-api-doc-link" href="https://developers.openai.com/api/docs/guides/image-generation" target="_blank" rel="noopener noreferrer">📘 OpenAI Image API 文档</a></div>
+                                <div id="image-mask-status" class="asset-sub" style="margin-bottom:6px; color:#a7f3d0;"></div>
                                 <div class="asset-toolbar" style="gap:6px; flex-wrap:wrap;">
-                                    <input id="gemini-api-key-input" type="password" placeholder="粘贴 API Key（不会回显）" style="min-width:220px; flex:1;" autocomplete="new-password" />
-                                    <button id="btn-save-gemini-key" onclick="saveGeminiConfigFromUI()">保存 Key</button>
+                                    <input id="image-api-key-input" type="password" placeholder="粘贴 API Key（不会回显）" style="min-width:220px; flex:1;" autocomplete="new-password" />
+                                    <button id="btn-save-image-key" onclick="saveImageConfigFromUI()">保存设置</button>
                                 </div>
                                 <div class="asset-toolbar" style="display:grid; gap:8px; margin-top:8px;">
                                     <label><span id="image-base-label" class="asset-sub">API 地址</span><input id="image-base-url-input" type="url" placeholder="https://api.openai.com/v1" style="display:block;width:100%;" /></label>
                                     <label><span id="image-model-label" class="asset-sub">图片模型</span><input id="image-model-input" type="text" placeholder="gpt-image-2" style="display:block;width:100%;" /></label>
                                     <label><span id="image-mode-label" class="asset-sub">生成方式</span><select id="image-mode-input" style="display:block;width:100%;background:#1e293b;color:#e5e7eb;padding:8px;"><option id="image-mode-edit" value="edit">参考图编辑</option><option id="image-mode-generate" value="generate">纯文生图</option></select></label>
                                 </div>
-                                <div id="gemini-config-msg" class="asset-sub" style="margin-top:4px;"></div>
+                                <div id="image-config-msg" class="asset-sub" style="margin-top:4px;"></div>
                             </div>
                         </details>
                         <div id="asset-broker-actions">
@@ -1792,8 +1792,8 @@
                 brokerGenerating: '🏘️ 正在按中介方案生成底图，请稍候（约20-90秒）...',
                 brokerDone: '✅ 已按中介方案生成并替换底图，正在刷新房间...',
                 moveSuccess: '✅ 搬家成功！',
-                brokerMissingKey: '❌ 生图失败：缺少 GEMINI API Key，请在下方填写并保存后重试',
-                geminiPanelTitle: '🔐 API 设置（可折叠）', geminiHint: '可选：填写你的生图 API Key（留空不影响基础功能）', geminiApiDoc: '📘 Image API 文档', geminiInputPh: '粘贴 API Key（不会回显）', geminiSaveKey: '保存设置', geminiMaskNoKey: '当前状态：未配置 Key', geminiMaskHasKey: '当前已配置：',
+                brokerMissingKey: '❌ 生图失败：缺少 OpenAI API Key，请在下方填写并保存后重试',
+                imagePanelTitle: '🔐 API 设置（可折叠）', imageHint: '可选：填写你的生图 API Key（留空不影响基础功能）', imageApiDoc: '📘 Image API 文档', imageInputPh: '粘贴 API Key（不会回显）', imageSaveKey: '保存设置', imageMaskNoKey: '当前状态：未配置 Key', imageMaskHasKey: '当前已配置：',
                 speedModeLabel: '生成模式', speedFast: '⚡ Fast', speedQuality: '✦ Fine',
                 searchPlaceholder: '搜索资产名（如 desk / sofa / star）', loaded: '已加载', allAssets: '全部资产',
                 chooseImage: '上传替换素材', confirmUpload: '确认并刷新', uploadPending: '待上传', uploadTarget: '目标',
@@ -1826,8 +1826,8 @@
                 brokerGenerating: '🏘️ Generating room background from broker plan, please wait (20-90s)...',
                 brokerDone: '✅ Broker plan applied and background replaced, refreshing room...',
                 moveSuccess: '✅ Move successful!',
-                brokerMissingKey: '❌ Generation failed: missing GEMINI API key. Fill it below and retry.',
-                geminiPanelTitle: '🔐 API Settings (collapsible)', geminiHint: 'Optional: set your image API key (base features work without it)', geminiApiDoc: '📘 Image API documentation', geminiInputPh: 'Paste API Key (input hidden)', geminiSaveKey: 'Save settings', geminiMaskNoKey: 'Current: no key configured', geminiMaskHasKey: 'Configured key:',
+                brokerMissingKey: '❌ Generation failed: missing OpenAI API key. Fill it below and retry.',
+                imagePanelTitle: '🔐 API Settings (collapsible)', imageHint: 'Optional: set your image API key (base features work without it)', imageApiDoc: '📘 Image API documentation', imageInputPh: 'Paste API Key (input hidden)', imageSaveKey: 'Save settings', imageMaskNoKey: 'Current: no key configured', imageMaskHasKey: 'Configured key:',
                 speedModeLabel: 'Render Mode', speedFast: '⚡ Fast', speedQuality: '✦ Fine',
                 searchPlaceholder: 'Search assets (desk / sofa / star)', loaded: 'Loaded', allAssets: 'All Assets',
                 chooseImage: 'Upload Replacement Asset', confirmUpload: 'Confirm & Refresh', uploadPending: 'Pending Upload', uploadTarget: 'Target',
@@ -1860,8 +1860,8 @@
                 brokerGenerating: '🏘️ 仲介プランで背景を生成中（20〜90秒）...',
                 brokerDone: '✅ 仲介プランを適用して背景を更新しました。部屋を更新中...',
                 moveSuccess: '✅ 引っ越し成功！',
-                brokerMissingKey: '❌ 生成失敗：GEMINI APIキーが未設定です。下で入力して保存してください。',
-                geminiPanelTitle: '🔐 API設定（折りたたみ）', geminiHint: '任意：画像生成APIキーを設定（未設定でも基本機能は利用可）', geminiApiDoc: '📘 Image API ドキュメント', geminiInputPh: 'API Key を貼り付け（入力は非表示）', geminiSaveKey: '設定を保存', geminiMaskNoKey: '現在：キー未設定', geminiMaskHasKey: '設定済みキー：',
+                brokerMissingKey: '❌ 生成失敗：OpenAI APIキーが未設定です。下で入力して保存してください。',
+                imagePanelTitle: '🔐 API設定（折りたたみ）', imageHint: '任意：画像生成APIキーを設定（未設定でも基本機能は利用可）', imageApiDoc: '📘 Image API ドキュメント', imageInputPh: 'API Key を貼り付け（入力は非表示）', imageSaveKey: '設定を保存', imageMaskNoKey: '現在：キー未設定', imageMaskHasKey: '設定済みキー：',
                 speedModeLabel: '生成モード', speedFast: '⚡ Fast', speedQuality: '✦ Fine',
                 searchPlaceholder: 'アセット検索（desk / sofa / star）', loaded: '読み込み済み', allAssets: '全アセット',
                 chooseImage: '差し替え素材をアップロード', confirmUpload: '確定して更新', uploadPending: 'アップロード待ち', uploadTarget: '対象',
@@ -2028,11 +2028,11 @@
             const speedLbl = document.getElementById('speed-mode-label'); if (speedLbl) speedLbl.textContent = t('speedModeLabel');
             const speedFastBtn = document.getElementById('speed-fast-btn'); if (speedFastBtn) speedFastBtn.textContent = t('speedFast');
             const speedQualityBtn = document.getElementById('speed-quality-btn'); if (speedQualityBtn) speedQualityBtn.textContent = t('speedQuality');
-            const geminiPanelSummary = document.getElementById('gemini-panel-summary'); if (geminiPanelSummary) geminiPanelSummary.textContent = t('geminiPanelTitle');
-            const geminiHint = document.getElementById('gemini-config-hint'); if (geminiHint) geminiHint.textContent = t('geminiHint');
-            const geminiDocLink = document.getElementById('gemini-api-doc-link'); if (geminiDocLink) geminiDocLink.textContent = t('geminiApiDoc');
-            const geminiInput = document.getElementById('gemini-api-key-input'); if (geminiInput) geminiInput.placeholder = t('geminiInputPh');
-            const geminiSaveBtn = document.getElementById('btn-save-gemini-key'); if (geminiSaveBtn) geminiSaveBtn.textContent = t('geminiSaveKey');
+            const imagePanelSummary = document.getElementById('image-panel-summary'); if (imagePanelSummary) imagePanelSummary.textContent = t('imagePanelTitle');
+            const imageHint = document.getElementById('image-config-hint'); if (imageHint) imageHint.textContent = t('imageHint');
+            const imageDocLink = document.getElementById('image-api-doc-link'); if (imageDocLink) imageDocLink.textContent = t('imageApiDoc');
+            const imageInput = document.getElementById('image-api-key-input'); if (imageInput) imageInput.placeholder = t('imageInputPh');
+            const imageSaveBtn = document.getElementById('btn-save-image-key'); if (imageSaveBtn) imageSaveBtn.textContent = t('imageSaveKey');
 
             setPh('asset-search', 'searchPlaceholder');
 
@@ -3754,15 +3754,15 @@ function toggleBrokerPanel() {
             try { setState('writing', detail); } catch (e) {}
         }
 
-        async function ensureGeminiConfigLoaded() {
+        async function ensureImageConfigLoaded() {
             try { await window.StarImageSettings.load(); }
             catch (error) {
-                const message = document.getElementById('gemini-config-msg');
+                const message = document.getElementById('image-config-msg');
                 if (message) message.textContent = error.message;
             }
         }
 
-        async function saveGeminiConfigFromUI() {
+        async function saveImageConfigFromUI() {
             await window.StarImageSettings.save();
         }
 
@@ -3802,11 +3802,11 @@ function toggleBrokerPanel() {
                 if (!data.ok) {
                     if (data.code === 'MISSING_API_KEY') {
                         out.textContent = t('brokerMissingKey');
-                        const box = document.getElementById('asset-gemini-config');
+                        const box = document.getElementById('asset-image-config');
                         if (box) box.style.display = 'block';
                     } else if (data.code === 'API_KEY_REVOKED_OR_LEAKED') {
                         out.textContent = '❌ 当前 API Key 已失效/疑似泄露，请更换新 Key 后重试';
-                        const box = document.getElementById('asset-gemini-config');
+                        const box = document.getElementById('asset-image-config');
                         if (box) box.style.display = 'block';
                     } else if (data.code === 'MODEL_NOT_AVAILABLE') {
                         out.textContent = '❌ 当前模型在此通道不可用，请切换可用模型后重试';
@@ -3848,11 +3848,11 @@ function toggleBrokerPanel() {
                 if (!data.ok) {
                     if (data.code === 'MISSING_API_KEY') {
                         out.textContent = t('brokerMissingKey');
-                        const box = document.getElementById('asset-gemini-config');
+                        const box = document.getElementById('asset-image-config');
                         if (box) box.style.display = 'block';
                     } else if (data.code === 'API_KEY_REVOKED_OR_LEAKED') {
                         out.textContent = '❌ 当前 API Key 已失效/疑似泄露，请更换新 Key 后重试';
-                        const box = document.getElementById('asset-gemini-config');
+                        const box = document.getElementById('asset-image-config');
                         if (box) box.style.display = 'block';
                     } else if (data.code === 'MODEL_NOT_AVAILABLE') {
                         out.textContent = '❌ 当前模型在此通道不可用，请切换可用模型后重试';
@@ -4144,7 +4144,7 @@ function toggleBrokerPanel() {
                 assetManualPanelOpen = false;
                 updateAssetAuthUI();
                 bindAssetDrawerBackgroundDeselect();
-                await ensureGeminiConfigLoaded();
+                await ensureImageConfigLoaded();
                 if (assetDrawerAuthed) {
                     await applySavedPositionOverrides();
                     await refreshAssetDrawerList();
@@ -4175,7 +4175,7 @@ function toggleBrokerPanel() {
                 assetManualPanelOpen = false;
                 updateAssetAuthUI();
                 bindAssetDrawerBackgroundDeselect();
-                await ensureGeminiConfigLoaded();
+                await ensureImageConfigLoaded();
                 if (assetDrawerAuthed) {
                     await applySavedPositionOverrides();
                     await refreshAssetDrawerList();
@@ -4833,8 +4833,8 @@ function toggleBrokerPanel() {
             // Error / bug animation: 180x180, 96 frames (repacked grid)
             this.load.spritesheet('error_bug', '/static/error-bug-spritesheet-grid.webp?v={{VERSION_TIMESTAMP}}', { frameWidth: 220, frameHeight: 220 });
 
-            // 运行时 Gemini 配置（用于搬家/中介生图）
-            this.geminiConfig = { hasKey: false, model: 'gemini-3.1-flash-image-preview' };
+            // 运行时图片 API 配置（用于搬家/中介生图）
+            this.imageConfig = { hasKey: false, model: 'gpt-image-2' };
 
             // Cat spritesheet: 160x160, 4x4=16 cats
             this.load.spritesheet('cats', '/static/cats-spritesheet.webp?v={{VERSION_TIMESTAMP}}', { frameWidth: 160, frameHeight: 160 });

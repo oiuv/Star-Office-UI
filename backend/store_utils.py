@@ -88,7 +88,7 @@ def save_asset_defaults(path: str, data: dict):
 
 
 def load_runtime_config(path: str) -> dict:
-    """OpenAI-compatible image configuration with migration of legacy key fields."""
+    """Load OpenAI Image API settings from environment and runtime configuration."""
     from image_client import DEFAULT_BASE_URL, DEFAULT_MODEL
     base = {
         "api_key": os.getenv("OPENAI_API_KEY") or "",
@@ -103,8 +103,6 @@ def load_runtime_config(path: str) -> dict:
                 for key in base:
                     if key in data and isinstance(data[key], str):
                         base[key] = data[key]
-                if "api_key" not in data and isinstance(data.get("gemini_api_key"), str):
-                    base["api_key"] = data["gemini_api_key"]
         except (OSError, ValueError):
             pass
     return base
@@ -112,7 +110,7 @@ def load_runtime_config(path: str) -> dict:
 
 def save_runtime_config(path: str, data: dict):
     cfg = load_runtime_config(path)
-    cfg.update(data or {})
+    cfg.update({key: value for key, value in (data or {}).items() if key in cfg})
     _save_json(path, cfg)
     try:
         os.chmod(path, 0o600)

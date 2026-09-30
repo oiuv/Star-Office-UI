@@ -60,7 +60,7 @@ def file_has_secret_pattern(path: Path) -> list[str]:
         return hits
 
     patterns = [
-        (r"AIza[0-9A-Za-z\-_]{20,}", "Google/Gemini API key-like token"),
+        (r"AIza[0-9A-Za-z\-_]{20,}", "Google API key-like token"),
         (r"sk-[A-Za-z0-9]{16,}", "Generic sk-* token"),
         (r"AKIA[0-9A-Z]{16}", "AWS access key-like token"),
     ]

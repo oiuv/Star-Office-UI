@@ -3,9 +3,12 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
-function fixture() {
+function fixture(page = 'frontend/index.html') {
+  const markup = fs.readFileSync(page, 'utf8');
+  const ids = new Set([...markup.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]));
   const nodes = new Map();
   const node = id => {
+    if (!ids.has(id)) return null;
     if (!nodes.has(id)) nodes.set(id,{value:'',textContent:'',placeholder:'',disabled:false});
     return nodes.get(id);
   };
@@ -46,13 +49,26 @@ test('Editing URL and model with a blank key preserves the request contract',asy
   assert.deepEqual(JSON.parse(request.options.body),{
     api_key:'',base_url:'https://relay.example/v1',model:'my-model',image_mode:'edit'
   });
-  assert.equal(f.node('btn-save-gemini-key').disabled,false);
+  assert.equal(f.node('btn-save-image-key').disabled,false);
 });
 
 test('Changing languages updates new settings labels',() => {
   const f=fixture();
   f.settings.labels();
-  assert.equal(f.node('btn-save-gemini-key').textContent,'Save settings');
+  assert.equal(f.node('btn-save-image-key').textContent,'Save settings');
   f.context.uiLang='zh'; f.settings.labels();
-  assert.equal(f.node('btn-save-gemini-key').textContent,'保存设置');
+  assert.equal(f.node('btn-save-image-key').textContent,'保存设置');
+});
+
+
+test('Both office pages expose working image settings controls', async () => {
+  for (const page of ['frontend/index.html', 'frontend/electron-standalone.html']) {
+    const f = fixture(page);
+    await f.settings.load();
+    assert.equal(f.context.window.imageConfig.model, 'custom-image');
+    assert.equal(f.node('image-mask-status').textContent, 'API key (blank keeps saved value): ****test');
+    await f.settings.save();
+    assert.equal(f.requests.find(request => request.options.method === 'POST').url, '/config/ai');
+    assert.equal(f.node('image-config-msg').textContent, 'Saved. Ready to decorate.');
+  }
 });

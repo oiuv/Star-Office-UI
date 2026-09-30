@@ -65,9 +65,9 @@ This PR delivers a full refresh of Star Office UI across UX, asset pipeline, loc
 - Added `docs/CHANGELOG_2026-03.md`
 
 ## Deployment notes
-- Recommended model for room generation:
-  1. gemini nanobanana pro
-  2. gemini nanobanana 2
+- Current room-generation settings:
+  - OpenAI-compatible Image API, default model `gpt-image-2`
+  - Configure the key, base URL, model, and generation mode in the asset drawer
 - Security recommendation:
   - always override `ASSET_DRAWER_PASS` in production/public deployments
 

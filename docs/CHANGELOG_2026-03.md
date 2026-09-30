@@ -32,11 +32,6 @@
   - `ASSET_DRAWER_PASS=<your-strong-pass>`
 - Rationale: prevent unauthorized layout/asset modifications from shared links
 
-## AI model recommendation for room generation
+## Current image-generation configuration
 
-For best style-transfer quality (while preserving room structure), recommend:
-
-1. gemini nanobanana pro
-2. gemini nanobanana 2
-
-Other models may produce unstable structure consistency.
+Room generation now uses the OpenAI-compatible Image API with `gpt-image-2` as the default model. Configure the API key, base URL, model, and edit/generate mode in the asset drawer. See the current [README](../README.md) for setup.

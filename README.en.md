@@ -7,83 +7,112 @@
 **A pixel-art AI office dashboard** — visualize your AI assistant's work status in real time, so you can see at a glance who's doing what, what they did yesterday, and whether they're online.
 
 Supports multi-agent collaboration, trilingual UI (CN/EN/JP), AI-powered room design, and desktop pet mode.
-Best experienced with [OpenClaw](https://github.com/openclaw/openclaw), but also works standalone as a status dashboard.
+**Codex hooks** are the recommended integration: automatically update characters and record sessions, tools, and subagent activity. Other AI agents can connect through scripts or the HTTP API.
 
 > This project was co-created by **[Ring Hyacinth](https://x.com/ring_hyacinth)** and **[Simon Lee](https://x.com/simonxxoo)**, and is continuously maintained and improved together with community contributors ([@Zhaohan-Wang](https://github.com/Zhaohan-Wang), [@Jah-yee](https://github.com/Jah-yee), [@liaoandi](https://github.com/liaoandi)).
 > Issues and PRs are welcome — thank you to everyone who contributes.
 
 ---
 
-## ✨ Quick Start
+## ✨ Quick Start: Codex hooks (recommended)
 
-### Option 1: Let your lobster deploy it (recommended for OpenClaw users)
+Start the dashboard, configure hooks, then submit a task in Codex to see animations and activity records.
 
-If you're using [OpenClaw](https://github.com/openclaw/openclaw), just send this to your lobster:
+> **Requires Python 3.10+**. Use `python3` if that is your interpreter command. Copy the sample state only on first install; keep existing configuration.
 
-```text
-Please follow this SKILL.md to deploy Star Office UI for me:
-https://github.com/ringhyacinth/Star-Office-UI/blob/master/SKILL.md
-```
-
-Your lobster will automatically clone the repo, install dependencies, start the backend, configure status sync, and send you the access URL.
-
-### Option 2: 30-second manual setup
-
-> **Requires Python 3.10+** (the codebase uses `X | Y` union type syntax, which is not supported on 3.9 or earlier)
+### 1) Start the dashboard
 
 ```bash
-# 1) Clone the repo
 git clone https://github.com/ringhyacinth/Star-Office-UI.git
 cd Star-Office-UI
-
-# 2) Install dependencies (Python 3.10+ required)
-python3 -m pip install -r backend/requirements.txt
-
-# 3) Initialize state file (first run)
+python -m pip install -r backend/requirements.txt
 cp state.sample.json state.json
-
-# 4) Start the backend
-cd backend
-python3 app.py
+python backend/app.py
 ```
 
-Open **http://127.0.0.1:19000** and try switching states:
+Open [http://127.0.0.1:19000](http://127.0.0.1:19000). Leave the backend running and open another terminal in the Star Office project root.
+
+### 2) Configure Codex hooks
 
 ```bash
-python3 set_state.py writing "Organizing documents"
-python3 set_state.py error "Found an issue, debugging"
-python3 set_state.py idle "Standing by"
+python scripts/codex_hooks_config.py
 ```
+
+Merge the output into the `.codex/hooks.json` of the project where you use Codex, or your user-level `~/.codex/hooks.json`. Merge event arrays with existing hooks. Use `/hooks` in Codex to review and trust the configuration.
+
+The generated command uses an absolute script path, so Codex can call it from other projects. Use `--python` to specify an interpreter path when needed.
+
+### 3) Submit a task and view activity
+
+Submit a task in Codex. The character updates automatically and returns to idle when the turn ends or is interrupted. Open the [activity archive](http://127.0.0.1:19000/stats) for events, tool statistics, sessions, XP, and logs.
+
+You can also ask an AI assistant to follow this repository's [SKILL.md](./SKILL.md) for deployment and hooks setup.
 
 ![Star Office UI Preview](docs/screenshots/readme-cover-1.jpg)
 
 ---
 
+## 🔌 Codex hooks configuration
+
+Keep **6 animation states + 12 lifecycle events**: states describe the character's action; events explain what triggered it. The generated configuration covers all 12 events.
+
+| Hook | Animation / meaning |
+|------|---------------------|
+| `SessionStart` | Idle on start or resume; restore work state after compaction |
+| `UserPromptSubmit` | Researching: understand the task |
+| `PreToolUse` | Writing, researching, or executing based on tool type |
+| `PermissionRequest` | Idle while waiting for permission |
+| `PostToolUse` | Executing; error only on an explicit failure |
+| `PreCompact` | Syncing: organize context |
+| `PostCompact` | Restore the state from before compaction |
+| `SubagentStart` | Start an independently tracked child character |
+| `SubagentStop` | Child returns to idle |
+| `Stop` | Main turn ends; return to idle |
+| `Interrupt` | Return to idle and end child presence |
+| `SessionEnd` | End the session; return to idle |
+
+See the [official Codex hooks documentation](https://learn.chatgpt.com/docs/hooks) and [example configuration](./integrations/codex/hooks.example.json). The script observes events, outputs an empty JSON object, and does not make permission decisions. Changes to hook definitions require renewed trust; project-level hooks also require a trusted project.
+
+### Local and remote modes
+
+- **Local default**: `codex_hook.py` writes SQLite and the state file directly. It records events even while Flask is stopped; run the backend to view them.
+- **Remote**: set `STAR_OFFICE_URL`, for example `https://your-office.example`, in the Codex process. Set the same `STAR_OFFICE_HOOK_TOKEN` on both client and backend. Without a token, only direct loopback requests are accepted; use a token behind a reverse proxy.
+- The default database is `data/office-events.sqlite3`; override it with `STAR_OFFICE_EVENTS_DB`. Use `STAR_OFFICE_STATE_FILE` to change the state-file path.
+- Prompts, command bodies, full tool outputs, transcripts, and working directories are not stored. Late asynchronous tool results remain in the log without reviving a completed turn.
+- States expire after five minutes without updates. Long tool calls may temporarily appear offline until the next hook.
+
+---
+
 ## 🤔 Who is this for?
 
-### Users with OpenClaw / an AI Agent
-This is the **full experience**. Your agent automatically switches status as it works, and the pixel character walks to the corresponding office area in real time — just open the page and see what your AI is doing right now.
+### People using AI for coding or automation
 
-### Users without OpenClaw
-You can still deploy and use it. You can:
-- Use `set_state.py` or the API to push status manually or via scripts
-- Use it as a pixel-art personal status page or remote work dashboard
-- Connect any system that can send HTTP requests to drive the status
+See whether an AI is writing, researching, running tools, or waiting for permission. Codex hooks update the dashboard automatically; other agents can call the state script or API.
+
+### Individuals and teams running multiple agents
+
+View agents and subagents in one office and review tool activity, collaboration, and turn completion in the activity archive.
+
+### People who want a pixel dashboard and work records
+
+Push states manually or from scripts for personal logs, remote collaboration, or automation. Core features work without an image-generation API.
 
 ---
 
 ## 📋 Features
 
-1. **Status Visualization** — 6 states (`idle` / `writing` / `researching` / `executing` / `syncing` / `error`) mapped to different office areas with animated sprites and speech bubbles
-2. **Yesterday Memo** — Automatically reads the latest daily log from `memory/*.md`, sanitizes it, and displays it as a "Yesterday Memo" card
-3. **Multi-Agent Collaboration** — Invite other agents to join your office via join keys and see everyone's status in real time
-4. **Trilingual UI** — Switch between Chinese, English, and Japanese with one click; all UI text, bubbles, and loading messages update instantly
-5. **Custom Art Assets** — Manage characters, scenes, and decorations through the sidebar; dynamic frame sync prevents flickering
-6. **AI-Powered Room Design** — Connect your own Gemini API to generate new office backgrounds; core features work fine without an API
-7. **Mobile-Friendly** — Open on your phone for a quick status check on the go
-8. **Security Hardening** — Sidebar password protection, weak-password blocking in production, hardened session cookies
-9. **Flexible Public Access** — Use Cloudflare Tunnel for instant public access, or bring your own domain / reverse proxy
-10. **Desktop Pet Mode** — Optional Electron desktop wrapper that turns the office into a transparent desktop widget (see below)
+1. **Automatic Codex hooks** — 12 lifecycle events drive animations and records, including sessions, tools, compaction, interrupts, and subagents
+2. **Activity and progression** — State counts and observed time, trends, tool statistics, filterable logs, JSON export, XP, levels, and achievements
+3. **Status Visualization** — 6 states (`idle` / `writing` / `researching` / `executing` / `syncing` / `error`) mapped to different office areas with animated sprites and speech bubbles
+4. **Yesterday Memo** — Automatically reads the latest daily log from `memory/*.md`, sanitizes it, and displays it as a "Yesterday Memo" card
+5. **Multi-Agent Collaboration** — Invite other agents to join your office via join keys and see everyone's status in real time
+6. **Trilingual UI** — Switch between Chinese, English, and Japanese with one click; all UI text, bubbles, and loading messages update instantly
+7. **Custom Art Assets** — Manage characters, scenes, and decorations through the sidebar; dynamic frame sync prevents flickering
+8. **AI-Powered Room Design** — Connect an OpenAI-compatible Image API (default model: `gpt-image-2`) to generate new office backgrounds; core features work fine without an API
+9. **Mobile-Friendly** — Open on your phone for a quick status check on the go
+10. **Security Hardening** — Sidebar password protection, weak-password blocking in production, hardened session cookies
+11. **Flexible Public Access** — Use Cloudflare Tunnel for instant public access, or bring your own domain / reverse proxy
+12. **Desktop Pet Mode** — Optional Electron desktop wrapper that turns the office into a transparent desktop widget (see below)
 
 ---
 
@@ -109,11 +138,13 @@ cd backend
 python3 app.py
 ```
 
-Open `http://127.0.0.1:19000`
+Open [http://127.0.0.1:19000](http://127.0.0.1:19000).
 
 > ✅ For local development you can start with the defaults; in production, copy `.env.example` to `.env` and set strong random values for `FLASK_SECRET_KEY` and `ASSET_DRAWER_PASS` to avoid weak passwords and session leaks.
 
-### 4) Switch states
+### 4) Verify states manually (optional)
+
+Run these from the project root in another terminal. Codex hooks handle normal status updates automatically.
 
 ```bash
 python3 set_state.py writing "Organizing documents"
@@ -140,13 +171,13 @@ If all checks report `OK`, your deployment is good to go.
 
 ---
 
-## 🦞 OpenClaw Deep Integration
+## 🤝 Other AI agents
 
-> The following section is for [OpenClaw](https://github.com/openclaw/openclaw) users. If you don't use OpenClaw, feel free to skip this.
+Any agent that can run scripts or send HTTP requests can use the original integration. Once Codex hooks are configured, additional manual status-sync rules are unnecessary.
 
 ### Automatic Status Sync
 
-Add the following rule to your `SOUL.md` (or agent config) so your agent updates its status automatically:
+Add these rules to your agent instructions and run `set_state.py` from the Star Office project root. Alternatively, send `POST /set_state` with `state` and `detail` fields:
 
 ```markdown
 ## Star Office Status Sync Rules
@@ -177,8 +208,8 @@ The guest only needs to download `office-agent-push.py` and fill in 3 variables:
 
 ```python
 JOIN_KEY = "ocj_starteam02"          # The key you assign
-AGENT_NAME = "Alice's Lobster"       # Display name
-OFFICE_URL = "https://office.hyacinth.im"  # Your office URL
+AGENT_NAME = "Alice's Agent"       # Display name
+OFFICE_URL = "https://your-office.example"  # Your office URL
 ```
 
 ```bash
@@ -195,10 +226,31 @@ Guests can also use `frontend/join-office-skill.md` as a Skill — their agent w
 
 ---
 
+## 📊 Activity archive and progression
+
+Open the [activity archive](http://127.0.0.1:19000/stats) or click the office's activity link. View today, 7 days, 30 days, or all records, including state counts and observed time, the 12 hook counts, sessions, completed turns, tools, daily trends, and filtered logs. Export the latest 200 matching events as JSON.
+
+Tool durations pair start/end events by `tool_use_id`. Unique completed turns award 20 XP, successful tools 2 XP, and subagent completions 10 XP; each 100 XP adds a level. Duplicate replays and state heartbeats do not award extra XP.
+
+`set_state.py`, `POST /set_state`, and `POST /agent-push` also record activity. Session, turn, and tool breakdowns require the corresponding lifecycle events. Dates use the backend's local time zone, and observed time is capped at 300 seconds per update. Direct edits to the state file do not create records.
+
+---
+
+## 🎨 OpenAI image generation (gpt-image-2)
+
+In the asset drawer, configure the API key, base URL, model, and edit/generate mode. Defaults are `https://api.openai.com/v1`, `gpt-image-2`, and reference-image editing. Custom base URLs and models are supported.
+
+The service must implement `/images/edits` or `/images/generations`; a chat-only endpoint cannot generate office backgrounds. Settings use authenticated `GET /config/ai` and `POST /config/ai`. Environment options are `OPENAI_API_KEY`, `AI_BASE_URL` (or `OPENAI_BASE_URL`), `AI_IMAGE_MODEL`, and `AI_IMAGE_MODE`; saved UI/file settings take precedence. The CLI is `scripts/image_generate.py`.
+
+---
+
 ## 📡 API Reference
 
 | Endpoint | Description |
 |----------|-------------|
+| `POST /hooks/codex` | Receive Codex events; Bearer token for remote use |
+| `GET /api/stats?period=today` | Activity statistics; `today` / `7d` / `30d` / `all` |
+| `GET /api/events?period=7d&limit=50` | Event log; limit 1–200, optional `state` / `hook` filters |
 | `GET /health` | Health check |
 | `GET /status` | Get main agent status |
 | `POST /set_state` | Set main agent status |
@@ -207,15 +259,15 @@ Guests can also use `frontend/join-office-skill.md` as a Skill — their agent w
 | `POST /agent-push` | Guest pushes status |
 | `POST /leave-agent` | Guest leaves |
 | `GET /yesterday-memo` | Get yesterday's memo |
-| `GET /config/gemini` | Get Gemini API config |
-| `POST /config/gemini` | Set Gemini API config |
+| `GET /config/ai` | Get OpenAI Image API settings (key masked) |
+| `POST /config/ai` | Save OpenAI Image API settings |
 | `GET /assets/generate-rpg-background/poll` | Poll image generation progress |
 
 ---
 
 ## 🖥 Desktop Pet Mode (Optional)
 
-The `desktop-pet/` directory contains a **Electron**-based desktop wrapper that turns the pixel office into a transparent desktop widget.
+`desktop-pet/` provides a **Tauri** desktop version; `electron-shell/` provides an **Electron** version. Both can turn the pixel office into a desktop widget.
 
 ```bash
 cd desktop-pet
@@ -276,14 +328,18 @@ Star-Office-UI/
 │   ├── join.html
 │   ├── invite.html
 │   └── layout.js
-├── desktop-pet/        # Electron desktop wrapper (optional)
+├── desktop-pet/        # Tauri desktop version (optional)
+├── electron-shell/     # Electron desktop version (optional)
 ├── docs/               # Documentation & screenshots
 │   └── screenshots/
 ├── office-agent-push.py  # Guest push script
 ├── set_state.py          # Status switch script
 ├── state.sample.json     # State file template
 ├── join-keys.sample.json # Join key template (runtime generates join-keys.json)
-├── SKILL.md              # OpenClaw Skill
+├── codex_hook.py         # Codex hooks adapter
+├── integrations/codex/   # Example hook configuration
+├── scripts/              # Hook config generator and image CLI
+├── SKILL.md              # General agent deployment guide
 └── LICENSE               # MIT License
 ```
 

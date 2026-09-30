@@ -1721,8 +1721,7 @@ def assets_defaults_set():
 
 
 @app.route("/config/ai", methods=["GET"])
-@app.route("/config/gemini", methods=["GET"])
-def gemini_config_get():
+def image_config_get():
     guard = _require_asset_editor_auth()
     if guard:
         return guard
@@ -1732,14 +1731,13 @@ def gemini_config_get():
     return jsonify({
         "ok": True, "provider": "openai", "has_api_key": bool(key),
         "api_key_masked": masked, "base_url": cfg["base_url"],
-        "model": cfg["model"], "gemini_model": cfg["model"],
+        "model": cfg["model"],
         "image_mode": cfg["image_mode"],
     })
 
 
 @app.route("/config/ai", methods=["POST"])
-@app.route("/config/gemini", methods=["POST"])
-def gemini_config_set():
+def image_config_set():
     guard = _require_asset_editor_auth()
     if guard:
         return guard
@@ -1748,6 +1746,8 @@ def gemini_config_set():
         if not isinstance(data, dict):
             raise ValueError("Configuration must be a JSON object")
         cfg = load_runtime_config()
+        if set(data) - set(cfg):
+            raise ValueError("Unsupported image configuration fields")
         payload = {}
         if "api_key" in data:
             if not isinstance(data["api_key"], str):

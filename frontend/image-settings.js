@@ -9,10 +9,10 @@
   const language = () => { try { return typeof uiLang === 'string' && TEXT[uiLang] ? uiLang : 'zh'; } catch (_) { return 'zh'; } };
   const t = key => TEXT[language()][key];
   function labels() {
-    for (const [id,key] of [['image-base-label','base'],['image-model-label','model'],['image-mode-label','mode'],['image-mode-edit','edit'],['image-mode-generate','generate'],['btn-save-gemini-key','save'],['gemini-config-hint','hint'],['gemini-api-doc-link','doc'],['office-stats-link','stats'],['speed-fast-btn','fast'],['speed-quality-btn','quality']]) {
+    for (const [id,key] of [['image-base-label','base'],['image-model-label','model'],['image-mode-label','mode'],['image-mode-edit','edit'],['image-mode-generate','generate'],['btn-save-image-key','save'],['image-config-hint','hint'],['image-api-doc-link','doc'],['office-stats-link','stats'],['speed-fast-btn','fast'],['speed-quality-btn','quality']]) {
       if ($(id)) $(id).textContent = t(key);
     }
-    if ($('gemini-api-key-input')) $('gemini-api-key-input').placeholder = t('key');
+    if ($('image-api-key-input')) $('image-api-key-input').placeholder = t('key');
   }
   async function load() {
     const auth = await fetch('/assets/auth/status',{cache:'no-store'}).then(r => r.json());
@@ -22,20 +22,20 @@
     const response = await fetch('/config/ai',{cache:'no-store'});
     const config = await response.json();
     if (!response.ok || !config.ok) throw new Error(config.msg || response.status);
-    window.geminiConfig = {hasKey:config.has_api_key,model:config.model};
+    window.imageConfig = {hasKey:config.has_api_key,model:config.model};
     $('image-base-url-input').value = config.base_url;
     $('image-model-input').value = config.model;
     $('image-mode-input').value = config.image_mode;
-    $('gemini-mask-status').textContent = config.has_api_key ? t('key') + ': ' + config.api_key_masked : 'API Key: —';
+    $('image-mask-status').textContent = config.has_api_key ? t('key') + ': ' + config.api_key_masked : 'API Key: —';
   }
   async function save() {
-    const msg = $('gemini-config-msg'), button = $('btn-save-gemini-key');
+    const msg = $('image-config-msg'), button = $('btn-save-image-key');
     button.disabled = true;
     try {
       const response = await fetch('/config/ai',{
         method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
-          api_key:$('gemini-api-key-input').value.trim(),
+          api_key:$('image-api-key-input').value.trim(),
           base_url:$('image-base-url-input').value.trim(),
           model:$('image-model-input').value.trim(),
           image_mode:$('image-mode-input').value
@@ -43,7 +43,7 @@
       });
       const result = await response.json();
       if (!response.ok || !result.ok) throw new Error(result.msg || response.status);
-      $('gemini-api-key-input').value = ''; msg.textContent = t('saved'); await load();
+      $('image-api-key-input').value = ''; msg.textContent = t('saved'); await load();
     } catch (error) { msg.textContent = t('failed') + ': ' + error.message; }
     finally { button.disabled = false; }
   }

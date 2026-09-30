@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Legacy CLI filename retained; now calls an OpenAI-compatible Image API."""
+"""Generate or edit images using an OpenAI-compatible Image API."""
 from __future__ import annotations
 import argparse
 import json
@@ -19,8 +19,6 @@ def main():
     parser.add_argument("--reference-image", default="")
     parser.add_argument("--mode", choices=("edit", "generate"), default="edit")
     parser.add_argument("--speed-mode", choices=("fast", "quality"), default="quality")
-    parser.add_argument("--cleanup", action="store_true", help="Retained for CLI compatibility")
-    parser.add_argument("--aspect-ratio", default="", help="Retained; output is resized by the office")
     args = parser.parse_args()
     config = {"api_key": os.getenv("OPENAI_API_KEY", ""), "model": args.model,
               "base_url": args.base_url, "image_mode": args.mode}
