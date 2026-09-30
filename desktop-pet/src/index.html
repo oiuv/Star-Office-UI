@@ -52,7 +52,11 @@
             font-size: 16px;
             line-height: 1.3;
             color: #333;
-            white-space: nowrap;
+            box-sizing: border-box;
+            max-width: min(300px, calc(100vw - 8px));
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            text-align: center;
             opacity: 0;
             transition: opacity 0.2s;
             filter: drop-shadow(0 2px 4px rgba(0,0,0,0.18));
@@ -639,12 +643,16 @@
         bubbleLayer.appendChild(bubbleEl);
 
         updateBubblePos();
-        requestAnimationFrame(() => { if (bubbleEl) bubbleEl.style.opacity = '1'; });
+        const shownBubble = bubbleEl;
+        requestAnimationFrame(() => {
+            if (bubbleEl === shownBubble) bubbleEl.style.opacity = '1';
+        });
 
         bubbleTimer = setTimeout(() => {
-            if (bubbleEl) bubbleEl.style.opacity = '0';
-            setTimeout(removeBubble, 300);
-        }, 3500);
+            if (bubbleEl !== shownBubble) return;
+            bubbleEl.style.opacity = '0';
+            setTimeout(() => { if (bubbleEl === shownBubble) removeBubble(); }, 300);
+        }, Math.min(12000, Math.max(3500, Array.from(text).length * 90)));
     }
 
     function removeBubble() {

@@ -1183,8 +1183,8 @@
     <div id="asset-highlight"></div>
     <div id="room-loading-overlay" aria-live="polite" aria-busy="true">
         <div class="room-loading-inner">
-            <div id="room-loading-emoji">🦞</div>
-            <div id="room-loading-text">正在打包虾头……</div>
+            <div id="room-loading-emoji">🐱</div>
+            <div id="room-loading-text">正在收拾猫窝……</div>
         </div>
     </div>
 
@@ -1294,6 +1294,7 @@
 
     <a id="office-stats-link" href="/stats" target="_blank" rel="noopener noreferrer" style="position:fixed;right:12px;top:calc(env(safe-area-inset-top, 0px) + 52px);z-index:1000002;padding:8px 10px;background:#283b35;color:#c3efcd;border:2px solid #446d54;border-radius:5px;text-decoration:none;font:13px monospace;">📊 活动档案</a>
     <script src="/static/image-settings.js?v={{VERSION_TIMESTAMP}}"></script>
+    <script src="/static/speech-bubbles.js?v={{VERSION_TIMESTAMP}}&amp;cat=1"></script>
     <script src="/static/vendor/phaser-3.80.1.min.js?v={{VERSION_TIMESTAMP}}"></script>
     <script>
         // 简易中英文切换
@@ -1310,7 +1311,7 @@
                 resetToDefault: '重置为默认资产', restorePrevAsset: '用上一版',
                 btnMove: '📦 搬新家', btnHome: '🐚 回老家', btnHomeLast: '↩️ 回上一个家', btnHomeFavorite: '⭐ 收藏这个家', btnBroker: '🤝 找中介', btnDIY: '🪚 自己装', btnBrokerGo: '听中介的',
                 homeFavTitle: '🏠 收藏的家', homeFavEmpty: '还没有收藏，先点“⭐ 收藏这个家”', homeFavApply: '替换到当前地图', homeFavDelete: '删除', homeFavSaved: '✅ 已收藏当前地图', homeFavApplied: '✅ 已替换为收藏地图', homeFavDeleted: '🗑️ 已删除收藏',
-                brokerHint: '你会给龙虾推荐什么样的房子',
+                brokerHint: '你会给小猫推荐什么样的家',
                 brokerPromptPh: '例如：故宫主题、莫奈风格、地牢主题、兵马俑主题……',
                 brokerNeedPrompt: '请先输入中介方案描述',
                 brokerGenerating: '🏘️ 正在按中介方案生成底图，请稍候（约20-90秒）...',
@@ -1324,7 +1325,7 @@
                 assetHintNotInScene: '当前场景未检测到此对象，仍可替换文件（刷新后生效）',
                 assetHintDefault: '通用素材：建议保持原图尺寸、透明通道与视觉重心一致，避免错位或失真',
                 showCoords: '显示坐标', hideCoords: '隐藏坐标', moveView: '移动视野', lockView: '锁定视野',
-                memoTitle: '昨 日 小 记', guestTitle: '访 客 列 表', officeTitle: '海辛小龙虾的办公室',
+                memoTitle: '昨 日 小 记', guestTitle: '访 客 列 表', officeTitle: 'Star 小猫的办公室',
                 loadingOffice: '正在加载 Star 的像素办公室...'
             },
             en: {
@@ -1338,7 +1339,7 @@
                 resetToDefault: 'Reset to Default', restorePrevAsset: 'Use Previous',
                 btnMove: '📦 New Home', btnHome: '🐚 Go Home', btnHomeLast: '↩️ Last One', btnHomeFavorite: '⭐ Save This Home', btnBroker: '🤝 Broker', btnDIY: '🪚 DIY', btnBrokerGo: 'Follow Broker',
                 homeFavTitle: '🏠 Saved Homes', homeFavEmpty: 'No saved homes yet. Tap “⭐ Save This Home” first.', homeFavApply: 'Apply to Current Map', homeFavDelete: 'Delete', homeFavSaved: '✅ Current map saved', homeFavApplied: '✅ Applied saved home', homeFavDeleted: '🗑️ Saved home deleted',
-                brokerHint: 'What kind of house would you recommend for Lobster?',
+                brokerHint: 'What kind of home would you recommend for the cat?',
                 brokerPromptPh: 'e.g. Forbidden City theme, Monet style, dungeon theme, Terracotta Warriors theme...',
                 brokerNeedPrompt: 'Please enter broker style prompt first',
                 brokerGenerating: '🏘️ Generating room background from broker plan, please wait (20-90s)...',
@@ -1352,7 +1353,7 @@
                 assetHintNotInScene: 'This object is not detected in current scene; you can still replace file (effective after refresh)',
                 assetHintDefault: 'Generic asset: keep source size, alpha channel, and visual anchor to avoid drift/distortion',
                 showCoords: 'Show Coords', hideCoords: 'Hide Coords', moveView: 'Pan View', lockView: 'Lock View',
-                memoTitle: 'YESTERDAY NOTES', guestTitle: 'VISITOR LIST', officeTitle: 'Haixin Lobster Office',
+                memoTitle: 'YESTERDAY NOTES', guestTitle: 'VISITOR LIST', officeTitle: 'Star Cat Office',
                 loadingOffice: 'Loading Star’s pixel office...'
             },
             ja: {
@@ -1366,7 +1367,7 @@
                 resetToDefault: 'デフォルトへ戻す', restorePrevAsset: '前の版へ戻す',
                 btnMove: '📦 引っ越し', btnHome: '🐚 実家に戻る', btnHomeLast: '↩️ ひとつ前へ', btnHomeFavorite: '⭐ この家を保存', btnBroker: '🤝 仲介', btnDIY: '🪚 自分で装飾', btnBrokerGo: '仲介に任せる',
                 homeFavTitle: '🏠 保存した家', homeFavEmpty: 'まだ保存がありません。先に「⭐ この家を保存」を押してください。', homeFavApply: '現在のマップに適用', homeFavDelete: '削除', homeFavSaved: '✅ 現在のマップを保存しました', homeFavApplied: '✅ 保存した家を適用しました', homeFavDeleted: '🗑️ 保存した家を削除しました',
-                brokerHint: 'ロブスターにはどんな家をおすすめしますか',
+                brokerHint: '猫にはどんなお家をおすすめしますか',
                 brokerPromptPh: '例：故宮テーマ、モネ風、ダンジョン風、兵馬俑テーマ…',
                 brokerNeedPrompt: '先に仲介プランの説明を入力してください',
                 brokerGenerating: '🏘️ 仲介プランで背景を生成中（20〜90秒）...',
@@ -1380,7 +1381,7 @@
                 assetHintNotInScene: '現在のシーンでこのオブジェクトは未検出です。ファイル差し替えは可能（更新後に反映）',
                 assetHintDefault: '汎用素材：元サイズ・透過・視覚アンカーを維持し、ズレや崩れを防いでください',
                 showCoords: '座標表示', hideCoords: '座標非表示', moveView: '視点移動', lockView: '視点固定',
-                memoTitle: '昨日のメモ', guestTitle: '訪問者リスト', officeTitle: 'ハイシン・ロブスターのオフィス',
+                memoTitle: '昨日のメモ', guestTitle: '訪問者リスト', officeTitle: 'Star 猫のオフィス',
                 loadingOffice: 'Star のピクセルオフィスを読み込み中...'
             }
         };
@@ -2769,7 +2770,7 @@ function toggleBrokerPanel() {
                     '正在抽取下一站数字坐标……',
                     '正在查看本次漂流目的地……',
                     '正在把办公室折叠成随身模式……',
-                    '正在给钳子装上远行 Buff……',
+                    '正在给猫爪加上远行 Buff……',
                     '正在匹配下一段创作气候……',
                     '正在把时差调成冒险模式……',
                     '正在接收陌生街区的 Wi‑Fi 心跳……',
@@ -2785,7 +2786,7 @@ function toggleBrokerPanel() {
                     'Drawing the digital coordinates for the next stop…',
                     'Checking the destination of this drift…',
                     'Folding the office into portable mode…',
-                    'Installing a travel buff on the claws…',
+                    'Adding a travel buff to the paws…',
                     'Matching the creative climate for the next chapter…',
                     'Switching the time zone to adventure mode…',
                     'Receiving Wi‑Fi heartbeats from an unfamiliar block…',
@@ -2814,7 +2815,7 @@ function toggleBrokerPanel() {
                 ]
             };
             const steps = loadingTexts[uiLang] || loadingTexts.zh;
-            const emojis = ['🦞','🦀','🦐','🦑','🐙','🐟','🐠','🐡','🦪','🍣','🍤','🍱','🍲','🍜','🍝','🌊','🐚','🪸'];
+            const emojis = ['🐱','🐈','🐈‍⬛','🐾','🧶','🐟','☕','🏠','🛋️','🪴','📦','✨'];
 
             roomLoadingIndex = 0;
             roomLoadingEmojiIndex = 0;
@@ -3625,6 +3626,7 @@ function toggleBrokerPanel() {
             if (ids.length === 0) return;
             const id = ids[Math.floor(Math.random() * ids.length)];
             const g = guestSprites[id];
+            if (guestBubbles[id]) return; // Let longer messages finish before replacing them.
 
             // demo 气泡：优先展示与状态对应的内容，便于验证“状态→区域→气泡”链路
             const demoVisitor = (DEMO_MODE && window.__demoVisitors)
@@ -3654,22 +3656,18 @@ function toggleBrokerPanel() {
             const nameH = (g.nameText && g.nameText.height) ? g.nameText.height : 16;
             const by = isDemoGuest ? (g.sprite.y - 90) : ((g.nameText ? g.nameText.y : (g.sprite.y - 150)) - (nameH / 2) - 22);
             const fontSize = IS_TOUCH_DEVICE ? 14 : 12;
-            const bg = game.add.rectangle(bx, by, text.length * 10 + 24, 28, 0xffffff, 0.95);
-            bg.setStrokeStyle(2, 0x000000);
-            const txt = game.add.text(bx, by, text, { fontFamily: 'ArkPixel, monospace', fontSize: fontSize + 'px', fill: '#000' }).setOrigin(0.5);
-            const bubble = game.add.container(0, 0, [bg, txt]);
-            bubble.setDepth(2700);
+            const bubble = OfficeBubbles.create(game, text, bx, by + 16, { fontSize, depth: 2700 });
             guestBubbles[id] = bubble;
 
             // 让气泡跟随 sprite 锚点（用于 demo 平滑移动时也保持贴合）
             bubble.__followAgentId = id;
 
             setTimeout(() => {
-                if (guestBubbles[id]) {
+                if (guestBubbles[id] === bubble) {
                     guestBubbles[id].destroy();
                     delete guestBubbles[id];
                 }
-            }, 3200);
+            }, OfficeBubbles.duration(text));
         }
 
         function maybeRandomizeDemoVisitors() {
@@ -3762,19 +3760,15 @@ function toggleBrokerPanel() {
                                 const bx = g.sprite.x;
                                 const by = g.sprite.y - 90;
                                 const fontSize = IS_TOUCH_DEVICE ? 14 : 12;
-                                const bg = game.add.rectangle(bx, by, text.length * 10 + 24, 28, 0xffffff, 0.95);
-                                bg.setStrokeStyle(2, 0x000000);
-                                const txt = game.add.text(bx, by, text, { fontFamily: 'ArkPixel, monospace', fontSize: fontSize + 'px', fill: '#000' }).setOrigin(0.5);
-                                const bubble = game.add.container(0, 0, [bg, txt]);
-                                bubble.setDepth(2700);
+                                const bubble = OfficeBubbles.create(game, text, bx, by + 16, { fontSize, depth: 2700 });
                                 bubble.__followAgentId = agent.agentId;
                                 guestBubbles[agent.agentId] = bubble;
                                 setTimeout(() => {
-                                    if (guestBubbles[agent.agentId]) {
+                                    if (guestBubbles[agent.agentId] === bubble) {
                                         guestBubbles[agent.agentId].destroy();
                                         delete guestBubbles[agent.agentId];
                                     }
-                                }, 3200);
+                                }, OfficeBubbles.duration(text));
                             }
                         }
                     });
@@ -3923,7 +3917,7 @@ function toggleBrokerPanel() {
             // cache-busting to avoid stale background on client/CDN
             // use smaller/new map version provided by user
             this.load.image('office_bg', '/static/office_bg_small.webp?v={{VERSION_TIMESTAMP}}');
-            this.load.spritesheet('star_idle', '/static/star-idle-v5.png?v={{VERSION_TIMESTAMP}}', { frameWidth: 256, frameHeight: 256 });
+            this.load.spritesheet('star_idle', '/static/star-idle-v5.png?v={{VERSION_TIMESTAMP}}&cat=1', { frameWidth: 256, frameHeight: 256 });
 
             // Furniture
             this.load.image('sofa_idle', '/static/sofa-idle-v3.png?v={{VERSION_TIMESTAMP}}');
@@ -3937,7 +3931,7 @@ function toggleBrokerPanel() {
             this.load.spritesheet('serverroom', '/static/serverroom-spritesheet.webp?v={{VERSION_TIMESTAMP}}', { frameWidth: 180, frameHeight: 251 });
 
             // Error / bug animation: 180x180, 96 frames (repacked grid)
-            this.load.spritesheet('error_bug', '/static/error-bug-spritesheet-grid.webp?v={{VERSION_TIMESTAMP}}', { frameWidth: 220, frameHeight: 220 });
+            this.load.spritesheet('error_bug', '/static/error-bug-spritesheet-grid.webp?v={{VERSION_TIMESTAMP}}&cat=1', { frameWidth: 220, frameHeight: 220 });
 
             // 运行时图片 API 配置（用于搬家/中介生图）
             this.imageConfig = { hasKey: false, model: 'gpt-image-2' };
@@ -3949,10 +3943,10 @@ function toggleBrokerPanel() {
             // Star working animation: repacked to grid to avoid WebGL max texture size limits
             // NOTE: prefer WebP for size, PNG fallback
             // 动态替换后按最新素材识别：当前 writing 素材为 300x300 单帧
-            this.load.spritesheet('star_working', '/static/star-working-spritesheet-grid.webp?v={{VERSION_TIMESTAMP}}', { frameWidth: 300, frameHeight: 300 });
+            this.load.spritesheet('star_working', '/static/star-working-spritesheet-grid.webp?v={{VERSION_TIMESTAMP}}&cat=1', { frameWidth: 300, frameHeight: 300 });
 
             // Sync state animation (256x256, 多帧): 非同步显示首帧，同步从第2帧循环
-            this.load.spritesheet('sync_anim', '/static/sync-animation-v3-grid.webp?v={{VERSION_TIMESTAMP}}', { frameWidth: 256, frameHeight: 256 });
+            this.load.spritesheet('sync_anim', '/static/sync-animation-v3-grid.webp?v={{VERSION_TIMESTAMP}}&cat=1', { frameWidth: 256, frameHeight: 256 });
 
             // Memo background image
             // memo 底图固定走 png，避免某些端 webp 透明通道异常导致“底图丢失”
@@ -4026,7 +4020,7 @@ function toggleBrokerPanel() {
             sofa.anims.stop();
             sofa.setTexture('sofa_idle');
 
-            // 加像素风小牌匾：海辛小龙虾的办公室
+            // 加像素风小牌匾：Star 小猫的办公室
             const plaqueX = config.width / 2;
             const plaqueY = config.height - 36;
             const plaqueBg = game.add.rectangle(plaqueX, plaqueY, 420, 44, 0x5d4037);
@@ -4478,7 +4472,7 @@ function toggleBrokerPanel() {
             }
 
             // 冒气泡
-            if (time - lastBubble > BUBBLE_INTERVAL) {
+            if (time - lastBubble > BUBBLE_INTERVAL && !bubble) {
                 showBubble();
                 lastBubble = time;
             }
@@ -4499,6 +4493,11 @@ function toggleBrokerPanel() {
             // 移动 + 小踱步
             moveStar(time);
 
+            if (bubble && bubble.__followSprite?.visible) {
+                const sprite = bubble.__followSprite;
+                OfficeBubbles.position(bubble, sprite.x, sprite.y - bubble.__offsetY + 16);
+            }
+
             // guest 随机想法泡泡
             maybeShowGuestBubble(time);
 
@@ -4509,15 +4508,11 @@ function toggleBrokerPanel() {
                     const g = guestSprites[id];
                     if (!b || !g) return;
                     if (b.__followAgentId !== id) return;
-                    b.x = 0;
-                    b.y = 0;
-                    // children[0]=bg, children[1]=text
                     const bx = g.sprite.x;
                     const isDemoGuest = (id === 'demo_nika' || id === 'demo_mercury');
                     const nameH = (g.nameText && g.nameText.height) ? g.nameText.height : 16;
                     const by = isDemoGuest ? (g.sprite.y - 90) : ((g.nameText ? g.nameText.y : (g.sprite.y - 150)) - (nameH / 2) - 22);
-                    if (b.list && b.list[0]) { b.list[0].x = bx; b.list[0].y = by; }
-                    if (b.list && b.list[1]) { b.list[1].x = bx; b.list[1].y = by; }
+                    OfficeBubbles.position(b, bx, by + 16);
                 });
             } catch (e) {}
 
@@ -4783,32 +4778,40 @@ function toggleBrokerPanel() {
             // - error state: errorBug
             // - working at desk: starWorking
             // - other: star
+            let anchorSprite = star;
             let anchorX = star.x;
             let anchorY = star.y;
             if (currentState === 'syncing' && syncAnimSprite && syncAnimSprite.visible) {
+                anchorSprite = syncAnimSprite;
                 anchorX = syncAnimSprite.x;
                 anchorY = syncAnimSprite.y;
             } else if (currentState === 'error' && window.errorBug && window.errorBug.visible) {
+                anchorSprite = window.errorBug;
                 anchorX = window.errorBug.x;
                 anchorY = window.errorBug.y;
             } else if (!star.visible && window.starWorking && window.starWorking.visible) {
+                anchorSprite = window.starWorking;
                 anchorX = window.starWorking.x;
                 anchorY = window.starWorking.y;
             }
 
             const text = texts[Math.floor(Math.random() * texts.length)];
-            const bubbleOffsetY = (currentState === 'writing') ? 85 : 70;
+            const bubbleOffsetY = Math.max(
+                (currentState === 'writing') ? 85 : 70,
+                (anchorSprite.displayHeight || 0) / 2 + 8
+            );
             const bubbleY = anchorY - bubbleOffsetY;
 
             // 只做手机端稍微调大一点，避免发糊
             const isTouch = IS_TOUCH_DEVICE;
             const fontSize = isTouch ? 14 : 12;
-            const bg = game.add.rectangle(anchorX, bubbleY, text.length * 10 + 20, 28, 0xffffff, 0.95);
-            bg.setStrokeStyle(2, 0x000000);
-            const txt = game.add.text(anchorX, bubbleY, text, { fontFamily: 'ArkPixel, monospace', fontSize: fontSize + 'px', fill: '#000', align: 'center' }).setOrigin(0.5);
-            bubble = game.add.container(0, 0, [bg, txt]);
-            bubble.setDepth(1200); // always above desk/star
-            setTimeout(() => { if (bubble) { bubble.destroy(); bubble = null; } }, 3000);
+            bubble = OfficeBubbles.create(game, text, anchorX, bubbleY + 16, { fontSize, depth: 2700 });
+            bubble.__followSprite = anchorSprite;
+            bubble.__offsetY = bubbleOffsetY;
+            const shownBubble = bubble;
+            setTimeout(() => {
+                if (bubble === shownBubble) { bubble.destroy(); bubble = null; }
+            }, OfficeBubbles.duration(text));
         }
 
         function showCatBubble() {
@@ -4818,12 +4821,14 @@ function toggleBrokerPanel() {
             const text = texts[Math.floor(Math.random() * texts.length)];
             const anchorX = window.catSprite.x;
             const anchorY = window.catSprite.y - 60;
-            const bg = game.add.rectangle(anchorX, anchorY, text.length * 10 + 20, 24, 0xfffbeb, 0.95);
-            bg.setStrokeStyle(2, 0xd4a574);
-            const txt = game.add.text(anchorX, anchorY, text, { fontFamily: 'ArkPixel, monospace', fontSize: '11px', fill: '#8b6914', align: 'center' }).setOrigin(0.5);
-            window.catBubble = game.add.container(0, 0, [bg, txt]);
-            window.catBubble.setDepth(2100); // top layer above cat
-            setTimeout(() => { if (window.catBubble) { window.catBubble.destroy(); window.catBubble = null; } }, 4000);
+            window.catBubble = OfficeBubbles.create(game, text, anchorX, anchorY + 14, {
+                fontSize: 11, maxWidth: 260, fill: 0xfffbeb, stroke: 0xd4a574,
+                color: '#8b6914', depth: 2700
+            });
+            const shownBubble = window.catBubble;
+            setTimeout(() => {
+                if (window.catBubble === shownBubble) { window.catBubble.destroy(); window.catBubble = null; }
+            }, OfficeBubbles.duration(text, 4000));
         }
 
         // 假 Agent 气泡逻辑已移除，统一以真实 /agents 数据为准
