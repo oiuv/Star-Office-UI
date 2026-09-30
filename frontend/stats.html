@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Star Office · Activity</title>
   <link rel="stylesheet" href="/static/stats.css?v={{VERSION_TIMESTAMP}}">
-  <script src="/static/stats.js?v={{VERSION_TIMESTAMP}}" defer></script>
+  <script src="/static/stats.js?v={{VERSION_TIMESTAMP}}&amp;presence=1" defer></script>
 </head>
 <body>
   <main class="dashboard">
@@ -35,6 +35,7 @@
       <div class="panel-title"><h2 data-i18n="details">运行概览</h2><span id="tool-duration"></span></div>
       <div id="details" class="detail-grid"></div>
       <div id="actors" class="actors"></div>
+      <p id="presence-note" class="muted" data-i18n="presenceNote">Star 为办公室主角色，在线按最近 5 分钟收到的状态更新判断。</p>
     </section>
     <section class="panel">
       <div class="panel-title"><h2 data-i18n="log">活动日志</h2><div class="filters"><label><span class="sr-only" data-i18n="stateFilter">状态筛选</span><select id="state-filter"></select></label><label><span class="sr-only" data-i18n="hookFilter">事件筛选</span><select id="hook-filter"></select></label></div></div>

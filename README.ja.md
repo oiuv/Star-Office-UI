@@ -9,7 +9,9 @@
 マルチ Agent 協調、中英日 3 言語、AI 画像生成による模様替え、デスクトップペットモードに対応。
 推奨の接続方法は **Codex hooks**。キャラクターの状態を自動更新し、セッション、ツール、子 Agent の活動を記録します。他の AI Agent もスクリプトや HTTP API で接続できます。
 
-> 本プロジェクトは **[Ring Hyacinth](https://x.com/ring_hyacinth)** と **[Simon Lee](https://x.com/simonxxoo)** の共同制作（co-created project）であり、コミュニティの開発者（[@Zhaohan-Wang](https://github.com/Zhaohan-Wang)、[@Jah-yee](https://github.com/Jah-yee)、[@liaoandi](https://github.com/liaoandi)）とともに継続的にメンテナンス・改善を行っています。
+本バージョンは [ringhyacinth/Star-Office-UI](https://github.com/ringhyacinth/Star-Office-UI) を基に改修しています。開発とデプロイには [oiuv/Star-Office-UI](https://github.com/oiuv/Star-Office-UI) を使用してください。
+
+> 元のプロジェクトは **[Ring Hyacinth](https://x.com/ring_hyacinth)** と **[Simon Lee](https://x.com/simonxxoo)** の共同制作（co-created project）であり、コミュニティの開発者（[@Zhaohan-Wang](https://github.com/Zhaohan-Wang)、[@Jah-yee](https://github.com/Jah-yee)、[@liaoandi](https://github.com/liaoandi)）とともに継続的にメンテナンス・改善を行っています。
 > Issue や PR を歓迎します。貢献してくださるすべての方に感謝いたします。
 
 ---
@@ -23,7 +25,7 @@
 ### 1) ダッシュボードを起動
 
 ```bash
-git clone https://github.com/ringhyacinth/Star-Office-UI.git
+git clone https://github.com/oiuv/Star-Office-UI.git
 cd Star-Office-UI
 python -m pip install -r backend/requirements.txt
 cp state.sample.json state.json
@@ -347,4 +349,4 @@ Star-Office-UI/
 
 ## ⭐ Star History
 
-[![Star History Chart](https://api.star-history.com/image?repos=ringhyacinth/Star-Office-UI&type=date&legend=top-left)](https://www.star-history.com/?repos=ringhyacinth%2FStar-Office-UI&type=date&legend=top-left)
+[![Star History Chart](https://api.star-history.com/image?repos=oiuv/Star-Office-UI&type=date&legend=top-left)](https://www.star-history.com/?repos=oiuv%2FStar-Office-UI&type=date&legend=top-left)

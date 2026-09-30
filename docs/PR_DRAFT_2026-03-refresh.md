@@ -1,10 +1,10 @@
-# PR Draft — Star Office UI March Refresh
+# Historical notes — Star Office UI March Refresh
 
-## Title
+## Change scope
 feat: asset editor + i18n + loading UX + sprite pipeline + security/perf refinements
 
 ## Summary
-This PR delivers a full refresh of Star Office UI across UX, asset pipeline, localization, stability, and deployment security.
+This document preserves the original March refresh notes covering UX, assets, localization, stability, and deployment security. The current version is maintained in [oiuv/Star-Office-UI](https://github.com/oiuv/Star-Office-UI), based on [ringhyacinth/Star-Office-UI](https://github.com/ringhyacinth/Star-Office-UI).
 
 ### What changed
 
@@ -80,8 +80,10 @@ This PR delivers a full refresh of Star Office UI across UX, asset pipeline, loc
 - [ ] Verify `/assets/restore-reference-background` works with `assets/room-reference.png`
 - [ ] Verify no missing `/static/*` refs in runtime logs
 
-## How to create PR
-1. `git checkout -b feat/march-refresh`
-2. `git push -u origin feat/march-refresh`
-3. Open PR to `ringhyacinth/Star-Office-UI:main`
-4. Paste this document as PR description
+## Current repository
+
+Development, deployment, issues, and releases use [oiuv/Star-Office-UI](https://github.com/oiuv/Star-Office-UI). Current changes are maintained in this repository. See the [README](../README.md) for deployment instructions.
+
+```bash
+git clone https://github.com/oiuv/Star-Office-UI.git
+```

@@ -2,22 +2,21 @@
 
 ## Description
 
-接入海辛的像素办公室，让你的 Agent 在看板上有一个工位，实时显示工作状态。Codex 的本地自动接入优先使用项目 README 中的 hooks 配置；本说明面向远程访客 Agent。
+接入目标像素办公室，让你的 Agent 在看板上有一个工位，实时显示工作状态。Codex 的本地自动接入优先使用项目 README 中的 hooks 配置；本说明面向远程访客 Agent。
 
 ## Prerequisites
 - 你需要一个接入密钥（join key），格式：`ocj_xxx`
 - 你的用户已同意授权你推送状态
-- 你能访问 `https://office.hyacinth.im`
+- 你能访问目标办公室地址，例如 `https://your-office.example`（替换为自己的部署地址）
 
 ## Quick Start（最快上手）
 
 ### Step 1: 向你的用户确认授权
-> "我将把我的工作状态（idle/writing/researching/executing/syncing/error）定时发送到海辛的像素办公室看板。只推送状态词和简短描述，不含任何隐私内容，随时可停。是否授权？"
+> "我将把我的工作状态（idle/writing/researching/executing/syncing/error）定时发送到目标像素办公室看板。只推送状态词和简短描述，不含任何隐私内容，随时可停。是否授权？"
 
-### Step 2: 下载推送脚本
-```bash
-curl -o office-agent-push.py https://office.hyacinth.im/static/office-agent-push.py
-```
+### Step 2: 获取推送脚本
+
+从当前项目仓库 [oiuv/Star-Office-UI](https://github.com/oiuv/Star-Office-UI) 获取 `office-agent-push.py`，或使用已克隆项目根目录下的脚本。
 
 ### Step 3: 配置并运行
 打开 `office-agent-push.py`，填写以下 3 个变量：
@@ -25,7 +24,7 @@ curl -o office-agent-push.py https://office.hyacinth.im/static/office-agent-push
 ```python
 JOIN_KEY = "你的接入密钥"        # 例如 ocj_starteam02
 AGENT_NAME = "你的名字"          # 例如 "小明的 Agent"
-OFFICE_URL = "https://office.hyacinth.im"
+OFFICE_URL = "https://your-office.example"
 ```
 
 然后运行：
@@ -35,7 +34,7 @@ python3 office-agent-push.py
 
 ### Step 4: 完成！
 脚本会自动：
-- 加入海辛的办公室（自动批准，无需等待）
+- 加入目标办公室（自动批准，无需等待）
 - 每 15 秒读取你的本地状态并推送
 - 你的 Agent 会出现在办公室看板上，根据状态自动走到不同区域
 

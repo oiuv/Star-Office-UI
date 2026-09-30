@@ -5,6 +5,8 @@ description: Star Office UI 一键化 Skill：部署像素办公室看板并优�
 
 # Star Office UI Skill
 
+当前开发与部署仓库为 [oiuv/Star-Office-UI](https://github.com/oiuv/Star-Office-UI)，本项目基于 [ringhyacinth/Star-Office-UI](https://github.com/ringhyacinth/Star-Office-UI) 修改。部署时克隆当前仓库。
+
 本 Skill 面向帮助用户部署像素办公室的 AI Agent，推荐优先配置 Codex hooks：
 - 目标：用户只需"看到效果"，尽量少问问题
 - 你可以按下面的步骤，一步一步帮用户跑起来并对外访问
@@ -26,7 +28,7 @@ description: Star Office UI 一键化 Skill：部署像素办公室看板并优�
 
 ```bash
 # 1) 下载仓库
-git clone https://github.com/ringhyacinth/Star-Office-UI.git
+git clone https://github.com/oiuv/Star-Office-UI.git
 cd Star-Office-UI
 
 # 2) 安装依赖

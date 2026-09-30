@@ -9,7 +9,9 @@
 Supports multi-agent collaboration, trilingual UI (CN/EN/JP), AI-powered room design, and desktop pet mode.
 **Codex hooks** are the recommended integration: automatically update characters and record sessions, tools, and subagent activity. Other AI agents can connect through scripts or the HTTP API.
 
-> This project was co-created by **[Ring Hyacinth](https://x.com/ring_hyacinth)** and **[Simon Lee](https://x.com/simonxxoo)**, and is continuously maintained and improved together with community contributors ([@Zhaohan-Wang](https://github.com/Zhaohan-Wang), [@Jah-yee](https://github.com/Jah-yee), [@liaoandi](https://github.com/liaoandi)).
+This version is based on [ringhyacinth/Star-Office-UI](https://github.com/ringhyacinth/Star-Office-UI). Development and deployment use [oiuv/Star-Office-UI](https://github.com/oiuv/Star-Office-UI).
+
+> The original project was co-created by **[Ring Hyacinth](https://x.com/ring_hyacinth)** and **[Simon Lee](https://x.com/simonxxoo)**, and is continuously maintained and improved together with community contributors ([@Zhaohan-Wang](https://github.com/Zhaohan-Wang), [@Jah-yee](https://github.com/Jah-yee), [@liaoandi](https://github.com/liaoandi)).
 > Issues and PRs are welcome — thank you to everyone who contributes.
 
 ---
@@ -23,7 +25,7 @@ Start the dashboard, configure hooks, then submit a task in Codex to see animati
 ### 1) Start the dashboard
 
 ```bash
-git clone https://github.com/ringhyacinth/Star-Office-UI.git
+git clone https://github.com/oiuv/Star-Office-UI.git
 cd Star-Office-UI
 python -m pip install -r backend/requirements.txt
 cp state.sample.json state.json
@@ -347,4 +349,4 @@ Star-Office-UI/
 
 ## ⭐ Star History
 
-[![Star History Chart](https://api.star-history.com/image?repos=ringhyacinth/Star-Office-UI&type=date&legend=top-left)](https://www.star-history.com/?repos=ringhyacinth%2FStar-Office-UI&type=date&legend=top-left)
+[![Star History Chart](https://api.star-history.com/image?repos=oiuv/Star-Office-UI&type=date&legend=top-left)](https://www.star-history.com/?repos=oiuv%2FStar-Office-UI&type=date&legend=top-left)

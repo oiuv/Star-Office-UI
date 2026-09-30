@@ -9,7 +9,9 @@
 支持多 Agent 协作、中英日三语、AI 生图装修、桌面宠物模式。
 推荐通过 **Codex hooks** 自动驱动角色状态并记录会话、工具和子 Agent 活动；其他 AI Agent 也可通过脚本或 HTTP API 接入。
 
-> 本项目由 **[Ring Hyacinth](https://x.com/ring_hyacinth)** 与 **[Simon Lee](https://x.com/simonxxoo)** 共同创建（co-created project），并与社区开发者（[@Zhaohan-Wang](https://github.com/Zhaohan-Wang)、[@Jah-yee](https://github.com/Jah-yee)、[@liaoandi](https://github.com/liaoandi)）一起持续维护和共建。
+本项目基于 [ringhyacinth/Star-Office-UI](https://github.com/ringhyacinth/Star-Office-UI) 修改，当前开发与部署仓库为 [oiuv/Star-Office-UI](https://github.com/oiuv/Star-Office-UI)。
+
+> 原项目由 **[Ring Hyacinth](https://x.com/ring_hyacinth)** 与 **[Simon Lee](https://x.com/simonxxoo)** 共同创建（co-created project），并与社区开发者（[@Zhaohan-Wang](https://github.com/Zhaohan-Wang)、[@Jah-yee](https://github.com/Jah-yee)、[@liaoandi](https://github.com/liaoandi)）一起持续维护和共建。
 > 欢迎提交 Issue 和 PR，也感谢每一位贡献者的支持。
 
 ---
@@ -23,7 +25,7 @@
 ### 1) 启动看板
 
 ```bash
-git clone https://github.com/ringhyacinth/Star-Office-UI.git
+git clone https://github.com/oiuv/Star-Office-UI.git
 cd Star-Office-UI
 python -m pip install -r backend/requirements.txt
 cp state.sample.json state.json
@@ -391,4 +393,4 @@ Star-Office-UI/
 
 ## ⭐ Star History
 
-[![Star History Chart](https://api.star-history.com/image?repos=ringhyacinth/Star-Office-UI&type=date&legend=top-left)](https://www.star-history.com/?repos=ringhyacinth%2FStar-Office-UI&type=date&legend=top-left)
+[![Star History Chart](https://api.star-history.com/image?repos=oiuv/Star-Office-UI&type=date&legend=top-left)](https://www.star-history.com/?repos=oiuv%2FStar-Office-UI&type=date&legend=top-left)
