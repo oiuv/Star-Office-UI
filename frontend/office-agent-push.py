@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-海辛办公室 - Agent 状态主动推送脚本
+Star Office - Agent 状态主动推送脚本
 
 用法：
-1. 填入下面的 JOIN_KEY（你从海辛那里拿到的一次性 join key）
+1. 配置 JOIN_KEY（办公室服务端分配的接入密钥）和 OFFICE_URL
 2. 填入 AGENT_NAME（你想要在办公室里显示的名字）
 3. 运行：python office-agent-push.py
-4. 脚本会自动先 join（首次运行），然后每 30s 向海辛办公室推送一次你的当前状态
+4. 脚本会自动先 join（首次运行），然后每 15s 向指定办公室推送一次你的当前状态
 """
 
 import json
@@ -16,9 +16,9 @@ import sys
 from datetime import datetime
 
 # === 你需要填入的信息 ===
-JOIN_KEY = ""   # 必填：你的一次性 join key
-AGENT_NAME = "" # 必填：你在办公室里的名字
-OFFICE_URL = "https://office.hyacinth.im"  # 海辛办公室地址（一般不用改）
+JOIN_KEY = ""  # 必填：办公室管理员分配的接入密钥
+AGENT_NAME = ""  # 必填：在办公室里显示的名字
+OFFICE_URL = "http://127.0.0.1:19000"  # 改为目标办公室地址；此默认值仅适用于本机
 
 # === 推送配置 ===
 PUSH_INTERVAL_SECONDS = 15  # 每隔多少秒推送一次（更实时）
@@ -32,12 +32,18 @@ STALE_STATE_TTL_SECONDS = int(os.environ.get("OFFICE_STALE_STATE_TTL", "600"))
 # 本地状态存储（记住上次 join 拿到的 agentId）
 STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "office-agent-state.json")
 
-# 优先读取本机 OpenClaw 工作区的状态文件（更贴合 AGENTS.md 的工作流）
-# 支持自动发现，减少对方手动配置成本。
+# 优先读取本机 OpenClaw 工作区的状态文件
+# 支持自动发现，减少对方手动配置成本，且避免硬编码绝对路径：
+# - 优先使用环境变量 OPENCLAW_HOME / OPENCLAW_WORKSPACE_DIR
+# - 其次使用当前用户 HOME/.openclaw
+# - 再回落到当前工作目录与脚本所在目录
+OPENCLAW_HOME = os.environ.get("OPENCLAW_HOME") or os.path.join(os.path.expanduser("~"), ".openclaw")
+OPENCLAW_WORKSPACE_DIR = os.environ.get("OPENCLAW_WORKSPACE_DIR") or os.path.join(OPENCLAW_HOME, "workspace")
+
 DEFAULT_STATE_CANDIDATES = [
-    "/root/.openclaw/workspace/Star-Office-UI/state.json",  # 当前仓库（大小写精确）
-    "/root/.openclaw/workspace/star-office-ui/state.json",  # 历史/兼容路径
-    "/root/.openclaw/workspace/state.json",
+    os.path.join(OPENCLAW_WORKSPACE_DIR, "Star-Office-UI", "state.json"),
+    os.path.join(OPENCLAW_WORKSPACE_DIR, "star-office-ui", "state.json"),
+    os.path.join(OPENCLAW_WORKSPACE_DIR, "state.json"),
     os.path.join(os.getcwd(), "state.json"),
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "state.json"),
 ]
@@ -87,7 +93,7 @@ def normalize_state(s):
 
 
 def map_detail_to_state(detail, fallback_state="idle"):
-    """当只有 detail 时，用关键词推断状态（贴近 AGENTS.md 的办公区逻辑）。"""
+    """当只有 detail 时，用关键词推断状态并映射到办公区域。"""
     d = (detail or "").lower()
     if any(k in d for k in ["报错", "error", "bug", "异常", "报警"]):
         return "error"
@@ -118,7 +124,7 @@ def _state_age_seconds(data):
 
 def fetch_local_status():
     """读取本地状态：
-    1) 优先 state.json（符合 AGENTS.md：任务前切 writing，完成后切 idle）
+    1) 优先 state.json（由本地 Agent 或状态更新工具维护）
     2) 其次尝试本地 HTTP /status
     3) 最后 fallback idle
 
@@ -211,7 +217,7 @@ def do_join(local):
             local["joined"] = True
             local["agentId"] = data.get("agentId")
             save_local_state(local)
-            print(f"✅ 已加入海辛办公室，agentId={local['agentId']}")
+            print(f"✅ 已加入目标办公室，agentId={local['agentId']}")
             return True
     print(f"❌ 加入失败：{r.text}")
     return False
@@ -253,6 +259,17 @@ def do_push(local, status_data):
 
 def main():
     local = load_local_state()
+
+    # Startup hint for state source and URL (helps with port/state issues, e.g. issue #31)
+    if LOCAL_STATE_FILE:
+        print(f"State file: {LOCAL_STATE_FILE}")
+    else:
+        first_existing = next((p for p in DEFAULT_STATE_CANDIDATES if p and os.path.exists(p)), None)
+        if first_existing:
+            print(f"State file (auto): {first_existing}")
+        else:
+            print("State file: auto-discover (set OFFICE_LOCAL_STATE_FILE if state not found)")
+    print(f"Local status URL: {LOCAL_STATUS_URL} (set OFFICE_LOCAL_STATUS_URL if backend uses another port)")
 
     # 先确认配置是否齐全
     if not JOIN_KEY or not AGENT_NAME:

@@ -4327,7 +4327,7 @@ function toggleBrokerPanel() {
         }
 
         function getAreaRect(area) {
-            // 区域坐标（海辛提供，左上-右下；这里的 x/y 作为 sprite 底部锚点坐标来用）
+            // 区域坐标（左上-右下；这里的 x/y 作为 sprite 底部锚点坐标来用）
             // 休息区域范围（511,262）（841,621）
             // 工作区域范围（190,526）（380,683）
             // error 区域范围（932,275）（1109,327）
@@ -4571,7 +4571,7 @@ function toggleBrokerPanel() {
             if (!DEMO_MODE) return;
             ensureDemoVisitors();
 
-            // 按海辛需求：每 8 秒切换一次状态
+            // 每 8 秒切换一次展示状态
             window.__demoNextAt = window.__demoNextAt || 0;
             const now = Date.now();
             if (now < window.__demoNextAt) return;

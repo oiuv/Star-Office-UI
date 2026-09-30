@@ -12,59 +12,6 @@
             font-style: normal;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: #1a1a2e;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            align-items: center;
-            min-height: 100vh;
-            font-family: 'ArkPixel', 'Courier New', monospace;
-            padding: 20px 0;
-            gap: 10px;
-            overflow-x: hidden;
-        }
-        /* 底部面板容器 */
-        #main-stage {
-            position: relative;
-            width: 1280px;
-            transition: transform .25s ease;
-            will-change: transform;
-        }
-        body.drawer-open #main-stage {
-            /* 与右侧抽屉并列：按视口动态左移，确保与抽屉至少保留 20px 间隔 */
-            transform: translateX(calc(-1 * max(0px, (min(320px, 92vw) + 20px) - ((100vw - 1280px) / 2))));
-        }
-        #bottom-panels {
-            display: flex;
-            gap: 20px;
-            width: 1280px;
-            max-width: none;
-            justify-content: flex-start;
-            margin-top: 20px;
-        }
-        #game-container {
-            position: relative;
-            border: 0;
-            image-rendering: pixelated;
-            width: 1280px;
-            height: 720px;
-            max-width: none;
-            max-height: none;
-            aspect-ratio: auto;
-            overflow: hidden;
-        }
-        #game-container canvas {
-            width: 100% !important;
-            height: 100% !important;
-            image-rendering: pixelated;
-            /* 再兜底一次：即使外层高度变化，也不要拉伸变形 */
-            object-fit: contain;
-            /* 边框改为直接贴合画布内部，避免“框比地图大” */
-            box-shadow: inset 0 0 0 4px #64477d;
-            position: relative;
-            z-index: 10;
-        }
         /* 首屏骨架：避免 Phaser 未就绪时纯黑屏 */
         #game-skeleton {
             position: absolute;
@@ -599,11 +546,6 @@
             pointer-events: auto;
             border-radius: 10px;
         }
-        #lang-toggle-group,
-        #lang-toggle-group button {
-            position: relative;
-            z-index: 1000002 !important;
-        }
         .room-loading-inner {
             display: flex;
             flex-direction: column;
@@ -834,199 +776,8 @@
             background: #6a2828;
         }
         /* Memo 区域 - 4:3 小正方形 */
-        #memo-panel {
-            position: relative;
-            width: 460px;
-            height: 300px;
-            background-image: url('/static/memo-bg.webp');
-            background-size: cover;
-            background-position: center;
-            border: 4px solid #0e1119;
-            border-radius: 0;
-            padding: 14px 16px;
-            box-shadow: none;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-        #memo-panel::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            background-image:
-                linear-gradient(#1a1b2f, #1a1b2f), linear-gradient(#1a1b2f, #1a1b2f),
-                linear-gradient(#1a1b2f, #1a1b2f), linear-gradient(#1a1b2f, #1a1b2f),
-                linear-gradient(#1a1b2f, #1a1b2f), linear-gradient(#1a1b2f, #1a1b2f),
-                linear-gradient(#1a1b2f, #1a1b2f), linear-gradient(#1a1b2f, #1a1b2f);
-            background-repeat: no-repeat;
-            background-size:
-                calc(50% - 14px) 2px, calc(50% - 14px) 2px,
-                2px calc(50% - 14px), 2px calc(50% - 14px),
-                calc(50% - 14px) 2px, calc(50% - 14px) 2px,
-                2px calc(50% - 14px), 2px calc(50% - 14px);
-            background-position:
-                9px 8px, calc(50% + 5px) 8px,
-                8px 9px, calc(100% - 10px) 9px,
-                9px calc(100% - 10px), calc(50% + 5px) calc(100% - 10px),
-                8px calc(50% + 5px), calc(100% - 10px) calc(50% + 5px);
-        }
-        #memo-panel::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            background-image:
-                linear-gradient(#1a1b2f, #1a1b2f), linear-gradient(#1a1b2f, #1a1b2f),
-                linear-gradient(#1a1b2f, #1a1b2f), linear-gradient(#1a1b2f, #1a1b2f),
-                linear-gradient(#1a1b2f, #1a1b2f), linear-gradient(#1a1b2f, #1a1b2f),
-                linear-gradient(#1a1b2f, #1a1b2f), linear-gradient(#1a1b2f, #1a1b2f);
-            background-repeat: no-repeat;
-            background-size:
-                9px 4px, 4px 9px,
-                9px 4px, 4px 9px,
-                9px 4px, 4px 9px,
-                9px 4px, 4px 9px;
-            background-position:
-                left top, left top,
-                right top, right top,
-                left bottom, left bottom,
-                right bottom, right bottom;
-        }
-        #memo-panel.no-bg {
-            background-image: none !important;
-            background-color: #111827;
-        }
-        #memo-title {
-            color: #1a1b2f;
-            font-size: 16px;
-            font-weight: bold;
-            margin-bottom: 6px;
-            text-align: center;
-            letter-spacing: 1px;
-            flex-shrink: 0;
-            position: relative;
-            top: 15px;
-        }
-        #memo-date {
-            color: #888;
-            font-size: 10px;
-            margin-bottom: 8px;
-            text-align: right;
-            flex-shrink: 0;
-            position: relative;
-            left: -40px; /* move date left by 40px */
-            top: -10px;
-        }
-        #memo-content {
-            color: #3b3b32;
-            font-size: 12px;
-            line-height: 1.8;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            overflow-y: auto;
-            flex-grow: 1;
-            padding-right: 4px;
-            position: relative;
-            left: 100px; /* move content right by 100px */
-            top: -10px;
-        }
-        #memo-content::-webkit-scrollbar {
-            width: 6px;
-        }
-        #memo-content::-webkit-scrollbar-track {
-            background: #1a1a2e;
-        }
-        #memo-content::-webkit-scrollbar-thumb {
-            background: #444;
-            border-radius: 3px;
-        }
-        #memo-placeholder {
-            color: #666;
-            font-style: italic;
-            text-align: center;
-            padding: 20px 0;
-        }
-        .memo-decoration {
-            text-align: center;
-            margin: 4px 0;
-            color: #555;
-            font-size: 10px;
-            flex-shrink: 0;
-        }
-
         /* 手机端专属适配（不影响桌面） */
         @media (max-width: 900px), (pointer: coarse) {
-            html, body {
-                height: 100%;
-            }
-
-            body {
-                padding: 0;
-                gap: 0;
-                overflow-x: auto;
-                overflow-y: auto;
-                -webkit-overflow-scrolling: touch;
-                align-items: stretch;
-            }
-
-            #game-container {
-                width: 100vw;
-                height: 66.666vh; /* 办公室占 2/3 屏幕高度 */
-                max-width: 100vw;
-                max-height: 66.666vh;
-                border-width: 0;
-                border-radius: 0;
-                aspect-ratio: auto;
-                flex: 0 0 auto;
-                touch-action: auto;
-                overflow: hidden;
-            }
-
-            #main-stage {
-                width: 100vw;
-                min-width: 0;
-                margin-left: 0 !important;
-            }
-
-            #bottom-panels {
-                width: 100vw;
-                max-width: 100vw;
-                min-height: 33.334vh; /* 余下约 1/3 可见区 */
-                padding: 10px 10px 16px;
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-                flex: 0 0 auto;
-            }
-
-            body.drawer-open #main-stage {
-                margin-left: 0 !important;
-            }
-
-            #memo-panel,
-            #control-bar,
-            #guest-agent-panel {
-                width: 100%;
-                height: auto;
-                min-height: 180px;
-            }
-
-            #memo-panel { min-height: 220px; }
-            #control-bar { min-height: 210px; }
-            #guest-agent-panel { min-height: 220px; }
-
-            #memo-date {
-                left: 0;
-                text-align: left;
-                margin-bottom: 6px;
-            }
-            #memo-content {
-                left: 0;
-                font-size: 13px;
-                line-height: 1.7;
-            }
-
             #control-bar-title,
             #guest-agent-panel-title,
             #memo-title {
@@ -1078,12 +829,6 @@
                 padding: 6px 8px !important;
             }
 
-            body.drawer-open {
-                overflow: hidden !important;
-                position: fixed;
-                width: 100%;
-                touch-action: none;
-            }
 
             #asset-drawer {
                 width: 92vw;
@@ -1129,6 +874,7 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="/static/office-shell.css?v={{VERSION_TIMESTAMP}}">
 </head>
 <body>
     <!-- 加载遮罩 -->
@@ -1139,47 +885,67 @@
         </div>
     </div>
     
-    <div id="main-stage">
+    <main id="main-stage">
         <div id="game-container">
             <div id="game-skeleton"><div class="hint">正在进入像素办公室…</div></div>
             <div id="status-text">加载中...</div>
         </div>
-    
-    <!-- 底部面板容器 -->
-    <div id="bottom-panels">
-        <!-- Memo 面板 -->
-        <div id="memo-panel">
-            <div id="memo-title">昨 日 小 记</div>
-            <div id="memo-date"></div>
-            <div class="memo-decoration">─ ─ ─ ─ ─</div>
-            <div id="memo-content">
-                <div id="memo-placeholder">加载中...</div>
-            </div>
-            <div class="memo-decoration">─ ─ ─ ─ ─</div>
-        </div>
-        
-        <!-- 状态控制栏 -->
-        <div id="control-bar">
-            <div id="control-bar-title">Star 状态</div>
-            <div id="control-buttons">
-                <button id="btn-state-idle" onclick="setState('idle','待命')">待命</button>
-                <button id="btn-state-writing" onclick="setState('writing','工作中')">工作</button>
-                <button id="btn-state-syncing" onclick="setState('syncing','同步中')">同步</button>
-                <button id="btn-state-error" onclick="setState('error','报警中')">报警</button>
-                <button id="btn-open-drawer" onclick="toggleAssetDrawer()">装修房间</button>
-            </div>
-        </div>
+    </main>
 
-        <!-- Guest Agent 名单面板（右下角） -->
-        <div id="guest-agent-panel">
-            <div id="guest-agent-panel-title">访 客 列 表</div>
-            <div id="guest-agent-list">
-                <div style="color:#9ca3af;font-size:12px;text-align:center;padding:20px 0;">正在加载访客...</div>
-            </div>
+    <nav id="office-dock" aria-label="办公室工具" data-office-label="tools">
+        <button id="office-memo-button" popovertarget="memo-panel" aria-expanded="false" data-office-text="memo">昨日小记</button>
+        <button id="office-guests-button" popovertarget="guest-agent-panel" aria-expanded="false" data-office-text="guests">访客列表</button>
+        <button id="btn-open-drawer" onclick="toggleAssetDrawer()" aria-controls="asset-drawer" aria-expanded="false" data-office-text="decor">装修房间</button>
+        <a id="office-stats-link" href="/stats" target="_blank" rel="noopener noreferrer" data-office-text="stats">活动档案</a>
+        <button id="office-more-button" popovertarget="control-bar" aria-label="更多设置" title="更多设置" data-office-label="more" aria-expanded="false">···</button>
+    </nav>
+
+    <section id="memo-panel" class="office-panel" popover="auto" aria-labelledby="memo-title">
+        <div class="office-panel-heading">
+            <h2 id="memo-title">昨日小记</h2>
+            <button class="office-panel-close" popovertarget="memo-panel" popovertargetaction="hide" aria-label="关闭" data-office-label="close">×</button>
+        </div>
+        <div id="memo-date"></div>
+        <div id="memo-content"><div id="memo-placeholder">加载中...</div></div>
+    </section>
+
+    <section id="guest-agent-panel" class="office-panel" popover="auto" aria-labelledby="guest-agent-panel-title">
+        <div class="office-panel-heading">
+            <h2 id="guest-agent-panel-title">访客列表</h2>
+            <button class="office-panel-close" popovertarget="guest-agent-panel" popovertargetaction="hide" aria-label="关闭" data-office-label="close">×</button>
+        </div>
+        <div id="guest-agent-list">
+            <div style="color:#b9a47d;font-size:12px;text-align:center;padding:20px 0;">正在加载访客...</div>
+        </div>
+    </section>
+
+    <section id="control-bar" class="office-panel" popover="auto" aria-labelledby="office-settings-title">
+        <div class="office-panel-heading">
+            <h2 id="office-settings-title" data-office-text="more" style="font-size:16px;font-weight:normal;">更多设置</h2>
+            <button class="office-panel-close" popovertarget="control-bar" popovertargetaction="hide" aria-label="关闭" data-office-label="close">×</button>
+        </div>
+        <div id="control-bar-title" data-office-text="state">手动状态</div>
+        <div id="control-buttons">
+            <button id="btn-state-idle" onclick="setState('idle','待命')">待命</button>
+            <button id="btn-state-writing" onclick="setState('writing','工作中')">工作</button>
+            <button id="btn-state-syncing" onclick="setState('syncing','同步中')">同步</button>
+            <button id="btn-state-error" onclick="setState('error','报警中')">报警</button>
+        </div>
+        <div class="office-settings-section">
+            <div class="office-settings-label" data-office-text="view">房间视野</div>
+            <button id="pan-toggle">移动视野</button>
+            <button id="coords-toggle">显示坐标</button>
+        </div>
+        <div class="office-settings-section">
+            <div class="office-settings-label" data-office-text="language">语言</div>
+            <div id="lang-toggle-group" role="group" aria-label="语言" data-office-label="language">
+                <button id="lang-btn-cn" onclick="setUILanguage('zh')">CN</button>
+                <button id="lang-btn-en" onclick="setUILanguage('en')">EN</button>
+                <button id="lang-btn-jp" onclick="setUILanguage('ja')">JP</button>
             </div>
         </div>
-    </div>
-    
+    </section>
+
     <div id="asset-highlight"></div>
     <div id="room-loading-overlay" aria-live="polite" aria-busy="true">
         <div class="room-loading-inner">
@@ -1189,9 +955,9 @@
     </div>
 
     <div id="asset-drawer-backdrop" onclick="toggleAssetDrawer(false)"></div>
-    <aside id="asset-drawer">
+    <aside id="asset-drawer" role="dialog" aria-labelledby="asset-drawer-title" aria-hidden="true" inert>
         <div id="asset-drawer-header">
-            <span>装修房间 · 资产侧边栏</span>
+            <span id="asset-drawer-title">装修房间 · 资产侧边栏</span>
             <button id="btn-close-drawer" onclick="toggleAssetDrawer(false)">关闭</button>
         </div>
         <div id="asset-drawer-body">
@@ -1280,19 +1046,7 @@
     <div id="coords-overlay" style="display:none; position:fixed; pointer-events:none; background:rgba(0,0,0,0.85); color:#fff; font-family:ArkPixel,monospace; font-size:14px; padding:8px 12px; border-radius:4px; z-index:99999;">
         <div id="coords-display">X: 0 | Y: 0</div>
     </div>
-    <button id="coords-toggle" style="position:fixed; top:calc(env(safe-area-inset-top, 0px) + 12px); right:12px; z-index:999999; padding:8px 10px; font-family:ArkPixel,monospace; font-size:13px; cursor:pointer; border:2px solid #333; border-radius:5px; background:#333; color:#fff;">
-        显示坐标
-    </button>
-    <button id="pan-toggle" style="position:fixed; top:calc(env(safe-area-inset-top, 0px) + 12px); left:12px; z-index:999999; padding:8px 10px; font-family:ArkPixel,monospace; font-size:13px; cursor:pointer; border:2px solid #333; border-radius:5px; background:#333; color:#fff;">
-        移动视野
-    </button>
-    <div id="lang-toggle-group" style="position:fixed; top:calc(env(safe-area-inset-top, 0px) + 52px); left:12px; z-index:1000002; display:flex; gap:2px; align-items:center;">
-        <button id="lang-btn-en" onclick="setUILanguage('en')" style="padding:8px 10px; font-family:ArkPixel,monospace; font-size:13px; cursor:pointer; border:2px solid #333; border-radius:5px; background:#333; color:#fff;">EN</button>
-        <button id="lang-btn-jp" onclick="setUILanguage('ja')" style="padding:8px 10px; font-family:ArkPixel,monospace; font-size:13px; cursor:pointer; border:2px solid #333; border-radius:5px; background:#333; color:#fff;">JP</button>
-        <button id="lang-btn-cn" onclick="setUILanguage('zh')" style="padding:8px 10px; font-family:ArkPixel,monospace; font-size:13px; cursor:pointer; border:2px solid #333; border-radius:5px; background:#333; color:#fff;">CN</button>
-    </div>
-
-    <a id="office-stats-link" href="/stats" target="_blank" rel="noopener noreferrer" style="position:fixed;right:12px;top:calc(env(safe-area-inset-top, 0px) + 52px);z-index:1000002;padding:8px 10px;background:#283b35;color:#c3efcd;border:2px solid #446d54;border-radius:5px;text-decoration:none;font:13px monospace;">📊 活动档案</a>
+    <script src="/static/office-shell.js?v={{VERSION_TIMESTAMP}}"></script>
     <script src="/static/image-settings.js?v={{VERSION_TIMESTAMP}}"></script>
     <script src="/static/speech-bubbles.js?v={{VERSION_TIMESTAMP}}&amp;cat=1"></script>
     <script src="/static/vendor/phaser-3.80.1.min.js?v={{VERSION_TIMESTAMP}}"></script>
@@ -1395,13 +1149,6 @@
             loadingEl.textContent = `${base}${p}`;
         }
 
-        function ensureMemoBgVisible() {
-            const panel = document.getElementById('memo-panel');
-            if (!panel) return;
-            panel.style.backgroundImage = "url('/static/memo-bg.webp?v={{VERSION_TIMESTAMP}}')";
-            panel.classList.remove('no-bg');
-        }
-
         function applyLanguage() {
             const setText = (id, key) => { const el = document.getElementById(id); if (el) el.textContent = t(key); };
             const setPh = (id, key) => { const el = document.getElementById(id); if (el) el.placeholder = t(key); };
@@ -1479,7 +1226,7 @@
                 const on = panBtn.dataset.on === '1';
                 panBtn.textContent = on ? t('lockView') : t('moveView');
             }
-            ensureMemoBgVisible();
+            window.OfficeShell.translate(uiLang);
             renderBootLoadingText(Number(loadingProgressBar?.style?.width?.replace('%','') || 0));
         }
 
@@ -1539,9 +1286,10 @@
             height: 720,
             parent: 'game-container',
             pixelArt: true,
-            // 桌面端保持 FIT；手机端用 RESIZE，并在相机里按高度做 fit（可横向 pan）
+            backgroundColor: '#171511',
+            // 画布跟随视口；相机负责等比缩放、居中和竖屏横向浏览。
             scale: {
-                mode: IS_TOUCH_DEVICE ? Phaser.Scale.RESIZE : Phaser.Scale.FIT,
+                mode: Phaser.Scale.RESIZE,
                 autoCenter: Phaser.Scale.CENTER_BOTH,
                 width: 1280,
                 height: 720
@@ -2124,13 +1872,14 @@
             }
             const b = sp.getBounds();
             const canvasRect = game.canvas.getBoundingClientRect();
-            const scaleX = canvasRect.width / config.width;
-            const scaleY = canvasRect.height / config.height;
+            const camera = game.cameras.main;
+            const scaleX = canvasRect.width / game.scale.gameSize.width;
+            const scaleY = canvasRect.height / game.scale.gameSize.height;
             hl.style.display = 'block';
-            hl.style.left = (canvasRect.left + b.x * scaleX) + 'px';
-            hl.style.top = (canvasRect.top + b.y * scaleY) + 'px';
-            hl.style.width = Math.max(24, b.width * scaleX) + 'px';
-            hl.style.height = Math.max(24, b.height * scaleY) + 'px';
+            hl.style.left = (canvasRect.left + (camera.x + (b.x - camera.scrollX) * camera.zoom) * scaleX) + 'px';
+            hl.style.top = (canvasRect.top + (camera.y + (b.y - camera.scrollY) * camera.zoom) * scaleY) + 'px';
+            hl.style.width = Math.max(24, b.width * camera.zoom * scaleX) + 'px';
+            hl.style.height = Math.max(24, b.height * camera.zoom * scaleY) + 'px';
             return true;
         }
 
@@ -2721,7 +2470,16 @@ function toggleBrokerPanel() {
         function placeOverlayAndStatusAtCanvasBottomLeft() {
             const canvasEl = game?.canvas || document.querySelector('#game-container canvas');
             const fallbackBox = document.getElementById('game-container');
-            const rect = canvasEl?.getBoundingClientRect?.() || fallbackBox?.getBoundingClientRect?.();
+            let rect = canvasEl?.getBoundingClientRect?.() || fallbackBox?.getBoundingClientRect?.();
+            const camera = game?.cameras?.main;
+            const size = game?.scale?.gameSize;
+            if (rect && camera && size?.width && size?.height) {
+                const sx = rect.width / size.width, sy = rect.height / size.height;
+                rect = {
+                    left: rect.left + camera.x * sx, top: rect.top + camera.y * sy,
+                    width: camera.width * sx, height: camera.height * sy
+                };
+            }
 
             // 1) loading 遮罩
             const overlay = document.getElementById('room-loading-overlay');
@@ -2745,7 +2503,7 @@ function toggleBrokerPanel() {
             if (st && gameContainer) {
                 if (rect && rect.width > 0 && rect.height > 0) {
                     const localLeft = Math.max(8, Math.round(rect.left - gameContainer.getBoundingClientRect().left + 14));
-                    const localBottom = 14;
+                    const localBottom = Math.max(8, Math.round(gameContainer.getBoundingClientRect().bottom - rect.top - rect.height + 14));
                     st.style.left = localLeft + 'px';
                     st.style.bottom = localBottom + 'px';
                     st.style.maxWidth = Math.max(120, Math.floor(rect.width - 28)) + 'px';
@@ -3232,9 +2990,6 @@ function toggleBrokerPanel() {
             }
         }
 
-        // 记录 body scroll 位置，drawer 关闭时恢复
-        let _drawerScrollY = 0;
-
         async function toggleAssetDrawer(force) {
             const drawer = document.getElementById('asset-drawer');
             const backdrop = document.getElementById('asset-drawer-backdrop');
@@ -3242,16 +2997,8 @@ function toggleBrokerPanel() {
             assetDrawerOpen = next;
             drawer.classList.toggle('open', next);
             if (backdrop) backdrop.classList.toggle('open', next);
-            // 移动端 body 锁定：打开时冻结滚动位置，关闭时恢复
-            if (next) {
-                _drawerScrollY = window.scrollY;
-                document.body.style.top = `-${_drawerScrollY}px`;
-            }
             document.body.classList.toggle('drawer-open', next);
-            if (!next) {
-                document.body.style.top = '';
-                window.scrollTo(0, _drawerScrollY);
-            }
+            window.OfficeShell.drawerChanged(next);
 
             const openBtn = document.getElementById('btn-open-drawer');
             if (openBtn) {
@@ -3415,7 +3162,7 @@ function toggleBrokerPanel() {
         }
 
         function getAreaRect(area) {
-            // 区域坐标（海辛提供，左上-右下；这里的 x/y 作为 sprite 底部锚点坐标来用）
+            // 区域坐标（左上-右下；这里的 x/y 作为 sprite 底部锚点坐标来用）
             // 休息区域范围（511,262）（841,621）
             // 工作区域范围（190,526）（380,683）
             // error 区域范围（932,275）（1109,327）
@@ -3674,7 +3421,7 @@ function toggleBrokerPanel() {
             if (!DEMO_MODE) return;
             ensureDemoVisitors();
 
-            // 按海辛需求：每 8 秒切换一次状态
+            // 每 8 秒切换一次展示状态
             window.__demoNextAt = window.__demoNextAt || 0;
             const now = Date.now();
             if (now < window.__demoNextAt) return;
@@ -4259,44 +4006,25 @@ function toggleBrokerPanel() {
                 camera.scrollY = clamp(camera.scrollY, 0, maxScrollY());
             }
 
-            // 手机上：锁定“办公室画布高度 = 2/3 区域高度”，
+            // 触屏上按全屏高度适配，保留横向拖动浏览整个房间。
             // 让世界坐标在竖向恰好看满（不需要上下拖），只保留横向拖动浏览左右。
             // 记录初始是否已手动平移（避免 resize 时把用户拖好的位置重置）
             let hasManuallyPanned = false;
-            function applyMobileCameraFit() {
-                if (!isTouchDevice) return;
-                const h = Math.max(1, camera.height);
-                const w = Math.max(1, camera.width);
-
-                // 关键：先按高度 fit，再看是否需要按宽度微调，
-                // 保证既不会让画面歪，又能左右拖到最左最右边缘不被裁。
-                const fitHeightZoom = h / MAP_H;
-                const candidateZoom = fitHeightZoom;
-
-                // 按 candidateZoom 计算：viewport 在世界坐标里的宽高
-                const viewW = w / candidateZoom;
-                const maxX = Math.max(0, MAP_W - viewW);
-
-                camera.setZoom(candidateZoom);
-                camera.scrollX = Math.min(camera.scrollX, maxX);
-                camera.scrollY = 0;
-
-                // 仅在未手动平移过时才居中（避免把用户拖好的位置冲掉）
-                if (!hasManuallyPanned) {
-                    camera.centerOn(MAP_W / 2, MAP_H / 2);
-                }
-                camera.scrollX = clamp(camera.scrollX, 0, maxX);
-                camera.scrollY = 0;
+            function applyRoomCameraFit() {
+                const { width: w, height: h } = game.scale.gameSize;
+                const portrait = w < h;
+                const zoom = portrait ? h / MAP_H : Math.min(w / MAP_W, h / MAP_H);
+                const viewW = portrait ? w : MAP_W * zoom;
+                const viewH = MAP_H * zoom;
+                // Letterbox on both sides equally, rather than leaving unused canvas on the right.
+                camera.setViewport((w - viewW) / 2, (h - viewH) / 2, viewW, viewH);
+                camera.setZoom(zoom);
+                if (!hasManuallyPanned || !portrait) camera.centerOn(MAP_W / 2, MAP_H / 2);
+                clampCameraScroll();
+                placeOverlayAndStatusAtCanvasBottomLeft();
             }
-            applyMobileCameraFit();
-
-            // 手机端旋转屏幕/地址栏伸缩时，重算 zoom + 夹紧 camera
-            if (isTouchDevice && game.scale) {
-                game.scale.on('resize', () => {
-                    applyMobileCameraFit();
-                    placeOverlayAndStatusAtCanvasBottomLeft();
-                });
-            }
+            applyRoomCameraFit();
+            game.scale.on('resize', applyRoomCameraFit);
 
             camera.setBounds(0, 0, MAP_W, MAP_H);
             clampCameraScroll();
@@ -4310,7 +4038,7 @@ function toggleBrokerPanel() {
                 }
                 game.input.setDefaultCursor(on ? 'grab' : 'default');
                 if (isTouchDevice && statusText) {
-                    const info = on ? '视野拖动已开启（可左右拖动画布）' : '视野拖动已关闭（点击左上角“移动视野”可开启）';
+                    const info = on ? '视野拖动已开启（可左右拖动画布）' : '视野拖动已关闭（在更多设置中开启“移动视野”）';
                     statusText.textContent = `状态：[${(STATES[currentState] && STATES[currentState].name) || '待命'}] ${info}`;
                 }
             }
@@ -4319,20 +4047,20 @@ function toggleBrokerPanel() {
                 panToggle.addEventListener('click', () => setPanEnabled(!panEnabled));
             }
 
-            // 手机端默认关闭拖动画面：由左上角“移动视野”开关显式开启
+            // 全屏触屏视图默认可以拖动，所有房间区域都可到达。
             if (isTouchDevice) {
-                setPanEnabled(false);
+                setPanEnabled(true);
             }
 
             // iOS/Safari 手势策略：
-            // - 保留垂直滚动（让页面能下滑看三个面板）
+            // - 页面固定在视口内，面板按需打开
             // - 水平方向拖动时才阻止默认行为，并转为 camera 横向平移
             // 说明：iOS 对 pointer + touch-action 支持存在机型差异，所以这里加一套原生 touch 兜底。
             const canvasEl = game.canvas;
             let touchPan = null; // {x,y,sx,sy,lock:'x'|'y'|null}
             if (canvasEl) {
-                // 手机端允许页面自然滚动，避免“不能滑动”
-                canvasEl.style.touchAction = 'auto';
+                // 房间手势只移动相机，面板内容单独滚动。
+                canvasEl.style.touchAction = 'none';
 
                 canvasEl.addEventListener('touchstart', (e) => {
                     if (!panEnabled || e.touches.length !== 1) return;
@@ -4355,9 +4083,9 @@ function toggleBrokerPanel() {
                         // 横向拖动交给办公室视野；阻止浏览器默认滚动
                         e.preventDefault();
                         hasManuallyPanned = true;
-                        camera.scrollX = clamp(touchPan.sx - dx, 0, maxScrollX());
+                        camera.scrollX = clamp(touchPan.sx - dx / camera.zoom, 0, maxScrollX());
                     }
-                    // lock==='y' 时不阻止默认，交给页面纵向滚动
+                    // 竖向手势不改变房间视野。
                 }, { passive: false });
 
                 const clearTouchPan = () => { touchPan = null; };
@@ -4384,19 +4112,19 @@ function toggleBrokerPanel() {
                 const dx = pointer.x - panStart.x;
                 const dy = pointer.y - panStart.y;
 
-                // 手机端优先“横向拖动看办公室”，纵向手势留给页面滚动看下方面板。
+                // 触屏上只横向浏览房间；浮窗自行处理内部滚动。
                 if (isTouchDevice && Math.abs(dy) > Math.abs(dx)) {
                     return;
                 }
 
                 // 手指向右拖，视野跟着向右看：camera scroll 向左减小（反向）
-                const newX = panStart.sx - dx;
+                const newX = panStart.sx - dx / camera.zoom;
                 hasManuallyPanned = true;
                 camera.scrollX = clamp(newX, 0, maxScrollX());
 
                 // 桌面端保留自由二维拖动
                 if (!isTouchDevice) {
-                    const newY = panStart.sy - dy;
+                    const newY = panStart.sy - dy / camera.zoom;
                     camera.scrollY = clamp(newY, 0, maxScrollY());
                 }
             });
@@ -4405,8 +4133,8 @@ function toggleBrokerPanel() {
             game.input.on('pointermove', (pointer) => {
                 if (!showCoords) return;
                 // Clamp to map size (0..width-1 / 0..height-1)
-                const x = Math.max(0, Math.min(config.width - 1, Math.round(pointer.x)));
-                const y = Math.max(0, Math.min(config.height - 1, Math.round(pointer.y)));
+                const x = Math.max(0, Math.min(config.width - 1, Math.round(pointer.worldX)));
+                const y = Math.max(0, Math.min(config.height - 1, Math.round(pointer.worldY)));
                 coordsDisplay.textContent = `${x}, ${y}`;
                 // Position overlay next to mouse
                 coordsOverlay.style.left = (pointer.x + 18) + 'px';

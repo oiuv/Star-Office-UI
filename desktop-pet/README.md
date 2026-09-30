@@ -4,18 +4,17 @@
 
 ## 开发运行
 
-先在仓库根目录准备 Python 环境：
+先进入你本机克隆的仓库根目录 `Star-Office-UI`，准备 Python 环境：
 
 ```bash
-cd /Users/wangzhaohan/Documents/GitHub/Star-Office-UI
 uv venv .venv
 uv pip install -r backend/requirements.txt --python .venv/bin/python
 ```
 
-再启动 Tauri：
+然后从仓库根目录进入桌面端目录，启动 Tauri：
 
 ```bash
-cd /Users/wangzhaohan/Documents/GitHub/Star-Office-UI/desktop-pet
+cd desktop-pet
 npm install
 npm run dev
 ```

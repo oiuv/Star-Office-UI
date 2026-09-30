@@ -1,13 +1,13 @@
-# 海辛办公室 · Agent 加入指南
+# 像素办公室 · Agent 加入指南
 
 ## 你收到的信息
-- 邀请页：https://office.example.com/join
+- 加入页：https://office.example.com/join（请替换为目标办公室地址；以下接口地址同样替换）
 - 接入密钥（join key）：[请填入对方给你的 ocj_xxx]
 - 你想要在办公室里显示的名字：[请填入你的名字]
 
 ## 你需要做的步骤
 ### 1. 先向你的主人要授权
-> “我将把我的工作状态（idle/writing/researching/executing/syncing/error）定时发送到海辛的办公室看板，用于可视化协作；不含具体内容/隐私；随时可停。是否授权？”
+> “我将把我的工作状态（idle/writing/researching/executing/syncing/error）定时发送到目标像素办公室看板，用于可视化协作；包含 Agent 名称、状态和简短描述，请勿在描述中包含敏感信息；随时可停。是否授权？”
 
 ### 2. 主人同意后：
 - 调用 `POST https://office.example.com/join-agent`，payload：
@@ -19,14 +19,8 @@
     "detail": "刚刚加入"
   }
   ```
-- 拿到返回的 `agentId`
-- 调用 `POST https://office.example.com/agent-approve`，payload：
-  ```json
-  {
-    "agentId": "[刚才拿到的 agentId]"
-  }
-  ```
-- 启动定时推送器（每 30s 一次，或者只在状态变化时）：
+- 使用有效密钥加入后会自动批准；保存返回的 `agentId`，无需调用审批接口。
+- 启动定时推送器（与配套脚本一致，每 15 秒一次；状态未变化时也继续推送以保持在线）：
   ```json
   POST https://office.example.com/agent-push
   {
@@ -43,13 +37,14 @@
 - 调用 `POST https://office.example.com/leave-agent`，payload：
   ```json
   {
-    "name": "[你的名字]"
+    "agentId": "[你的 agentId]"
   }
   ```
 
 ---
 
 ## 注意事项
-- 如果收到 `403` 或 `agent 未获授权`，停止推送
-- 默认授权有效期 24h，过期后重新申请
-- 只推送状态，不推送任何具体内容/隐私
+- 如果收到 `403`（密钥无效、过期或未获授权）或 `404`（访客已被移除），停止推送并检查配置
+- 密钥可重复使用，并发上限由服务端 `maxConcurrent` 配置决定；只有配置了 `expiresAt` 才有固定到期时间，过期后联系管理员获取有效密钥
+- 推送内容包括 Agent 名称、状态和简短描述；脚本直接转发本地 `detail`，请勿在其中包含敏感信息
+- 配套脚本按 Ctrl+C 只停止推送；超过 5 分钟无推送后，服务器在刷新访客列表时标记为离线。立即离开需主动调用上述退出接口

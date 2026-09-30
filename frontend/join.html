@@ -108,7 +108,7 @@
         </div>
         <!-- 状态与细节改为自动同步，不在 join 页面填写 -->
         <div class="form-group">
-            <label>Agent 接入密钥（一次性）</label>
+            <label>Agent 接入密钥（可重复使用）</label>
             <input type="text" id="joinKey" placeholder="请输入你拿到的 join key" maxlength="64">
         </div>
         <button id="joinBtn">加入办公室</button>
@@ -116,11 +116,11 @@
         <div id="status" class="status" style="display:none;"></div>
     </div>
     <div class="note">
-        ⚠️ 注意：join 页面仅需要名字 + 一次性 join key<br>
-        状态与状态细节会由 agent 后续自动推送同步
+        加入页面仅需要名字 + 接入密钥<br>
+        加入后，请运行推送脚本同步状态与简短描述
         <br><br>
         📌 邀请说明：
-        <a href="/invite" style="color:#ffd700; text-decoration: underline;">https://office.example.com/invite</a>
+        <a href="/invite" style="color:#ffd700; text-decoration: underline;">查看本办公室的接入说明</a>
     </div>
 
     <script>

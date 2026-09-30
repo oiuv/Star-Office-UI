@@ -13,8 +13,10 @@
 
 ## 启动方式
 
+从本机克隆的仓库根目录运行：
+
 ```bash
-cd "/Users/wangzhaohan/Documents/GitHub/Star-Office-UI/electron-shell"
+cd electron-shell
 npm install
 npm run dev
 ```

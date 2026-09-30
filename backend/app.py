@@ -737,7 +737,7 @@ def agent_approve():
 
         target["authStatus"] = "approved"
         target["authApprovedAt"] = datetime.now().isoformat()
-        target["authExpiresAt"] = (datetime.now() + timedelta(hours=24)).isoformat()  # 默认授权24h
+        target["authExpiresAt"] = (datetime.now() + timedelta(hours=24)).isoformat()  # 兼容字段；已批准访客的有效期由接入密钥 expiresAt 决定
 
         save_agents_state(agents)
         return jsonify({"ok": True, "agentId": agent_id, "authStatus": "approved"})
@@ -785,7 +785,7 @@ def agent_reject():
 
 @app.route("/join-agent", methods=["POST"])
 def join_agent():
-    """Add a new agent with one-time join key validation and pending auth"""
+    """Validate a reusable join key and automatically approve the agent"""
     try:
         data = request.get_json()
         if not isinstance(data, dict) or not data.get("name"):
@@ -930,7 +930,7 @@ def join_agent():
 
 @app.route("/leave-agent", methods=["POST"])
 def leave_agent():
-    """Remove an agent and free its one-time join key for reuse (optional)
+    """Remove an agent and clear the usage metadata of its reusable join key
 
     Prefer agentId (stable). Name is accepted for backward compatibility.
     """

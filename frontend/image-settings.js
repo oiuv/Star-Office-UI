@@ -10,7 +10,7 @@
   const t = key => TEXT[language()][key];
   function labels() {
     for (const [id,key] of [['image-base-label','base'],['image-model-label','model'],['image-mode-label','mode'],['image-mode-edit','edit'],['image-mode-generate','generate'],['btn-save-image-key','save'],['image-config-hint','hint'],['image-api-doc-link','doc'],['office-stats-link','stats'],['speed-fast-btn','fast'],['speed-quality-btn','quality']]) {
-      if ($(id)) $(id).textContent = t(key);
+      if ($(id) && !$(id).dataset?.officeText) $(id).textContent = t(key);
     }
     if ($('image-api-key-input')) $('image-api-key-input').placeholder = t('key');
   }

@@ -1,24 +1,30 @@
 #!/usr/bin/env python3
 """
-海辛办公室 - Agent 状态主动推送脚本
+Star Office - Agent 状态主动推送脚本
 
 用法：
-1. 填入下面的 JOIN_KEY（你从海辛那里拿到的一次性 join key）
-2. 填入 AGENT_NAME（你想要在办公室里显示的名字）
+1. 在同目录 office-agent.local.json 填入 {"joinKey": "你的接入密钥"}，或设置 OFFICE_JOIN_KEY 环境变量；按需修改 OFFICE_URL
+2. AGENT_NAME 自动生成“访客 + 随机名称”，用于本机新访客测试
 3. 运行：python office-agent-push.py
-4. 脚本会自动先 join（首次运行），然后每 30s 向海辛办公室推送一次你的当前状态
+4. 每次启动都以新访客加入，不复用缓存身份；随后每 15s 向指定办公室推送当前状态
 """
 
 import json
 import os
+import secrets
 import time
 import sys
 from datetime import datetime
 
 # === 你需要填入的信息 ===
-JOIN_KEY = ""   # 必填：你的一次性 join key
-AGENT_NAME = "" # 必填：你在办公室里的名字
-OFFICE_URL = "https://office.hyacinth.im"  # 海辛办公室地址（一般不用改）
+# 本地测试密钥不写入源码；环境变量优先于本地配置。
+LOCAL_CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "office-agent.local.json")
+JOIN_KEY = os.environ.get("OFFICE_JOIN_KEY", "")
+if not JOIN_KEY and os.path.exists(LOCAL_CONFIG_FILE):
+    with open(LOCAL_CONFIG_FILE, "r", encoding="utf-8") as config_file:
+        JOIN_KEY = json.load(config_file).get("joinKey", "")
+AGENT_NAME = f"访客{secrets.token_hex(4)}"  # 每次启动生成新的测试访客名称
+OFFICE_URL = "http://127.0.0.1:19000"  # 本机办公室地址
 
 # === 推送配置 ===
 PUSH_INTERVAL_SECONDS = 15  # 每隔多少秒推送一次（更实时）
@@ -29,10 +35,10 @@ PUSH_ENDPOINT = "/agent-push"
 # 自动状态守护：当本地状态文件不存在或长期不更新时，自动回 idle，避免“假工作中”
 STALE_STATE_TTL_SECONDS = int(os.environ.get("OFFICE_STALE_STATE_TTL", "600"))
 
-# 本地状态存储（记住上次 join 拿到的 agentId）
+# 记录本次测试访客信息；下次启动不读取此缓存
 STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "office-agent-state.json")
 
-# 优先读取本机 OpenClaw 工作区的状态文件（更贴合 AGENTS.md 的工作流）
+# 优先读取本机 OpenClaw 工作区的状态文件
 # 支持自动发现，减少对方手动配置成本，且避免硬编码绝对路径：
 # - 优先使用环境变量 OPENCLAW_HOME / OPENCLAW_WORKSPACE_DIR
 # - 其次使用当前用户 HOME/.openclaw
@@ -41,11 +47,9 @@ OPENCLAW_HOME = os.environ.get("OPENCLAW_HOME") or os.path.join(os.path.expandus
 OPENCLAW_WORKSPACE_DIR = os.environ.get("OPENCLAW_WORKSPACE_DIR") or os.path.join(OPENCLAW_HOME, "workspace")
 
 DEFAULT_STATE_CANDIDATES = [
+    os.path.join(OPENCLAW_WORKSPACE_DIR, "Star-Office-UI", "state.json"),
     os.path.join(OPENCLAW_WORKSPACE_DIR, "star-office-ui", "state.json"),
     os.path.join(OPENCLAW_WORKSPACE_DIR, "state.json"),
-    "/root/.openclaw/workspace/Star-Office-UI/state.json",  # 当前仓库（大小写精确）
-    "/root/.openclaw/workspace/star-office-ui/state.json",  # 历史/兼容路径
-    "/root/.openclaw/workspace/state.json",
     os.path.join(os.getcwd(), "state.json"),
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "state.json"),
 ]
@@ -58,13 +62,8 @@ LOCAL_STATE_FILE = os.environ.get("OFFICE_LOCAL_STATE_FILE", "")
 VERBOSE = os.environ.get("OFFICE_VERBOSE", "0") in {"1", "true", "TRUE", "yes", "YES"}
 
 
-def load_local_state():
-    if os.path.exists(STATE_FILE):
-        try:
-            with open(STATE_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            pass
+def create_local_state():
+    """每次启动创建全新访客身份，不复用上次测试的 agentId。"""
     return {
         "agentId": None,
         "joined": False,
@@ -95,7 +94,7 @@ def normalize_state(s):
 
 
 def map_detail_to_state(detail, fallback_state="idle"):
-    """当只有 detail 时，用关键词推断状态（贴近 AGENTS.md 的办公区逻辑）。"""
+    """当只有 detail 时，用关键词推断状态并映射到办公区域。"""
     d = (detail or "").lower()
     if any(k in d for k in ["报错", "error", "bug", "异常", "报警"]):
         return "error"
@@ -126,7 +125,7 @@ def _state_age_seconds(data):
 
 def fetch_local_status():
     """读取本地状态：
-    1) 优先 state.json（符合 AGENTS.md：任务前切 writing，完成后切 idle）
+    1) 优先 state.json（由本地 Agent 或状态更新工具维护）
     2) 其次尝试本地 HTTP /status
     3) 最后 fallback idle
 
@@ -219,7 +218,7 @@ def do_join(local):
             local["joined"] = True
             local["agentId"] = data.get("agentId")
             save_local_state(local)
-            print(f"✅ 已加入海辛办公室，agentId={local['agentId']}")
+            print(f"✅ 已加入目标办公室，agentId={local['agentId']}")
             return True
     print(f"❌ 加入失败：{r.text}")
     return False
@@ -260,7 +259,8 @@ def do_push(local, status_data):
 
 
 def main():
-    local = load_local_state()
+    local = create_local_state()
+    print(f"🆕 本次测试访客：{AGENT_NAME}")
 
     # Startup hint for state source and URL (helps with port/state issues, e.g. issue #31)
     if LOCAL_STATE_FILE:
@@ -275,10 +275,10 @@ def main():
 
     # 先确认配置是否齐全
     if not JOIN_KEY or not AGENT_NAME:
-        print("❌ 请先在脚本开头填入 JOIN_KEY 和 AGENT_NAME")
+        print("❌ 请在 office-agent.local.json 中配置 joinKey，或设置 OFFICE_JOIN_KEY 环境变量")
         sys.exit(1)
 
-    # 如果之前没 join，先 join
+    # 新测试访客先加入，获取本次运行的 agentId
     if not local.get("joined") or not local.get("agentId"):
         ok = do_join(local)
         if not ok:

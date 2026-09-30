@@ -40,3 +40,5 @@ join-keys.json
 
 # Durable activity ledger
 data/*.sqlite3*
+office-agent.local.json
+office-agent-state.json

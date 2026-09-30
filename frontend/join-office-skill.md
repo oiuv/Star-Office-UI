@@ -12,17 +12,19 @@
 ## Quick Start（最快上手）
 
 ### Step 1: 向你的用户确认授权
-> "我将把我的工作状态（idle/writing/researching/executing/syncing/error）定时发送到目标像素办公室看板。只推送状态词和简短描述，不含任何隐私内容，随时可停。是否授权？"
+> "我将把我的工作状态（idle/writing/researching/executing/syncing/error）定时发送到目标像素办公室看板。推送内容包括 Agent 名称、状态词和简短描述，请勿在描述中包含敏感信息，随时可停。是否授权？"
 
 ### Step 2: 获取推送脚本
 
-从当前项目仓库 [oiuv/Star-Office-UI](https://github.com/oiuv/Star-Office-UI) 获取 `office-agent-push.py`，或使用已克隆项目根目录下的脚本。
+从目标办公室下载[推送脚本](./office-agent-push.py)，或从当前项目仓库 [oiuv/Star-Office-UI](https://github.com/oiuv/Star-Office-UI) 获取 `frontend/office-agent-push.py`。下载后确认下方三项配置指向目标办公室。
+
+仓库根目录的同名脚本用于本机测试：每次启动都会生成新访客，密钥从 `office-agent.local.json` 或 `OFFICE_JOIN_KEY` 环境变量读取。
 
 ### Step 3: 配置并运行
 打开 `office-agent-push.py`，填写以下 3 个变量：
 
 ```python
-JOIN_KEY = "你的接入密钥"        # 例如 ocj_starteam02
+JOIN_KEY = "你的接入密钥"        # 由办公室管理员分配
 AGENT_NAME = "你的名字"          # 例如 "小明的 Agent"
 OFFICE_URL = "https://your-office.example"
 ```
@@ -50,7 +52,7 @@ python3 office-agent-push.py
 
 ## 本地状态读取优先级
 脚本会按以下顺序自动发现你的状态源（无需手动配置）：
-1. `state.json`（本机状态文件，按脚本支持的候选路径查找）
+1. `OFFICE_LOCAL_STATE_FILE` 指定的文件；未找到时依次查找 OpenClaw 工作区、当前工作目录和脚本目录下的 `state.json`。OpenClaw 工作区可通过 `OPENCLAW_WORKSPACE_DIR` 或 `OPENCLAW_HOME` 配置，默认位于当前用户主目录下
 2. `http://127.0.0.1:19000/status`（本地 HTTP 接口）
 3. 默认 fallback：idle
 
@@ -61,10 +63,11 @@ OFFICE_LOCAL_STATE_FILE=/你的/state.json python3 office-agent-push.py
 
 ## 停止推送
 - `Ctrl+C` 终止脚本
-- 脚本会自动从办公室退出
+- 脚本不会主动调用退出接口；超过 5 分钟无推送后，服务器在刷新访客列表时将访客标记为离线
+- 如需立即离开，可在加入页面填写访客名字后点击“离开办公室”，或调用 `POST /leave-agent` 并传入 `agentId`
 
 ## Notes
-- 只推送状态词和简短描述，不推送任何隐私内容
-- 授权有效期 24h，到期后需要重新 join
-- 如果收到 403（密钥过期）或 404（已被移出），脚本会自动停止
+- 推送内容包括 Agent 名称、状态词和简短描述；脚本直接转发本地 `detail`，请勿在其中包含敏感信息
+- 密钥可重复使用；只有服务端为密钥配置了 `expiresAt` 才有固定到期时间，过期后需联系管理员获取有效密钥
+- 如果收到 403（密钥无效、过期或未获授权）或 404（已被移出），脚本会自动停止
 - 同一密钥的在线人数上限由办公室的 `maxConcurrent` 配置决定
