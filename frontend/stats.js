@@ -4,7 +4,55 @@
   const HOOKS = ['PreToolUse','PermissionRequest','PostToolUse','PreCompact','PostCompact','SessionStart','SessionEnd','UserPromptSubmit','SubagentStart','SubagentStop','Stop','Interrupt'];
   const TEXT = {
     zh: {
-      back:'返回办公室 ↗',title:'每一次行动，都留下足迹。',subtitle:'从像素办公室，到你的 AI 活动档案。',
+      achievements:"成就徽章",
+      achievementNote:"按办公室全部历史记录累计，不受日期筛选影响；重复工具、回合和会话按标识去重。",
+      badgeAll:"全部成就",
+      badgeLocked:"未解锁",
+      badgeEarned:"已解锁",
+      badgeProgress:"解锁进度",
+      badgeView:"查看成就",
+      badgeVisible:"显示 {count} 项",
+      badgeNoneEarned:"还没有解锁的成就。收到对应活动后会自动点亮。",
+      badgeNoneLocked:"全部成就已解锁。",
+      group_sessions:"启程与会话",
+      group_turns:"任务与收工",
+      group_tools:"工具与实践",
+      group_context:"上下文整理",
+      group_team:"协作与分工",
+      group_control:"节奏与确认",
+      first_session:"初来办公室",
+      session_10:"办公室常客",
+      session_50:"资深常驻",
+      session_closed:"好好道别",
+      first_prompt:"新的委托",
+      prompt_25:"任务接力",
+      turn_25:"稳步交付",
+      turn_100:"百次收工",
+      first_tool:"工具上手",
+      tool_started_100:"百次尝试",
+      first_tool_success:"初试成功",
+      tool_1000:"工具大师",
+      first_compact:"整理行囊",
+      compact_10:"思路常新",
+      compact_50:"记忆典藏",
+      first_delegate:"邀请搭档",
+      delegate_10:"协作发起人",
+      teamwork_10:"默契团队",
+      first_permission:"等待确认",
+      first_interrupt:"适时暂停",
+      rule_SessionStart:"开始 {target} 个会话",
+      rule_SessionEnd:"结束 {target} 个会话",
+      rule_UserPromptSubmit:"提交 {target} 个任务回合",
+      rule_Stop:"结束 {target} 个回合",
+      rule_PreToolUse:"发起 {target} 次工具调用",
+      rule_PostToolUse:"成功执行 {target} 次工具",
+      rule_PreCompact:"开始 {target} 次上下文整理",
+      rule_PostCompact:"完成 {target} 次上下文整理",
+      rule_SubagentStart:"启动 {target} 次子 Agent 协作",
+      rule_SubagentStop:"收到 {target} 次子 Agent 收尾",
+      rule_PermissionRequest:"收到 {target} 次权限确认请求",
+      rule_Interrupt:"记录 {target} 次主动中断",
+      back:'← 返回办公室',title:'活动档案',subtitle:'从像素办公室，到你的 AI 活动档案。',
       loading:'正在读取记录…',live:'每 10 秒更新',today:'今日',week:'近 7 天',month:'近 30 天',all:'全部',
       export:'导出最近 200 条',journey:'办公室成长记录',next:'下一等级',states:'角色状态',countTime:'次数 / 观测时长',
       trend:'每日活动',events:'接收事件',trendNote:'全部视图显示最近 30 天趋势。',hooks:'Codex 生命周期',hookNote:'12 类事件 · 6 种动画状态',
@@ -20,7 +68,55 @@
       stateLabels:['待命','写作','调研','执行','同步','异常'],hookLabels:['工具执行前','等待权限','工具结果','压缩前','压缩后','会话开始','会话结束','接收任务','子 Agent 开始','子 Agent 收尾','回合结束','用户中断']
     },
     en: {
-      back:'Back to office ↗',title:'Every action leaves a trace.',subtitle:'Your pixel office, with a record of the work behind it.',
+      achievements:"Achievements",
+      achievementNote:"Uses the office's full history, regardless of date filters. Tool, turn and session IDs prevent duplicate counts.",
+      badgeAll:"All badges",
+      badgeLocked:"Locked",
+      badgeEarned:"Unlocked",
+      badgeProgress:"Achievement progress",
+      badgeView:"View achievements",
+      badgeVisible:"Showing {count}",
+      badgeNoneEarned:"No achievements yet. Matching activity will unlock them automatically.",
+      badgeNoneLocked:"All achievements unlocked.",
+      group_sessions:"Arrivals & sessions",
+      group_turns:"Tasks & finishes",
+      group_tools:"Tools & practice",
+      group_context:"Context care",
+      group_team:"Teamwork",
+      group_control:"Pace & permissions",
+      first_session:"First arrival",
+      session_10:"Office regular",
+      session_50:"Long-time resident",
+      session_closed:"A proper goodbye",
+      first_prompt:"New assignment",
+      prompt_25:"Task relay",
+      turn_25:"Steady finishes",
+      turn_100:"A hundred finishes",
+      first_tool:"Tool debut",
+      tool_started_100:"A hundred attempts",
+      first_tool_success:"First success",
+      tool_1000:"Tool master",
+      first_compact:"Pack your thoughts",
+      compact_10:"Fresh context",
+      compact_50:"Memory archive",
+      first_delegate:"Invite a partner",
+      delegate_10:"Team organizer",
+      teamwork_10:"In good company",
+      first_permission:"Awaiting approval",
+      first_interrupt:"Time to pause",
+      rule_SessionStart:"Start {target} sessions",
+      rule_SessionEnd:"End {target} sessions",
+      rule_UserPromptSubmit:"Submit {target} task turns",
+      rule_Stop:"End {target} turns",
+      rule_PreToolUse:"Start {target} tool calls",
+      rule_PostToolUse:"Complete {target} successful tool calls",
+      rule_PreCompact:"Start {target} context compactions",
+      rule_PostCompact:"Finish {target} context compactions",
+      rule_SubagentStart:"Start {target} subagent collaborations",
+      rule_SubagentStop:"Receive {target} subagent finishes",
+      rule_PermissionRequest:"Receive {target} permission requests",
+      rule_Interrupt:"Record {target} user interruptions",
+      back:'← Back to office',title:'Activity archive',subtitle:'Your pixel office, with a record of the work behind it.',
       loading:'Reading activity…',live:'Updates every 10s',today:'Today',week:'7 days',month:'30 days',all:'All time',
       export:'Export latest 200',journey:'OFFICE PROGRESS',next:'Next level',states:'Character states',countTime:'Count / observed time',
       trend:'Daily activity',events:'Events received',trendNote:'All-time view shows the last 30 days.',hooks:'Codex lifecycle',hookNote:'12 events · 6 animation states',
@@ -36,7 +132,55 @@
       stateLabels:['Idle','Writing','Research','Executing','Syncing','Error'],hookLabels:['Before tool','Permission wait','Tool result','Before compact','After compact','Session starts','Session ends','New prompt','Subagent starts','Subagent ends','Turn ends','Interrupted']
     },
     ja: {
-      back:'オフィスに戻る ↗',title:'すべての行動に、足跡を。',subtitle:'ピクセルオフィスから、AI の活動記録へ。',
+      achievements:"実績バッジ",
+      achievementNote:"日付フィルターに関係なく、オフィスの全履歴を集計します。ツール・ターン・セッションの ID で重複を除外します。",
+      badgeAll:"すべて",
+      badgeLocked:"未達成",
+      badgeEarned:"達成済み",
+      badgeProgress:"実績の進捗",
+      badgeView:"実績を見る",
+      badgeVisible:"{count} 件を表示",
+      badgeNoneEarned:"まだ実績はありません。対応する活動を受信すると自動で達成されます。",
+      badgeNoneLocked:"すべての実績を達成しました。",
+      group_sessions:"出発とセッション",
+      group_turns:"タスクと完了",
+      group_tools:"ツールと実践",
+      group_context:"コンテキスト整理",
+      group_team:"チームワーク",
+      group_control:"ペースと確認",
+      first_session:"はじめまして",
+      session_10:"オフィスの常連",
+      session_50:"ベテランの住人",
+      session_closed:"きちんとお別れ",
+      first_prompt:"新しい依頼",
+      prompt_25:"タスクリレー",
+      turn_25:"着実な完了",
+      turn_100:"百回の完了",
+      first_tool:"ツール入門",
+      tool_started_100:"百回の挑戦",
+      first_tool_success:"初めての成功",
+      tool_1000:"ツールの達人",
+      first_compact:"思考の整理",
+      compact_10:"新鮮な文脈",
+      compact_50:"記憶の書庫",
+      first_delegate:"仲間を招待",
+      delegate_10:"チーム発起人",
+      teamwork_10:"息の合う仲間",
+      first_permission:"確認待ち",
+      first_interrupt:"ひと休み",
+      rule_SessionStart:"セッションを {target} 回開始",
+      rule_SessionEnd:"セッションを {target} 回終了",
+      rule_UserPromptSubmit:"タスクを {target} ターン送信",
+      rule_Stop:"ターンを {target} 回終了",
+      rule_PreToolUse:"ツールを {target} 回呼び出す",
+      rule_PostToolUse:"ツールを {target} 回正常に実行",
+      rule_PreCompact:"コンテキスト整理を {target} 回開始",
+      rule_PostCompact:"コンテキスト整理を {target} 回完了",
+      rule_SubagentStart:"子 Agent の協作を {target} 回開始",
+      rule_SubagentStop:"子 Agent の終了を {target} 回受信",
+      rule_PermissionRequest:"権限確認を {target} 回受信",
+      rule_Interrupt:"ユーザーの中断を {target} 回記録",
+      back:'← オフィスに戻る',title:'活動アーカイブ',subtitle:'ピクセルオフィスから、AI の活動記録へ。',
       loading:'記録を読み込み中…',live:'10 秒ごとに更新',today:'今日',week:'7 日間',month:'30 日間',all:'全期間',
       export:'最新 200 件を出力',journey:'オフィスの成長記録',next:'次のレベル',states:'キャラクター状態',countTime:'回数 / 観測時間',
       trend:'日別の活動',events:'受信イベント',trendNote:'全期間では直近 30 日の推移を表示。',hooks:'Codex ライフサイクル',hookNote:'12 イベント · 6 アニメーション状態',
@@ -55,7 +199,7 @@
   let lang = 'zh';
   try { lang = localStorage.getItem('uiLang') || 'zh'; } catch (_) {}
   if (!TEXT[lang]) lang = 'zh';
-  let period = 'today', lastData = null, controller = null;
+  let period = 'today', lastData = null, controller = null, achievementFilter = 'all';
   const $ = id => document.getElementById(id);
   const t = key => TEXT[lang][key] || key;
   const element = (tag, cls, text) => {
@@ -99,6 +243,48 @@
       return badge;
     }));
   }
+  function renderAchievements(badges) {
+    const earned = badges.filter(badge => badge.earned).length;
+    const summary = earned + ' / ' + badges.length + ' ' + t('badgeEarned');
+    $('achievement-count').textContent = summary;
+    $('achievement-link').textContent = summary + ' · ' + t('badgeView') + ' ↓';
+    const visible = badges.filter(badge => achievementFilter === 'all'
+      || (achievementFilter === 'earned' ? badge.earned : !badge.earned));
+    $('achievement-visible').textContent = t('badgeVisible').replace('{count}', number(visible.length));
+    document.querySelectorAll('[data-achievement-filter]').forEach(button =>
+      button.setAttribute('aria-pressed', String(button.dataset.achievementFilter === achievementFilter)));
+    $('badges').replaceChildren();
+    for (const category of ['sessions','turns','tools','context','team','control']) {
+      const group = visible.filter(badge => badge.category === category);
+      if (!group.length) continue;
+      const section = element('section','achievement-group');
+      section.append(element('h3','',t('group_' + category)));
+      const cards = element('div','achievement-grid');
+      for (const badge of group) {
+        const card = element('article','achievement-card' + (badge.earned ? ' earned' : ''));
+        card.dataset.badgeId = badge.id;
+        const heading = element('div','achievement-heading');
+        const mark = element('span','achievement-mark',badge.earned ? '✦' : '◇');
+        mark.setAttribute('aria-hidden','true');
+        heading.append(mark,element('h4','',t(badge.id)),
+          element('span','achievement-status',t(badge.earned ? 'badgeEarned' : 'badgeLocked')));
+        const rule = t('rule_' + badge.hook).replace('{target}', number(badge.target));
+        const current = Math.min(badge.current, badge.target);
+        const progress = element('progress','achievement-progress');
+        progress.max = badge.target;
+        progress.value = current;
+        progress.setAttribute('aria-label',t(badge.id) + ' · ' + t('badgeProgress'));
+        card.append(heading,element('p','achievement-rule',rule),progress,
+          element('div','achievement-progress-text',number(current) + ' / ' + number(badge.target)));
+        cards.append(card);
+      }
+      section.append(cards);
+      $('badges').append(section);
+    }
+    if (!visible.length) {
+      $('badges').append(element('p','empty',t(achievementFilter === 'locked' ? 'badgeNoneLocked' : 'badgeNoneEarned')));
+    }
+  }
   function render(stats, events, office) {
     const o = stats.overview, game = stats.game;
     $('connection').textContent = t('live');
@@ -117,7 +303,7 @@
     $('xp-text').textContent = number(game.xp) + ' XP · +' + game.period_xp + ' ' + t('xpPeriod');
     $('level-progress').textContent = game.level_xp + ' / 100 XP';
     $('xp-progress').value = game.level_xp;
-    $('badges').replaceChildren(...game.badges.map(badge => element('span','badge' + (badge.earned ? ' earned' : ''),(badge.earned ? '✦ ' : '◇ ') + t(badge.id))));
+    renderAchievements(game.badges);
     $('states').replaceChildren();
     const maximum = Math.max(1,...Object.values(stats.states).map(value => value.count));
     STATES.forEach(state => {
@@ -207,6 +393,11 @@
     document.querySelectorAll('[data-period]').forEach(b => b.setAttribute('aria-pressed',String(b === button)));
     refresh();
   }));
+  document.querySelectorAll('[data-achievement-filter]').forEach(button => button.addEventListener('click',() => {
+    achievementFilter = button.dataset.achievementFilter;
+    if (lastData) renderAchievements(lastData[0].game.badges);
+  }));
+  $('achievement-link').addEventListener('click',() => { $('achievements').open = true; });
   $('state-filter').addEventListener('change',refresh); $('hook-filter').addEventListener('change',refresh);
   $('export').addEventListener('click',async () => {
     try {

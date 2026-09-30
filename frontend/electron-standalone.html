@@ -1591,6 +1591,7 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="/static/guest-feedback.css?v={{VERSION_TIMESTAMP}}">
 </head>
 <body>
     <div id="window-controls">
@@ -1645,6 +1646,11 @@
         <!-- Guest Agent 名单面板（右下角） -->
         <div id="guest-agent-panel">
             <div id="guest-agent-panel-title">访 客 列 表</div>
+            <div id="guest-feedback" data-kind="success" hidden>
+                <span id="guest-feedback-icon" aria-hidden="true">✓</span>
+                <span id="guest-feedback-message" role="status" aria-live="polite" aria-atomic="true"></span>
+                <button id="guest-feedback-close" type="button" aria-label="关闭提示">×</button>
+            </div>
             <div id="guest-agent-list">
                 <div style="color:#9ca3af;font-size:12px;text-align:center;padding:20px 0;">正在加载访客...</div>
             </div>
@@ -1767,6 +1773,7 @@
     </div>
 
     <a id="office-stats-link" href="/stats" target="_blank" rel="noopener noreferrer" style="position:fixed;right:12px;top:calc(env(safe-area-inset-top, 0px) + 52px);z-index:1000002;padding:8px 10px;background:#283b35;color:#c3efcd;border:2px solid #446d54;border-radius:5px;text-decoration:none;font:13px monospace;">📊 活动档案</a>
+    <script src="/static/guest-feedback.js?v={{VERSION_TIMESTAMP}}"></script>
     <script src="/static/image-settings.js?v={{VERSION_TIMESTAMP}}"></script>
     <script src="/static/speech-bubbles.js?v={{VERSION_TIMESTAMP}}&amp;cat=1"></script>
     <script src="/static/vendor/phaser-3.80.1.min.js"></script>
@@ -4208,6 +4215,7 @@ function toggleBrokerPanel() {
         }
 
         function leaveGuestAgent(agentId, name) {
+            window.GuestFeedback.hide();
             fetch('/leave-agent', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -4225,24 +4233,25 @@ function toggleBrokerPanel() {
                         delete guestBubbles[agentId];
                     }
                     fetchGuestAgents();
-                    alert((name || agentId) + ' 已离开房间');
+                    window.GuestFeedback.show((name || agentId) + ' 已离开房间');
                 } else {
                     // demo agent 没在后端也允许本地隐藏
                     if (DEMO_MODE && (name === '尼卡' || name === '水星')) {
                         hiddenDemoNames.add(name);
                         removeGuestSpriteByName(name);
                         renderGuestAgentList();
-                        alert(name + ' 已离开房间（demo）');
+                        window.GuestFeedback.show(name + ' 已离开房间（demo）');
                         return;
                     }
-                    alert('离开失败：' + (data.msg || '未知错误'));
+                    window.GuestFeedback.show('离开失败：' + (data.msg || '请稍后重试'), 'error');
                 }
             }).catch(error => {
-                alert('请求失败：' + error);
+                window.GuestFeedback.show('请求失败，请检查网络后重试。', 'error');
             });
         }
 
         function approveGuestAgent(agentId) {
+            window.GuestFeedback.hide();
             fetch('/agent-approve', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -4250,16 +4259,17 @@ function toggleBrokerPanel() {
             }).then(response => response.json()).then(data => {
                 if (data.ok) {
                     fetchGuestAgents();
-                    alert('已批准该访客接入');
+                    window.GuestFeedback.show('已批准该访客接入');
                 } else {
-                    alert('批准失败：' + (data.msg || '未知错误'));
+                    window.GuestFeedback.show('批准失败：' + (data.msg || '请稍后重试'), 'error');
                 }
             }).catch(error => {
-                alert('请求失败：' + error);
+                window.GuestFeedback.show('请求失败，请检查网络后重试。', 'error');
             });
         }
 
         function rejectGuestAgent(agentId) {
+            window.GuestFeedback.hide();
             fetch('/agent-reject', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -4267,12 +4277,12 @@ function toggleBrokerPanel() {
             }).then(response => response.json()).then(data => {
                 if (data.ok) {
                     fetchGuestAgents();
-                    alert('已拒绝该访客');
+                    window.GuestFeedback.show('已拒绝该访客');
                 } else {
-                    alert('拒绝失败：' + (data.msg || '未知错误'));
+                    window.GuestFeedback.show('拒绝失败：' + (data.msg || '请稍后重试'), 'error');
                 }
             }).catch(error => {
-                alert('请求失败：' + error);
+                window.GuestFeedback.show('请求失败，请检查网络后重试。', 'error');
             });
         }
 

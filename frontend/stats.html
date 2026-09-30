@@ -3,17 +3,17 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Star Office · Activity</title>
-  <link rel="stylesheet" href="/static/stats.css?v={{VERSION_TIMESTAMP}}">
-  <script src="/static/stats.js?v={{VERSION_TIMESTAMP}}&amp;presence=1" defer></script>
+  <link rel="stylesheet" href="/static/stats.css?v={{VERSION_TIMESTAMP}}&amp;office=1&amp;achievements=1">
+  <script src="/static/stats.js?v={{VERSION_TIMESTAMP}}&amp;presence=1&amp;office=1&amp;achievements=1" defer></script>
 </head>
 <body>
   <main class="dashboard">
     <header class="topbar">
-      <a class="brand" href="/">✦ STAR OFFICE <span data-i18n="back">返回办公室 ↗</span></a>
+      <a class="brand" href="/"><span class="brand-name">STAR OFFICE</span><span data-i18n="back">← 返回办公室</span></a>
       <div class="language" aria-label="Language"><button data-lang="zh">中文</button><button data-lang="en">EN</button><button data-lang="ja">日本語</button></div>
     </header>
     <section class="intro">
-      <div><div class="eyebrow">OFFICE FIELD NOTES / 01</div><h1 data-i18n="title">每一次行动，都留下足迹。</h1><p data-i18n="subtitle">从像素办公室，到你的 AI 活动档案。</p></div>
+      <div><div class="eyebrow">STAR OFFICE / ACTIVITY</div><h1 data-i18n="title">活动档案</h1><p data-i18n="subtitle">从像素办公室，到你的 AI 活动档案。</p></div>
       <div class="live"><span class="live-dot"></span><span id="connection" role="status" data-i18n="loading">正在读取记录…</span></div>
     </section>
     <div class="toolbar">
@@ -24,13 +24,26 @@
     <section class="metrics" id="metrics" aria-label="Overview"></section>
     <section class="panel journey">
       <div><div class="eyebrow" data-i18n="journey">办公室成长记录</div><h2 id="level">LV. 1</h2><p id="xp-text">0 XP</p></div>
-      <div class="growth"><div class="progress-label"><span data-i18n="next">下一等级</span><span id="level-progress">0 / 100 XP</span></div><progress id="xp-progress" max="100" value="0" aria-label="Level experience"></progress><div id="badges" class="badges"></div></div>
+      <div class="growth"><div class="progress-label"><span data-i18n="next">下一等级</span><span id="level-progress">0 / 100 XP</span></div><progress id="xp-progress" max="100" value="0" aria-label="Level experience"></progress><a class="achievement-link" href="#achievements" id="achievement-link"></a></div>
     </section>
     <div class="two-columns">
       <section class="panel"><div class="panel-title"><h2 data-i18n="states">角色状态</h2><span data-i18n="countTime">次数 / 观测时长</span></div><div id="states" class="state-bars"></div></section>
       <section class="panel"><div class="panel-title"><h2 data-i18n="trend">每日活动</h2><span data-i18n="events">接收事件</span></div><div id="daily" class="daily-chart"></div><p class="muted" data-i18n="trendNote">全部视图显示最近 30 天趋势。</p></section>
     </div>
     <section class="panel"><div class="panel-title"><h2 data-i18n="hooks">Codex 生命周期</h2><span data-i18n="hookNote">12 类事件 · 6 种动画状态</span></div><div id="hooks" class="hook-grid"></div></section>
+    <details class="panel achievements" id="achievements" open>
+      <summary><h2 data-i18n="achievements">成就徽章</h2><span id="achievement-count"></span></summary>
+      <p class="muted achievement-note" data-i18n="achievementNote">按办公室全部历史记录累计，不受日期筛选影响；重复工具、回合和会话按标识去重。</p>
+      <div class="achievement-toolbar">
+        <div class="periods achievement-filters" role="group" aria-label="Achievements">
+          <button type="button" data-achievement-filter="all" data-i18n="badgeAll" aria-pressed="true">全部成就</button>
+          <button type="button" data-achievement-filter="locked" data-i18n="badgeLocked" aria-pressed="false">未解锁</button>
+          <button type="button" data-achievement-filter="earned" data-i18n="badgeEarned" aria-pressed="false">已解锁</button>
+        </div>
+        <span id="achievement-visible" role="status" aria-live="polite"></span>
+      </div>
+      <div id="badges" class="achievement-groups"></div>
+    </details>
     <section class="panel">
       <div class="panel-title"><h2 data-i18n="details">运行概览</h2><span id="tool-duration"></span></div>
       <div id="details" class="detail-grid"></div>

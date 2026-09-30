@@ -1,0 +1,24 @@
+/* Visitor operation feedback stays inside the visitor panel. */
+#guest-feedback {
+    display: flex; align-items: flex-start; gap: 10px; flex-shrink: 0;
+    padding: 10px 10px 10px 12px; border: 1px solid #90a47d80; border-left: 3px solid #90a47d;
+    border-radius: 3px; background: #303b2b; color: #d9e7cc;
+    font: 13px/1.7 'ArkPixel', 'Courier New', monospace;
+    animation: guest-feedback-in .16s ease-out;
+}
+#guest-feedback[hidden] { display: none; }
+#guest-feedback[data-kind="error"] {
+    border-color: #c96e6080; border-left-color: #c96e60;
+    background: #472e29; color: #f7d2c8;
+}
+#guest-feedback-icon { flex: 0 0 18px; font: bold 16px/1.4 system-ui, sans-serif; text-align: center; }
+#guest-feedback-message { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+#guest-feedback-close {
+    flex: 0 0 28px; width: 28px; height: 28px; margin: -3px -3px -3px 0; padding: 0;
+    border: 1px solid transparent; border-radius: 2px;
+    background: transparent; color: inherit; font: 20px/1 monospace; cursor: pointer;
+}
+#guest-feedback-close:hover { background: #ffffff12; border-color: currentColor; }
+#guest-feedback-close:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+@keyframes guest-feedback-in { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { #guest-feedback { animation: none; } }

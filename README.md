@@ -2,7 +2,7 @@
 
 🌐 Language: **中文** | [English](./README.en.md) | [日本語](./README.ja.md)
 
-![Star Office UI 封面](docs/screenshots/readme-cover-2.jpg)
+![新版全屏像素办公室：顶部工具栏、访客角色与左下角状态提示](docs/screenshots/office-current.png)
 
 **一个像素风格的 AI 办公室看板** —— 把 AI 助手的工作状态实时可视化，让你直观看到"谁在做什么、昨天做了什么、现在是否在线"。
 
@@ -50,7 +50,9 @@ python scripts/codex_hooks_config.py
 
 也可以让 AI 助手按本仓库的 [SKILL.md](./SKILL.md) 完成部署和 hooks 配置。
 
-![Star Office UI 预览](docs/screenshots/readme-cover-1.jpg)
+**活动档案预览**：与办公室统一的木色像素界面，展示活动概览、经验等级、状态分布、每日趋势和 12 类 hooks 统计。
+
+![活动档案：近 7 天的统计概览与 Codex 生命周期](docs/screenshots/activity-current.png)
 
 ---
 
@@ -264,11 +266,20 @@ python3 office-agent-push.py
 
 支持今日、近 7 天、近 30 天、全部的事件、会话、回合和工具统计，六类状态的次数与观测时长，十二类 hooks 计数，权限等待、中断、压缩、子 Agent、每日趋势、筛选日志，以及最新 200 条 JSON 导出。
 
-工具耗时通过 `tool_use_id` 配对开始/结束；只有明确错误标记或非零退出码才计为失败。回合结束 +20 XP、工具成功 +2、子 Agent 收尾 +10，100 XP 升一级，并解锁四个纪念成就。重复回放同一回合/工具不会重复领奖，主动状态心跳不产生经验值。
+工具耗时通过 `tool_use_id` 配对开始/结束；只有明确错误标记或非零退出码才计为失败。回合结束 +20 XP、工具成功 +2、子 Agent 收尾 +10，100 XP 升一级。成就柜包含 **24 枚徽章**，覆盖全部 12 类 hooks，按会话、任务、工具、上下文、协作和流程控制分组；每枚徽章显示条件与进度，可筛选已解锁/未解锁，也可收起整个成就柜。重复回放同一回合/工具不会重复领奖，主动状态心跳不产生经验值。
 
 已有 `set_state.py`、`POST /set_state` 和 `POST /agent-push` 同样记录。页面轮询不增加事件，相同状态描述的重复推送标记为心跳。hook 接收次数和去重后的结束回合数分别展示。
 
+成就按办公室全部历史记录累计，不随日期范围重置，已有记录会自动解锁新徽章。工具按工具 ID、任务按回合 ID、会话按会话 ID 去重；上下文整理按独立事件 ID 计数，缺少业务 ID 时使用事件 ID。工具成功成就排除明确失败结果。权限确认与主动中断各设一枚体验徽章，不额外发放 XP。原有四枚徽章保留。
+
 日期按后端本地时区分组，Agent 时长累加，每次更新最多观测 300 秒；断联时间不无限累计。回合数表示收到 Stop，不代表任务质量。没有 Token 数据时不推算 Token 或费用。升级前的历史不自动生成，绕过脚本手工修改状态文件不产生记录。
+
+<details>
+<summary>查看成就柜截图：24 枚徽章、解锁条件与进度</summary>
+
+![成就柜：六组成就及已解锁、未解锁进度](docs/screenshots/achievements-current.png)
+
+</details>
 
 ---
 

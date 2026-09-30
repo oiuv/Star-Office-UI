@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
 from hook_events import HOOKS, STATES, short_text
+from achievements import build_achievements
 
 DEFAULT_DB = Path(__file__).resolve().parent.parent / "data" / "office-events.sqlite3"
 PRESENCE_TTL = 300
@@ -184,7 +185,10 @@ class EventStore:
                     AND newer.applied=1 AND newer.occurred_at<? AND newer.occurred_at>e.occurred_at)""", (since, since)).fetchall()
             durations = db.execute("SELECT completed_at-started_at AS seconds FROM tools WHERE completed_at>=? AND completed_at<=? AND started_at IS NOT NULL AND completed_at>=started_at", (since, until)).fetchall()
             reward_rows = db.execute("SELECT * FROM events WHERE event_name IN ('Stop','SubagentStop','PostToolUse') AND outcome='ok'").fetchall()
-            all_counts = dict(db.execute("SELECT event_name,COUNT(*) FROM events GROUP BY event_name").fetchall())
+            achievement_rows = db.execute(
+                "SELECT event_id,event_name,actor_id,session_id,turn_id,tool_id,outcome FROM events "
+                "WHERE event_name IN (" + ",".join("?" for _ in HOOKS) + ")", HOOKS
+            ).fetchall()
             terminators = db.execute("SELECT session_id, occurred_at FROM events WHERE applied=1 AND event_name IN ('SessionEnd','Interrupt') AND occurred_at<=? ORDER BY occurred_at", (until,)).fetchall()
         states = {s: {"count": 0, "transitions": 0, "seconds": 0} for s in STATES}
         hooks = {h: 0 for h in HOOKS}
@@ -231,13 +235,7 @@ class EventStore:
         period_rewards = [r for r in rewards.values() if since <= r["occurred_at"] <= until]
         period_xp = sum(points[r["event_name"]] for r in period_rewards)
         completed_turns = sum(r["event_name"] == "Stop" for r in period_rewards)
-        all_success = sum(r["event_name"] == "PostToolUse" for r in rewards.values())
-        badges = [
-            {"id": "first_turn", "earned": all_counts.get("Stop", 0) >= 1},
-            {"id": "tool_100", "earned": all_success >= 100},
-            {"id": "teamwork", "earned": all_counts.get("SubagentStop", 0) >= 1},
-            {"id": "context_keeper", "earned": all_counts.get("PostCompact", 0) >= 1},
-        ]
+        badges = build_achievements(achievement_rows)
         seconds = [r["seconds"] for r in durations]
         return {"since": since, "until": until, "states": states, "hooks": hooks,
                 "overview": {"events": len(rows), "state_updates": sum(r["event_name"] == "StateUpdate" for r in rows),
