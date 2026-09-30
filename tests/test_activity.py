@@ -373,9 +373,25 @@ class ScriptTests(unittest.TestCase):
         spec=importlib.util.spec_from_file_location("hooks_config",ROOT/"scripts/codex_hooks_config.py")
         module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
         config=module.build_config()
+        example = json.loads((ROOT / "integrations/codex/hooks.example.json").read_text(encoding="utf-8"))
         self.assertEqual(set(config["hooks"]),set(HOOKS))
-        self.assertEqual(config["hooks"]["SessionEnd"][0]["hooks"][0]["timeout"],3)
-        self.assertTrue(config["hooks"]["PostToolUse"][0]["hooks"][0]["async"])
+        self.assertEqual(set(example["hooks"]),set(HOOKS))
+        for event in HOOKS:
+            with self.subTest(event=event):
+                generated = config["hooks"][event][0]["hooks"][0]
+                documented = example["hooks"][event][0]["hooks"][0]
+                self.assertEqual(generated["timeout"],3)
+                for field in ("type", "timeout", "statusMessage"):
+                    self.assertEqual(generated[field],documented[field])
+                self.assertEqual(generated.get("async",False),event=="PostToolUse")
+                self.assertEqual(generated.get("async",False),documented.get("async",False))
+        result = subprocess.run(
+            [sys.executable, "-B", str(ROOT / "scripts/codex_hooks_config.py")],
+            env={**os.environ, "PYTHONIOENCODING": "ascii"},
+            capture_output=True, timeout=4,
+        )
+        self.assertEqual(result.returncode,0,result.stderr)
+        self.assertEqual(json.loads(result.stdout.decode("utf-8")),config)
     def test_image_cli_uses_openai_configuration(self):
         spec = importlib.util.spec_from_file_location("image_generate_cli", ROOT / "scripts/image_generate.py")
         module = importlib.util.module_from_spec(spec)

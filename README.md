@@ -70,6 +70,8 @@ python scripts/codex_hooks_config.py
 
 也可使用 [hooks.example.json](./integrations/codex/hooks.example.json)，将脚本路径替换成实际路径。Windows 路径会加引号，支持空格。
 
+生成器与示例均使用中文 `statusMessage`，所有事件设置 `timeout: 3`，其中 `PostToolUse` 使用异步执行。提示文字仅用于 Codex 的运行提示，桌宠状态与统计由事件内容决定。
+
 配置后在 Codex 中使用 `/hooks` 检查并信任新配置。官方要求信任确切的 hook 定义，改动后需重新审核；项目级 hooks 还需要项目被信任。脚本无需额外安装 Python 包，必须能访问这份源码。
 
 ### 事件与动画状态

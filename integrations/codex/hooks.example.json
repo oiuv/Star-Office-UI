@@ -9,7 +9,7 @@
             "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
             "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
             "timeout": 3,
-            "statusMessage": "Star Office: SessionStart"
+            "statusMessage": "Star Office: 初始化"
           }
         ]
       }
@@ -22,7 +22,7 @@
             "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
             "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
             "timeout": 3,
-            "statusMessage": "Star Office: SessionEnd"
+            "statusMessage": "Star Office: 收尾"
           }
         ]
       }
@@ -35,7 +35,7 @@
             "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
             "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
             "timeout": 3,
-            "statusMessage": "Star Office: UserPromptSubmit"
+            "statusMessage": "Star Office: 接收任务"
           }
         ]
       }
@@ -48,7 +48,7 @@
             "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
             "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
             "timeout": 3,
-            "statusMessage": "Star Office: PreToolUse"
+            "statusMessage": "Star Office: 执行中"
           }
         ]
       }
@@ -61,7 +61,7 @@
             "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
             "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
             "timeout": 3,
-            "statusMessage": "Star Office: PermissionRequest"
+            "statusMessage": "Star Office: 请求权限"
           }
         ]
       }
@@ -75,7 +75,7 @@
             "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
             "timeout": 3,
             "async": true,
-            "statusMessage": "Star Office: PostToolUse"
+            "statusMessage": "Star Office: 处理工具结果"
           }
         ]
       }
@@ -88,7 +88,7 @@
             "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
             "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
             "timeout": 3,
-            "statusMessage": "Star Office: PreCompact"
+            "statusMessage": "Star Office: 保存上下文"
           }
         ]
       }
@@ -101,7 +101,7 @@
             "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
             "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
             "timeout": 3,
-            "statusMessage": "Star Office: PostCompact"
+            "statusMessage": "Star Office: 恢复工作"
           }
         ]
       }
@@ -114,7 +114,7 @@
             "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
             "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
             "timeout": 3,
-            "statusMessage": "Star Office: SubagentStart"
+            "statusMessage": "Star Office: Agent 工作中"
           }
         ]
       }
@@ -127,7 +127,7 @@
             "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
             "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
             "timeout": 3,
-            "statusMessage": "Star Office: SubagentStop"
+            "statusMessage": "Star Office: Agent 收尾"
           }
         ]
       }
@@ -140,7 +140,7 @@
             "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
             "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
             "timeout": 3,
-            "statusMessage": "Star Office: Stop"
+            "statusMessage": "Star Office: 待命"
           }
         ]
       }
@@ -153,7 +153,7 @@
             "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
             "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
             "timeout": 3,
-            "statusMessage": "Star Office: Interrupt"
+            "statusMessage": "Star Office: 已中断"
           }
         ]
       }

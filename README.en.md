@@ -58,6 +58,8 @@ You can also ask an AI assistant to follow this repository's [SKILL.md](./SKILL.
 
 Keep **6 animation states + 12 lifecycle events**: states describe the character's action; events explain what triggered it. The generated configuration covers all 12 events.
 
+The generator and example use Chinese `statusMessage` labels and a 3-second timeout for every event. `PostToolUse` runs asynchronously. These labels only affect Codex's progress messages; event data determines office animations and statistics.
+
 | Hook | Animation / meaning |
 |------|---------------------|
 | `SessionStart` | Idle on start or resume; restore work state after compaction |
