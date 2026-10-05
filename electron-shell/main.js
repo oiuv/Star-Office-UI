@@ -3,6 +3,7 @@ const { spawn } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const net = require("net");
+const { MAIN_WINDOW_SIZE, resizeMainWindow } = require("./window-layout");
 const APP_NAME = "Star Office UI";
 const BACKEND_HOST = process.env.STAR_BACKEND_HOST || "127.0.0.1";
 const rawBackendPort = Number(process.env.STAR_BACKEND_PORT || 19000);
@@ -284,8 +285,8 @@ function createWindows(projectRoot) {
   ensureElectronStandaloneSnapshot(projectRoot);
 
   mainWindow = new BrowserWindow({
-    width: 700,
-    height: 460,
+    ...MAIN_WINDOW_SIZE,
+    useContentSize: true,
     x: 80,
     y: 60,
     transparent: true,
@@ -379,12 +380,7 @@ function createTray(projectRoot) {
 
 function registerIpc(projectRoot) {
   const applyMainWindowMode = (expanded) => {
-    if (!mainWindow || mainWindow.isDestroyed()) return;
-    const bounds = mainWindow.getBounds();
-    const targetHeight = expanded ? 620 : 460;
-    const targetWidth = bounds.width || 700;
-    mainWindow.setSize(targetWidth, targetHeight, true);
-    mainWindow.setContentSize(targetWidth, targetHeight, true);
+    resizeMainWindow(mainWindow, expanded);
   };
 
   ipcMain.handle("tauri:invoke", async (_event, payload) => {

@@ -85,6 +85,7 @@
             padding: 6px 0 8px !important;
             gap: 8px !important;
             justify-content: flex-start !important;
+            align-items: center !important;
             overflow: hidden !important;
         }
         body.desktop-shell #main-stage {
@@ -111,6 +112,8 @@
             flex-wrap: nowrap !important;
             align-items: flex-start !important;
             margin-top: 5px !important;
+            min-height: 0 !important;
+            padding: 0 !important;
         }
         body.desktop-shell #memo-panel {
             flex: 1 1 0 !important;
@@ -172,11 +175,15 @@
             line-height: 1.55 !important;
             left: 12px !important;
         }
-        body.desktop-shell .panel-collapsible.collapsed {
+        body.desktop-shell #memo-panel.collapsed,
+        body.desktop-shell #control-bar.collapsed,
+        body.desktop-shell #guest-agent-panel.collapsed {
             height: 62px !important;
             min-height: 62px !important;
         }
-        body.desktop-shell .panel-collapsible:not(.collapsed) {
+        body.desktop-shell #memo-panel:not(.collapsed),
+        body.desktop-shell #control-bar:not(.collapsed),
+        body.desktop-shell #guest-agent-panel:not(.collapsed) {
             height: 220px !important;
             min-height: 220px !important;
         }
@@ -399,6 +406,25 @@
         }
         body.desktop-shell #asset-drawer {
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45) !important;
+        }
+        /* Keep desktop controls inside the room, independent of native window edges. */
+        body.desktop-shell #game-container > #window-controls,
+        body.desktop-shell #game-container > #status-fab,
+        body.desktop-shell #game-container > #lang-toggle-group,
+        body.desktop-shell #game-container > #office-stats-link {
+            position: absolute !important;
+        }
+        body.desktop-shell #game-container > #window-controls {
+            left: 12px;
+            top: 10px;
+        }
+        body.desktop-shell #game-container > #lang-toggle-group {
+            right: 12px !important;
+            top: 10px !important;
+        }
+        body.desktop-shell #game-container > #status-fab {
+            top: 10px;
+            max-width: calc(100% - 300px);
         }
         /* 底部面板容器 */
         #main-stage {
@@ -2132,6 +2158,12 @@
         const ASSET_WINDOW_MODE = PAGE_PARAMS.get('assetWindow') === '1';
         if (DESKTOP_MODE) {
             document.body.classList.add('desktop-shell');
+            if (!ASSET_WINDOW_MODE) {
+                const room = document.getElementById('game-container');
+                for (const id of ['window-controls', 'status-fab', 'lang-toggle-group', 'office-stats-link']) {
+                    room.appendChild(document.getElementById(id));
+                }
+            }
         }
         if (ASSET_WINDOW_MODE) {
             document.body.classList.add('asset-window-mode');

@@ -180,7 +180,7 @@ macOS / Linux 使用 `export NAME=value`。修改环境后重启相关进程；�
 ```bash
 python scripts/smoke_test.py --base-url http://127.0.0.1:19000
 python -B -m unittest discover -s tests -v
-node --test tests/test_stats.cjs tests/test_image_settings.cjs tests/test_speech_bubbles.cjs tests/test_recent_memo.cjs
+node --test tests/test_stats.cjs tests/test_image_settings.cjs tests/test_speech_bubbles.cjs tests/test_recent_memo.cjs tests/test_desktop_window.cjs
 ```
 
 smoke 检查页面与读取接口，不推送测试状态或增加活动记录。自动化测试使用临时数据库和模拟图片接口，不消耗 API 额度；Node.js 仅用于前端测试或桌面壳开发。hooks 是否真正接入，仍需在 Codex 中提交一次任务并确认 `/stats` 出现对应事件。
