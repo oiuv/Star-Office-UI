@@ -1418,10 +1418,10 @@
         const IDLE_SOFA_ANCHOR = { x: 798, y: 272 }; // 统一中心锚点（原 sofa 左上 670,144 的中心）
         const IDLE_STAR_SCALE = 1.0; // star idle 改为256帧原生显示，不再放大
         // flowers 精灵表规格：固定单帧 128x128，4x4
-        let FLOWERS_FRAME_W = 65;
-        let FLOWERS_FRAME_H = 65;
-        let FLOWERS_FRAME_COLS = 4;
-        let FLOWERS_FRAME_ROWS = 4;
+        const FLOWERS_FRAME_W = 128;
+        const FLOWERS_FRAME_H = 128;
+        const FLOWERS_FRAME_COLS = 4;
+        const FLOWERS_FRAME_ROWS = 4;
         let currentOfficeBgTextureKey = 'office_bg';
         let assetDrawerOpen = false;
         let assetDrawerAuthed = false;
@@ -3621,24 +3621,6 @@ function toggleBrokerPanel() {
 
             // 非关键初始化延后到首屏之后，提升首开速度
             setTimeout(async () => {
-                // 动态探测 flowers 精灵表帧规格（避免写死 65x65 导致显示比例异常）
-                try {
-                    const res = await fetch('/assets/list?t=' + Date.now(), { cache: 'no-store' });
-                    const data = await res.json();
-                    if (data && data.ok && Array.isArray(data.items)) {
-                        const flowerItem = data.items.find(it => (it.path || '').toLowerCase().includes('flowers-bloom-v2'));
-                        if (flowerItem && Number(flowerItem.width) > 0 && Number(flowerItem.height) > 0) {
-                            // 固定规则：花朵单帧 128x128，4x4
-                            FLOWERS_FRAME_W = 128;
-                            FLOWERS_FRAME_H = 128;
-                            FLOWERS_FRAME_COLS = 4;
-                            FLOWERS_FRAME_ROWS = 4;
-                        }
-                    }
-                } catch (e) {
-                    console.warn('flowers 规格探测失败，使用默认 65x65', e);
-                }
-
                 // Only fetch /assets/positions and /assets/defaults when user is authed,
                 // to avoid 401 Unauthorized on first load for new visitors (issue #54).
                 try {
@@ -3742,7 +3724,7 @@ function toggleBrokerPanel() {
             };
 
             // 创建 Star 角色待命动画（每次先移除旧定义，确保不复用历史动画）
-            const starIdleFrameMax = Math.max(0, (this.textures.get('star_idle')?.frameTotal || 1) - 1);
+            const starIdleFrameMax = Math.max(0, this.textures.get('star_idle').getFrameNames().length - 1);
             if (this.anims.exists('star_idle')) {
                 this.anims.remove('star_idle');
             }
@@ -3904,7 +3886,7 @@ function toggleBrokerPanel() {
             desk.setDepth(1001);  // desk above starWorking
 
             // Random flower pot at (310,390), default scale 0.8 (top layer)
-            const flowerFrameCount = Math.max(1, FLOWERS_FRAME_COLS * FLOWERS_FRAME_ROWS); // 动态帧数
+            const flowerFrameCount = Math.max(1, FLOWERS_FRAME_COLS * FLOWERS_FRAME_ROWS); // 4×4，共 16 帧
             const randomFlowerFrame = Math.floor(Math.random() * flowerFrameCount);
             const flower = this.add.sprite(310, 390, 'flowers', randomFlowerFrame).setOrigin(0.5);
             flower.setScale(0.8);
@@ -3950,7 +3932,8 @@ function toggleBrokerPanel() {
             window.starWorking = starWorking;
 
             // Sync animation sprite at (1157,592)
-            const syncFrameTotal = Number(this.textures.get('sync_anim')?.frameTotal || 0);
+            // getFrameNames() excludes Phaser's __BASE frame; the first and last numbered frames are empty beds.
+            const syncFrameTotal = this.textures.get('sync_anim').getFrameNames().length;
             const syncFrameStart = 1;
             const syncFrameEnd = Math.max(0, syncFrameTotal - 2);
             // 仅在确实存在可播放帧（>=1）时才创建同步动画，避免单帧素材触发播放异常

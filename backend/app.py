@@ -596,8 +596,18 @@ def _generate_rpg_background_to_webp(out_webp_path: str, width: int = 1280, heig
         raise RuntimeError("Pillow unavailable")
     cfg = load_runtime_config()
     theme = custom_prompt.strip() or random.choice([
-        "cozy pixel fantasy tavern", "pixel cyberpunk workshop",
-        "elven forest office", "snow mountain lodge",
+        "cozy pixel fantasy tavern",
+        "pixel cyberpunk workshop",
+        "elven forest office",
+        "snow mountain lodge",
+        "classical Chinese study with dark wood, rice paper textures and warm lamplight",
+        "Japanese-inspired office with light wood, woven bamboo and soft daylight",
+        "steampunk workshop with brass, mechanical details and amber lighting",
+        "space station office with metal panels, cool white lighting and blue accents",
+        "underwater research office with blue-green tones, watery light patterns and glass textures",
+        "magic academy study with aged wood, arcane motifs and purple-gold lighting",
+        "cozy autumn office with orange-brown tones, warm wood and autumn leaf decorations",
+        "desert oasis office with sandstone, terracotta and turquoise accents",
     ])
     prompt = (
         "Create a top-down pixel room for an office game. "
