@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Star Office · Activity</title>
-  <link rel="stylesheet" href="/static/stats.css?v={{VERSION_TIMESTAMP}}&amp;office=1&amp;achievements=1">
-  <script src="/static/stats.js?v={{VERSION_TIMESTAMP}}&amp;presence=1&amp;office=1&amp;achievements=1" defer></script>
+  <link rel="stylesheet" href="/static/stats.css?v={{VERSION_TIMESTAMP}}&amp;office=1&amp;achievements=6">
+  <script src="/static/stats.js?v={{VERSION_TIMESTAMP}}&amp;presence=1&amp;office=1&amp;achievements=6" defer></script>
 </head>
 <body>
   <main class="dashboard">
@@ -26,23 +26,43 @@
       <div><div class="eyebrow" data-i18n="journey">办公室成长记录</div><h2 id="level">LV. 1</h2><p id="xp-text">0 XP</p></div>
       <div class="growth"><div class="progress-label"><span data-i18n="next">下一等级</span><span id="level-progress">0 / 100 XP</span></div><progress id="xp-progress" max="100" value="0" aria-label="Level experience"></progress><a class="achievement-link" href="#achievements" id="achievement-link"></a></div>
     </section>
+    <section class="panel badge-collections" id="badge-collections" aria-labelledby="collection-title" hidden>
+      <div class="panel-title"><h2 id="collection-title" data-i18n="collectionTitle">徽章收藏</h2><span data-i18n="collectionSubtitle">长久成长，每月留念</span></div>
+      <div class="collection-layout"><article id="monthly-challenge" class="monthly-card"></article><article id="full-collection" class="collection-card"></article></div>
+      <div class="monthly-archive-heading"><h3 data-i18n="monthlyArchive">月度收藏</h3><span id="monthly-archive-count"></span></div>
+      <div id="monthly-archive" class="monthly-archive"></div>
+      <p class="muted" data-i18n="monthlyNote">按后端本地自然月计算。历史达标月份自动入藏，新月重新计数。</p>
+    </section>
+    <section class="panel achievement-goals" aria-labelledby="achievement-goals-title">
+      <div class="panel-title"><h2 id="achievement-goals-title" tabindex="-1" data-i18n="goalTitle">关注目标</h2><span id="achievement-goals-count">0 / 3</span></div>
+      <p id="achievement-goals-note" class="muted" data-i18n="goalNote">最多关注 3 枚成长徽章；选择保存在当前浏览器。</p>
+      <div id="achievement-goals" class="achievement-grid"></div>
+      <div id="achievement-goals-empty" class="goal-empty"><p data-i18n="goalEmpty">挑几枚想继续积累的徽章，在这里查看下一级进度。</p><a href="#achievements" id="achievement-goals-link" class="achievement-link" data-i18n="goalChoose">选择成长徽章 ↓</a></div>
+    </section>
     <div class="two-columns">
       <section class="panel"><div class="panel-title"><h2 data-i18n="states">角色状态</h2><span data-i18n="countTime">次数 / 观测时长</span></div><div id="states" class="state-bars"></div></section>
       <section class="panel"><div class="panel-title"><h2 data-i18n="trend">每日活动</h2><span data-i18n="events">接收事件</span></div><div id="daily" class="daily-chart"></div><p class="muted" data-i18n="trendNote">全部视图显示最近 30 天趋势。</p></section>
     </div>
     <section class="panel"><div class="panel-title"><h2 data-i18n="hooks">Codex 生命周期</h2><span data-i18n="hookNote">12 类事件 · 6 种动画状态</span></div><div id="hooks" class="hook-grid"></div></section>
     <details class="panel achievements" id="achievements" open>
-      <summary><h2 data-i18n="achievements">成就徽章</h2><span id="achievement-count"></span></summary>
-      <p class="muted achievement-note" data-i18n="achievementNote">按办公室全部历史记录累计，不受日期筛选影响；重复工具、回合和会话按标识去重。</p>
+      <summary><h2 data-i18n="achievements">常规成就</h2><span id="achievement-count"></span></summary>
+      <p class="muted achievement-note" data-i18n="achievementNote">8 条成长线，每条包含基础、里程碑和进阶徽章，共 24 枚。前两档只解锁一次，进阶累计门槛逐级翻倍。全成就只计算这 24 枚，隐藏探索与月度徽章单独收藏。</p>
       <div class="achievement-toolbar">
         <div class="periods achievement-filters" role="group" aria-label="Achievements">
           <button type="button" data-achievement-filter="all" data-i18n="badgeAll" aria-pressed="true">全部成就</button>
+          <button type="button" data-achievement-filter="repeatable" data-i18n="badgeGrowing" aria-pressed="false">可成长</button>
           <button type="button" data-achievement-filter="locked" data-i18n="badgeLocked" aria-pressed="false">未解锁</button>
           <button type="button" data-achievement-filter="earned" data-i18n="badgeEarned" aria-pressed="false">已解锁</button>
         </div>
         <span id="achievement-visible" role="status" aria-live="polite"></span>
       </div>
       <div id="badges" class="achievement-groups"></div>
+    </details>
+    <details class="panel achievements explorations" id="exploration-section" open hidden>
+      <summary><h2 data-i18n="explorationTitle">趣味探索</h2><span id="exploration-count"></span></summary>
+      <p class="muted achievement-note" data-i18n="explorationNote">9 段办公室见闻，集齐后揭晓第 10 枚纪念。未解锁时保留秘密；独立于常规成就和月度收藏，按全部历史记录计算。</p>
+      <div id="exploration-badges" class="exploration-grid"></div>
+      <p class="muted" data-i18n="explorationTimeNote">时间类探索按后端本地时区和真实任务事件判定，挂机与心跳不触发。</p>
     </details>
     <section class="panel">
       <div class="panel-title"><h2 data-i18n="details">运行概览</h2><span id="tool-duration"></span></div>

@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
 from hook_events import HOOKS, STATES, short_text
-from achievements import build_achievements
+from achievements import build_achievements, build_collection, build_explorations, build_monthly_badges
 
 DEFAULT_DB = Path(__file__).resolve().parent.parent / "data" / "office-events.sqlite3"
 PRESENCE_TTL = 300
@@ -186,7 +186,7 @@ class EventStore:
             durations = db.execute("SELECT completed_at-started_at AS seconds FROM tools WHERE completed_at>=? AND completed_at<=? AND started_at IS NOT NULL AND completed_at>=started_at", (since, until)).fetchall()
             reward_rows = db.execute("SELECT * FROM events WHERE event_name IN ('Stop','SubagentStop','PostToolUse') AND outcome='ok'").fetchall()
             achievement_rows = db.execute(
-                "SELECT event_id,event_name,actor_id,session_id,turn_id,tool_id,outcome FROM events "
+                "SELECT event_id,event_name,actor_id,session_id,turn_id,tool_id,outcome,occurred_at,metadata FROM events "
                 "WHERE event_name IN (" + ",".join("?" for _ in HOOKS) + ")", HOOKS
             ).fetchall()
             terminators = db.execute("SELECT session_id, occurred_at FROM events WHERE applied=1 AND event_name IN ('SessionEnd','Interrupt') AND occurred_at<=? ORDER BY occurred_at", (until,)).fetchall()
@@ -249,7 +249,9 @@ class EventStore:
                     "compactions": hooks["PostCompact"], "subagents": hooks["SubagentStart"],
                     "active_seconds": round(sum(v["seconds"] for s, v in states.items() if s != "idle"), 1),
                     "measured_tools": len(seconds), "average_tool_seconds": round(sum(seconds) / len(seconds), 2) if seconds else None},
-                "game": {"xp": xp, "period_xp": period_xp, "level": xp // 100 + 1, "level_xp": xp % 100, "next_level_xp": 100, "badges": badges},
+                "game": {"xp": xp, "period_xp": period_xp, "level": xp // 100 + 1, "level_xp": xp % 100, "next_level_xp": 100, "badges": badges,
+                         "collection": build_collection(badges), "monthly": build_monthly_badges(achievement_rows),
+                         "exploration": build_explorations(achievement_rows)},
                 "daily": [daily[k] for k in sorted(daily)], "actors": self.actors()}
 
 def period_bounds(period, now=None):

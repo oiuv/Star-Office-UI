@@ -52,7 +52,7 @@ Submit a task in Codex. The character updates automatically and returns to idle 
 
 You can also ask an AI assistant to follow this repository's [SKILL.md](./SKILL.md) for deployment and hooks setup.
 
-![Star Office UI Preview](docs/screenshots/readme-cover-1.jpg)
+![Activity archive with monthly collections and followed goals](docs/screenshots/activity-current.png)
 
 ---
 
@@ -108,7 +108,7 @@ Push states manually or from scripts for personal logs, remote collaboration, or
 ## 📋 Features
 
 1. **Automatic Codex hooks** — 12 lifecycle events drive animations and records, including sessions, tools, compaction, interrupts, and subagents
-2. **Activity and progression** — State counts and observed time, trends, tool statistics, filterable logs, JSON export, XP, levels, and achievements
+2. **Activity and progression** — State counts and observed time, trends, tool statistics, filterable logs, JSON export, XP, levels, 24 regular achievements, hidden discoveries, full collection, and monthly badges
 3. **Status Visualization** — 6 states (`idle` / `writing` / `researching` / `executing` / `syncing` / `error`) mapped to different office areas with animated sprites and speech bubbles
 4. **Recent Notes** — Reads the latest five Codex summaries from `$CODEX_HOME/memories/rollout_summaries/` (default `~/.codex/`). Shows summary update dates, projects, and up to three tasks per entry; no API calls or manual diary required.
 5. **Multi-Agent Collaboration** — Invite other agents to join your office via join keys and see everyone's status in real time
@@ -240,6 +240,19 @@ Open the [activity archive](http://127.0.0.1:19000/stats) or click the office's 
 Tool durations pair start/end events by `tool_use_id`. Unique completed turns award 20 XP, successful tools 2 XP, and subagent completions 10 XP; each 100 XP adds a level. Duplicate replays and state heartbeats do not award extra XP.
 
 `set_state.py`, `POST /set_state`, and `POST /agent-push` also record activity. Session, turn, and tool breakdowns require the corresponding lifecycle events. Dates use the backend's local time zone, and observed time is capped at 300 seconds per update. Direct edits to the state file do not create records.
+
+### Achievements and collections
+
+- **24 regular badges across 8 tracks**: session starts, task submissions, completed turns, tool attempts, tool successes, completed compactions, collaboration starts, and collaboration finishes. Each track has a one-time basic badge, a one-time milestone, and an advanced badge with unlimited levels.
+- **Advanced levels double their cumulative thresholds**: the successful-tool badge unlocks at 1,000 calls, reaches Lv.2 at 2,000 and Lv.3 at 4,000. On wide screens, two fixed badges sit on the left and one taller advanced card on the right; on phones they stack vertically.
+- **Follow up to 3 advanced badges** to see their next-level progress near the top. Selections are saved in the current browser. Lifetime progress is deduplicated and unaffected by the date filter; existing history is recalculated without resetting XP.
+- **Full collection** requires the initial unlock of all 24 regular badges; Lv.1 is enough for advanced badges. Hidden discoveries and monthly badges are excluded.
+- **Monthly challenge** uses the same three requirements every month: **10 active days, 30 completed turns, and 300 successful tool calls**. All three must be met within the backend's local calendar month; active days need not be consecutive. Task submissions, completed turns, or successful tools count as activity. Multiple agents on the same date count as one active day; heartbeats and permission waits do not count.
+- **Monthly collection** keeps each earned year-month badge with a seasonal theme. A new month starts fresh; retained historical events can unlock past months, including late arrivals. Back up `data/office-events.sqlite3` to preserve the record.
+- **Hidden discoveries** have 9 optional experiences plus a tenth reward for collecting all nine. Locked cards show only an unrevealed placeholder; names and conditions appear after unlocking. Some use rare lifecycle events and others use local time and actual task events. They never block the regular full collection.
+- Achievements and monthly badges award no extra XP. All 12 lifecycle event statistics remain available.
+
+See the [full rule table and screenshots](./README.md#成就成长线). Hidden conditions and screenshots are in separate spoiler folds in the Chinese guide.
 
 ---
 

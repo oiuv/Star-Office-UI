@@ -134,13 +134,21 @@ progress::-moz-progress-bar { background: var(--office-gold); }
 .achievements[open] > summary::after { content: '−'; }
 .achievements > summary h2 { flex: 1; }
 .achievements > summary:focus-visible { outline: 2px solid var(--office-gold); outline-offset: 4px; }
-#achievement-count { font-size: 12px; color: var(--office-gold); }
+#achievement-count, #exploration-count { font-size: 12px; color: var(--office-gold); }
 .achievement-note { margin: 8px 0 16px; }
 .achievement-toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 22px; }
 #achievement-visible { color: var(--muted); font-size: 12px; }
 .achievement-group + .achievement-group { margin-top: 24px; }
 .achievement-group h3 { margin: 0 0 12px; padding-left: 10px; border-left: 3px solid var(--office-leaf); font-size: 14px; font-weight: normal; }
 .achievement-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.achievement-group .achievement-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; }
+/* Each growth track stacks two fixed milestones beside one spanning card. */
+.achievement-group .achievement-track { grid-template-rows: repeat(2, minmax(0, 1fr)); }
+.achievement-track > .achievement-card.growing { grid-column: 2; grid-row: 1 / span 2; }
+.achievement-track > .achievement-card:not(.growing) { grid-column: 1; display: flex; flex-direction: column; }
+.achievement-track > .achievement-card:not(.growing) .achievement-rule { min-height: 0; margin: 8px 0; }
+.achievement-track > .achievement-card:not(.growing) .achievement-progress { margin-top: auto; flex-shrink: 0; }
+.achievement-group .achievement-single { grid-template-columns: minmax(0, 1fr); }
 .achievement-card { min-width: 0; padding: 14px; border: 1px solid var(--office-edge); border-radius: 3px; background: var(--office-ink); }
 .achievement-card.earned { border-color: #9d8050; background: #3b3223; }
 .achievement-heading { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
@@ -157,6 +165,81 @@ progress::-moz-progress-bar { background: var(--office-gold); }
 .earned .achievement-progress::-webkit-progress-value { background: var(--office-gold); }
 .earned .achievement-progress::-moz-progress-bar { background: var(--office-gold); }
 .achievement-progress-text { color: var(--muted); text-align: right; margin-top: 7px; font-size: 12px; }
+/* Growing badges keep the office palette, with small pixel stars for milestones. */
+.achievement-goals .panel-title { margin-bottom: 10px; }
+.achievement-goals .muted { margin: 0 0 16px; }
+.goal-empty { padding: 4px 0; }
+.goal-empty p { margin: 0; }
+.goal-empty .achievement-link { margin-top: 8px; }
+.achievement-card.growing { --tier-color: var(--muted); display: flex; flex-direction: column; }
+.achievement-card.growing[data-tier="1"] { --tier-color: var(--office-leaf); }
+.achievement-card.growing[data-tier="2"] { --tier-color: #d1a077; }
+.achievement-card.growing[data-tier="3"] { --tier-color: #c4cbd2; }
+.achievement-card.growing[data-tier="5"] { --tier-color: var(--office-gold); }
+.achievement-card.growing[data-tier="7"] { --tier-color: #94c7ce; }
+.achievement-card.growing[data-tier="10"] { --tier-color: #d4b6de; }
+.achievement-card.growing.earned { border-color: var(--tier-color); border-top-width: 3px; }
+.growing .achievement-mark, .achievement-level, .achievement-tier { color: var(--tier-color); }
+.achievement-level { padding: 1px 6px; border: 1px solid var(--tier-color); font-size: 12px; overflow-wrap: anywhere; max-width: 100%; }
+.growing .achievement-heading h4 { min-width: 90px; overflow-wrap: anywhere; }
+.growing .achievement-rule { margin-bottom: 6px; }
+.achievement-total { font: 12px/1.7 system-ui, sans-serif; margin: 0 0 12px; color: var(--office-paper); overflow-wrap: anywhere; }
+.growing .achievement-progress { flex-shrink: 0; accent-color: var(--tier-color); }
+.growing .achievement-progress::-webkit-progress-value { background: var(--tier-color); }
+.growing .achievement-progress::-moz-progress-bar { background: var(--tier-color); }
+.growing-progress { display: flex; justify-content: space-between; gap: 6px 12px; flex-wrap: wrap; text-align: left; }
+.achievement-remaining { margin: 5px 0 14px; font: 12px/1.7 system-ui, sans-serif; }
+.achievement-footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--divider); }
+.achievement-tier { font-size: 12px; }
+.achievement-tier::before { content: '◇ '; }
+.growing[data-tier="1"] .achievement-tier::before { content: '✦ '; }
+.growing[data-tier="2"] .achievement-tier::before { content: '★ '; }
+.growing[data-tier="3"] .achievement-tier::before { content: '★★ '; }
+.growing[data-tier="5"] .achievement-tier::before { content: '★★★ '; }
+.growing[data-tier="7"] .achievement-tier::before { content: '✧★✧ '; }
+.growing[data-tier="10"] .achievement-tier::before { content: '✦★✦ '; }
+.achievement-pin { border: 1px solid var(--office-edge); background: var(--office-wood); border-radius: 2px; padding: 6px 10px; min-height: 36px; font-size: 12px; }
+.achievement-pin[aria-pressed="true"] { color: var(--office-gold); border-color: var(--office-gold); }
+.achievement-pin:hover:not(:disabled) { background: #4b3e2b; color: #ffe4a8; }
+.achievement-pin:disabled { opacity: .45; cursor: default; }
+
+
+
+/* Nine quiet mystery cards and a final keepsake, revealed only after earning. */
+.exploration-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.exploration-card { min-width: 0; padding: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; border: 1px solid var(--office-edge); border-radius: 3px; background: var(--office-ink); }
+.exploration-card.locked { min-height: 152px; border-style: dashed; color: var(--muted); }
+.exploration-mark { color: var(--muted); font-size: 28px; line-height: 1.3; margin-bottom: 8px; }
+.exploration-card h3 { font-size: 14px; font-weight: normal; margin: 0; overflow-wrap: anywhere; }
+.exploration-card p { font: 12px/1.7 system-ui, sans-serif; margin: 8px 0; }
+.exploration-card .achievement-status { margin-top: auto; padding-top: 4px; }
+.exploration-card.earned { border-color: #9d8050; background: #3b3223; }
+.exploration-card.earned .exploration-mark { color: var(--office-gold); }
+.exploration-completion { grid-column: 1 / -1; }
+.exploration-completion.earned { border: 2px double var(--office-gold); }
+
+/* Calendar keepsakes sit alongside the single full-collection reward. */
+.collection-layout { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 24px; }
+.collection-layout h3 { margin: 6px 0; font-size: 16px; font-weight: normal; overflow-wrap: anywhere; }
+.monthly-card, .collection-card { min-width: 0; }
+.collection-card { padding: 16px 20px; border: 1px dashed var(--office-edge); text-align: center; background: var(--office-ink); }
+.collection-card.earned { border: 1px solid var(--office-gold); background: #3b3223; }
+.collection-seal { font-size: 44px; line-height: 1.5; color: var(--muted); }
+.earned .collection-seal, .collection-count { color: var(--office-gold); }
+.collection-card .achievement-progress { margin-top: 20px; }
+.monthly-heading { display: flex; align-items: center; gap: 16px; }
+.monthly-heading .muted { margin: 0; }
+.monthly-seal { flex-shrink: 0; width: 66px; height: 76px; display: grid; place-items: center; font-size: 28px; color: var(--muted); border: 3px double var(--office-edge); background: var(--office-ink); box-shadow: 3px 3px 0 #0e0c09; }
+.earned .monthly-seal { color: var(--office-gold); border-color: var(--office-gold); background: #493c25; }
+.monthly-goal { margin-top: 14px; }
+.monthly-goal .progress-label { margin-bottom: 6px; flex-wrap: wrap; gap: 4px 12px; }
+.monthly-archive-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--divider); }
+.monthly-archive-heading h3 { font-size: 14px; font-weight: normal; margin: 0; }
+.monthly-archive-heading span { font-size: 12px; color: var(--muted); }
+.monthly-archive { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.monthly-archive .muted { margin: 0; }
+.monthly-keepsake { padding: 8px 12px; border: 1px solid var(--office-edge); color: var(--office-gold); font-size: 12px; background: #3b3223; overflow-wrap: anywhere; }
+
 .two-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
 .state-row { display: grid; grid-template-columns: 72px minmax(0, 1fr) 92px; align-items: center; gap: 12px; margin: 14px 0; font-size: 13px; }
 .state-track { height: 9px; background: var(--office-ink); box-shadow: inset 0 1px 0 #0006; }
@@ -212,7 +295,10 @@ footer > span { display: block; color: var(--muted); font-size: 11px; letter-spa
 }
 @media (max-width: 600px) {
   .dashboard { padding: 12px 12px 28px; }
-  .achievement-grid { grid-template-columns: minmax(0, 1fr); }
+  .exploration-grid { grid-template-columns: minmax(0, 1fr); }
+  .achievement-grid, .achievement-group .achievement-grid, .collection-layout { grid-template-columns: minmax(0, 1fr); }
+  .achievement-group .achievement-track { grid-template-rows: none; }
+  .achievement-track > .achievement-card.growing, .achievement-track > .achievement-card:not(.growing) { grid-column: auto; grid-row: auto; }
   .achievement-rule { min-height: 0; }
   .achievement-filters button { padding-inline: 9px; }
   .topbar { padding: 4px; gap: 4px; }
