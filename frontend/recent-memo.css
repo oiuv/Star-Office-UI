@@ -9,6 +9,12 @@
 #memo-content .recent-memo-tasks { padding: 0 0 0 18px; margin: 0; font: 13px/1.8 system-ui, sans-serif; }
 #memo-content .recent-memo-tasks li + li { margin-top: 6px; }
 #memo-content .recent-memo-outcome { display: inline-block; margin-left: 7px; padding: 0 5px; border: 1px solid #b9a47d80; border-radius: 2px; font-size: 10px; color: #796649; }
+/* Larger type and margins for the browser reading panel on wide screens. */
+@media (min-width: 900px) and (min-height: 481px) {
+    #memo-panel[popover] { padding: 24px 28px; }
+    #memo-panel[popover] .recent-memo-title { font-size: 16px; }
+    #memo-panel[popover] .recent-memo-tasks { font-size: 14px; }
+}
 /* The compact desktop panel needs a flat reading area for multi-entry summaries. */
 body.desktop-shell #memo-panel:not(.collapsed) {
     background: #eddec0 !important; border: 1px solid #b9a47d !important;
