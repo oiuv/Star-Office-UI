@@ -1,4 +1,4 @@
-/* Viewport shell: the room is the page; utilities live above it. */
+/* Viewport shell: the room is the page; the nameplate opens its utilities. */
 :root {
     --office-ink: #171511;
     --office-wood: #29231b;
@@ -6,6 +6,8 @@
     --office-paper: #eddec0;
     --office-gold: #ddb96f;
     --office-leaf: #90a47d;
+    --office-room-bottom: 14px;
+    --office-menu-bottom: max(var(--office-room-bottom), calc(env(safe-area-inset-bottom) + 14px));
 }
 html, body { width: 100%; height: 100%; overflow: hidden; overscroll-behavior: none; }
 body {
@@ -24,36 +26,54 @@ body {
     padding: 8px 12px; border: 1px solid #76604280; border-radius: 3px;
     background: #171511dd; color: var(--office-paper); font-size: 12px;
 }
-#office-dock {
-    position: fixed; z-index: 1000002; left: 50%;
-    top: max(14px, env(safe-area-inset-top));
-    transform: translateX(-50%); display: flex; align-items: stretch; gap: 4px;
-    max-width: calc(100% - 24px); padding: 5px;
-    border: 2px solid var(--office-edge); border-radius: 5px;
-    background: #29231bf5; box-shadow: 0 4px 0 #0e0c09, inset 0 1px 0 #b79c6950;
+.office-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+#office-menu-toggle {
+    position: fixed; z-index: 35; left: 50%; bottom: var(--office-menu-bottom);
+    transform: translateX(-50%); display: flex; align-items: center; gap: 18px;
+    width: min(340px, calc(100vw - 28px)); min-height: 48px; padding: 10px 18px;
+    border: 2px solid #3e2723; border-radius: 3px; background: #5d4037;
+    box-shadow: 0 3px 0 #261c15, inset 0 1px 0 #b79c6960;
+    color: #ffe09d; font: 16px 'ArkPixel', monospace; cursor: pointer;
+    text-shadow: 0 2px 0 #302016; transition: background .15s, border-color .15s;
 }
+#office-menu-toggle:hover, #office-menu-toggle[aria-expanded="true"] { background: #704d3e; border-color: var(--office-gold); }
+#office-plaque-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.office-plaque-star { color: var(--office-gold); font-size: 19px; }
+.office-menu-chevron { width: 16px; height: 16px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2; transition: transform .15s; }
+#office-menu-toggle[aria-expanded="true"] .office-menu-chevron { transform: rotate(180deg); }
+#office-dock {
+    position: fixed; inset: auto auto calc(var(--office-menu-bottom) + 60px) 50%;
+    transform: translateX(-50%); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px;
+    width: min(340px, calc(100vw - 28px)); max-height: calc(100dvh - var(--office-menu-bottom) - 76px);
+    margin: 0; padding: 8px; overflow: auto; overscroll-behavior: contain;
+    border: 2px solid var(--office-edge); border-radius: 4px;
+    background: #29231bfa; box-shadow: 0 4px 0 #0e0c09, 0 8px 28px #0006, inset 0 1px 0 #b79c6950;
+}
+#office-dock[popover]:not(:popover-open) { display: none; }
+#office-dock::backdrop { background: transparent; }
 #office-dock button, #office-dock a {
-    display: flex; align-items: center; justify-content: center;
-    min-height: 44px; padding: 10px 16px; border: 1px solid transparent;
+    display: flex; align-items: center; justify-content: flex-start; gap: 10px;
+    min-height: 48px; padding: 10px 12px; border: 1px solid transparent;
     border-radius: 2px; background: transparent; color: var(--office-paper);
     font: 13px 'ArkPixel', monospace; white-space: nowrap;
     text-decoration: none; cursor: pointer; transition: background .15s, color .15s;
 }
+#office-dock svg { width: 20px; height: 20px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: square; stroke-linejoin: miter; }
 #office-dock button:hover, #office-dock a:hover,
 #office-dock button[aria-expanded="true"] {
     background: #4b3e2b; color: #ffe4a8; border-color: var(--office-edge);
 }
-#office-dock #btn-open-drawer { color: var(--office-gold); }
+#office-dock #btn-open-drawer { grid-column: auto; color: var(--office-gold); }
 #office-dock #office-stats-link { color: #bdd1ab; }
-#office-dock #office-more-button { padding-inline: 13px; font-size: 20px; }
-#office-dock :focus-visible, .office-panel :focus-visible, #asset-drawer :focus-visible {
+#office-dock #office-more-button { grid-column: 1 / -1; border-top-color: #76604270; margin-top: 2px; }
+#office-menu-toggle:focus-visible, #office-dock :focus-visible, .office-panel :focus-visible, #asset-drawer :focus-visible {
     outline: 2px solid var(--office-gold); outline-offset: 3px;
 }
 /* Native popovers provide light dismiss, Escape and focus return. */
 .office-panel[popover]:not(:popover-open) { display: none !important; }
 #memo-panel, #guest-agent-panel, #control-bar {
-    position: fixed; inset: max(86px, calc(env(safe-area-inset-top) + 72px)) auto auto 50%;
-    transform: translateX(-50%);
+    position: fixed; inset: 50% auto auto 50%;
+    transform: translate(-50%, -50%);
     width: min(420px, calc(100vw - 24px)); height: auto; min-height: 0;
     max-height: calc(100vh - 112px); max-height: calc(100dvh - 112px);
     margin: 0; padding: 20px; gap: 14px; overflow: auto; overscroll-behavior: contain;
@@ -104,24 +124,17 @@ body {
 #asset-drawer-backdrop { background: #17151140; }
 body.drawer-open { touch-action: auto; }
 @media (max-width: 600px) {
-    #office-dock { top: max(10px, env(safe-area-inset-top)); gap: 0; padding: 4px; max-width: calc(100% - 16px); }
-    #office-dock button, #office-dock a { padding: 8px 10px; font-size: 12px; }
-    #office-dock #office-more-button { padding-inline: 10px; }
-    #memo-panel, #guest-agent-panel, #control-bar {
-        top: max(78px, calc(env(safe-area-inset-top) + 68px));
-        width: calc(100vw - 24px); padding: 16px;
-        max-height: calc(100dvh - 104px);
-    }
+    #memo-panel, #guest-agent-panel, #control-bar { width: calc(100vw - 24px); padding: 16px; }
     #status-text { font-size: 11px; }
 }
 @media (max-width: 360px) {
-    #office-dock button, #office-dock a { padding-inline: 7px; font-size: 11px; }
+    #office-dock button, #office-dock a { padding-inline: 8px; gap: 8px; font-size: 12px; }
+    #office-menu-toggle { padding-inline: 14px; gap: 12px; font-size: 14px; }
 }
 @media (max-height: 480px) {
-    #office-dock { top: max(8px, env(safe-area-inset-top)); }
-    #memo-panel, #guest-agent-panel, #control-bar { top: 70px; max-height: calc(100dvh - 82px); padding: 12px; }
+    #memo-panel, #guest-agent-panel, #control-bar { max-height: calc(100dvh - 100px); padding: 12px; }
     #memo-content, #guest-agent-list { max-height: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-    #office-dock button, #office-dock a, #asset-drawer { transition: none; }
+    #office-menu-toggle, .office-menu-chevron, #office-dock button, #office-dock a, #asset-drawer { transition: none; }
 }

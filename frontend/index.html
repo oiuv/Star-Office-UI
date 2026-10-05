@@ -890,15 +890,36 @@
         <div id="game-container">
             <div id="game-skeleton"><div class="hint">正在进入像素办公室…</div></div>
             <div id="status-text">加载中...</div>
+            <button id="office-menu-toggle" type="button" popovertarget="office-dock" aria-controls="office-dock" aria-expanded="false" aria-describedby="office-menu-hint">
+                <span class="office-plaque-star" aria-hidden="true">★</span>
+                <span id="office-plaque-title">Star 小猫的办公室</span>
+                <svg class="office-menu-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m3 10 5-5 5 5"/></svg>
+            </button>
+            <span id="office-menu-hint" class="office-sr-only" data-office-text="menuHint">点击办公室名称展开菜单</span>
         </div>
     </main>
 
-    <nav id="office-dock" aria-label="办公室工具" data-office-label="tools">
-        <button id="office-memo-button" popovertarget="memo-panel" aria-expanded="false" data-office-text="memo">昨日小记</button>
-        <button id="office-guests-button" popovertarget="guest-agent-panel" aria-expanded="false" data-office-text="guests">访客列表</button>
-        <button id="btn-open-drawer" onclick="toggleAssetDrawer()" aria-controls="asset-drawer" aria-expanded="false" data-office-text="decor">装修房间</button>
-        <a id="office-stats-link" href="/stats" target="_blank" rel="noopener noreferrer" data-office-text="stats">活动档案</a>
-        <button id="office-more-button" popovertarget="control-bar" aria-label="更多设置" title="更多设置" data-office-label="more" aria-expanded="false">···</button>
+    <nav id="office-dock" popover="auto" aria-label="办公室工具" data-office-label="tools">
+        <button id="office-memo-button" popovertarget="memo-panel" aria-expanded="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5"/></svg>
+            <span data-office-text="memo">昨日小记</span>
+        </button>
+        <button id="office-guests-button" popovertarget="guest-agent-panel" aria-expanded="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20v-3a6 6 0 0 1 12 0v3M16 5a3 3 0 0 1 0 6M18 14a4 4 0 0 1 3 4v2"/></svg>
+            <span data-office-text="guests">访客列表</span>
+        </button>
+        <button id="btn-open-drawer" onclick="toggleAssetDrawer()" aria-controls="asset-drawer" aria-expanded="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h12v6H4zM16 7h4v7h-8v7M9 17h6"/></svg>
+            <span id="office-decor-label" data-office-text="decor">装修房间</span>
+        </button>
+        <a id="office-stats-link" href="/stats" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3v17h17M8 16v-5M13 16V6M18 16V9"/></svg>
+            <span data-office-text="stats">活动档案</span>
+        </a>
+        <button id="office-more-button" popovertarget="control-bar" aria-expanded="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h5m4 0h9M3 12h11m4 0h3M3 18h3m4 0h11M8 3v6m6 0v6M6 15v6"/></svg>
+            <span data-office-text="more">更多设置</span>
+        </button>
     </nav>
 
     <section id="memo-panel" class="office-panel" popover="auto" aria-labelledby="memo-title">
@@ -1165,7 +1186,7 @@
             setText('btn-state-writing', 'btnWork');
             setText('btn-state-syncing', 'btnSync');
             setText('btn-state-error', 'btnError');
-            setText('btn-open-drawer', 'btnDecor');
+            setText('office-decor-label', 'btnDecor');
             const langButtons = [
                 { id: 'lang-btn-en', lang: 'en' },
                 { id: 'lang-btn-jp', lang: 'ja' },
@@ -1222,9 +1243,7 @@
             const guestTitle = document.getElementById('guest-agent-panel-title');
             if (guestTitle) guestTitle.textContent = t('guestTitle');
             const plaqueTitle = (typeof window.officeNameFromServer !== 'undefined' && window.officeNameFromServer) || t('officeTitle');
-            if (window.officePlaqueText && window.officePlaqueText.setText) {
-                window.officePlaqueText.setText(plaqueTitle);
-            }
+            window.OfficeShell.setTitle(plaqueTitle);
 
             const coordsBtn = document.getElementById('coords-toggle');
             if (coordsBtn) coordsBtn.textContent = showCoords ? t('hideCoords') : t('showCoords');
@@ -2520,6 +2539,7 @@ function toggleBrokerPanel() {
                     st.style.maxWidth = 'calc(100% - 28px)';
                 }
             }
+            window.OfficeShell.positionAtRoomBottom(rect);
         }
 
         function showRoomLoadingOverlay(baseText) {
@@ -3010,7 +3030,7 @@ function toggleBrokerPanel() {
             const openBtn = document.getElementById('btn-open-drawer');
             if (openBtn) {
                 openBtn.classList.toggle('is-active', next);
-                openBtn.textContent = t('btnDecor');
+                document.getElementById('office-decor-label').textContent = t('btnDecor');
             }
             const closeBtn = document.getElementById('btn-close-drawer');
             if (closeBtn) closeBtn.textContent = t('drawerClose');
@@ -3759,27 +3779,6 @@ function toggleBrokerPanel() {
             sofa.anims.stop();
             sofa.setTexture('sofa_idle');
 
-            // 加像素风小牌匾：Star 小猫的办公室
-            const plaqueX = config.width / 2;
-            const plaqueY = config.height - 36;
-            const plaqueBg = game.add.rectangle(plaqueX, plaqueY, 420, 44, 0x5d4037);
-            plaqueBg.setStrokeStyle(3, 0x3e2723);
-            const plaqueText = game.add.text(plaqueX, plaqueY, t('officeTitle'), {
-                fontFamily: 'ArkPixel, monospace',
-                fontSize: '18px',
-                fill: '#ffd700',
-                fontWeight: '900',
-                fontStyle: 'bold',
-                stroke: '#000',
-                strokeThickness: 3,
-                wordWrap: { width: 400 },
-                align: 'center'
-            }).setOrigin(0.5);
-            // 牌匾两边加个小装饰（跟随牌匾居中）
-            game.add.text(plaqueX - 190, plaqueY, '⭐', { fontFamily: 'ArkPixel, monospace', fontSize: '20px' }).setOrigin(0.5);
-            game.add.text(plaqueX + 190, plaqueY, '⭐', { fontFamily: 'ArkPixel, monospace', fontSize: '20px' }).setOrigin(0.5);
-            window.officePlaqueText = plaqueText;
-
             // Random plant at (565,178) (frame 0-15, 160x160 each)
             const plantFrameCount = 16;
             const randomPlantFrame = Math.floor(Math.random() * plantFrameCount);
@@ -4331,9 +4330,7 @@ function toggleBrokerPanel() {
                     try {
                         if (data.officeName) {
                             window.officeNameFromServer = data.officeName;
-                            if (window.officePlaqueText && window.officePlaqueText.setText) {
-                                window.officePlaqueText.setText(data.officeName);
-                            }
+                            window.OfficeShell.setTitle(data.officeName);
                         }
                         const nextState = normalizeState(data.state);
                         const stateInfo = STATES[nextState] || STATES.idle;
