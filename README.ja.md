@@ -2,9 +2,9 @@
 
 🌐 Language: [中文](./README.md) | [English](./README.en.md) | **日本語**
 
-![Star Office UI カバー](docs/screenshots/readme-cover-2.jpg)
+![Star Office UI カバー](docs/screenshots/office-current.png)
 
-**ピクセルアート風 AI オフィスダッシュボード** —— AI アシスタントの作業状態をリアルタイムで可視化し、「誰が何をしているか」「昨日何をしたか」「今オンラインか」を直感的に把握できます。
+**ピクセルアート風 AI オフィスダッシュボード** —— AI アシスタントの作業状態をリアルタイムで可視化し、「誰が何をしているか」「最近何をしたか」「今オンラインか」を直感的に把握できます。
 
 マルチ Agent 協調、中英日 3 言語、AI 画像生成による模様替え、デスクトップペットモードに対応。
 推奨の接続方法は **Codex hooks**。キャラクターの状態を自動更新し、セッション、ツール、子 Agent の活動を記録します。他の AI Agent もスクリプトや HTTP API で接続できます。
@@ -15,6 +15,8 @@
 > Issue や PR を歓迎します。貢献してくださるすべての方に感謝いたします。
 
 ---
+
+> ブラウザー版は全画面表示です。下部のオフィス名から最近のメモ、訪問者、模様替え、活動記録、設定を開きます。Codex の子 Agent はキーなしで自動参加し、終了後はオフライン、最後のイベントから 5 分で非表示になります。Python での直接起動は `.env` を読み込みません。環境変数はシェルやサービス管理ツールで設定してください。配布用は `frontend/office-agent-push.py`（`requests` が必要）、ルートの同名スクリプトは毎回新規ゲストを作るテスト用です。メモはバックエンド実行ユーザーの Codex 要約を読みます。最新の設定・テスト手順は[中国語ガイド](./README.md)を参照してください。
 
 ## ✨ クイックスタート：Codex hooks（推奨）
 
@@ -108,7 +110,7 @@ Agent と子 Agent を一つのオフィスで確認し、活動記録からツ�
 1. **Codex hooks 自動接続** —— 12 種類のイベントでアニメーションと記録を更新。セッション、ツール、圧縮、中断、子 Agent に対応
 2. **活動記録と成長** —— 状態回数と観測時間、推移、ツール統計、ログ絞り込み、JSON 出力、経験値、レベル、実績
 3. **ステータス可視化** —— 6 種類の状態（`idle` / `writing` / `researching` / `executing` / `syncing` / `error`）がオフィスの各エリアに自動マッピングされ、アニメーションと吹き出しでリアルタイム表示
-4. **昨日メモ** —— `memory/*.md` から直近の作業記録を自動取得し、匿名化して「昨日メモ」カードとして表示
+4. **最近のメモ** —— `$CODEX_HOME/memories/rollout_summaries/`（既定の Codex ホームは `~/.codex/`）から最新 5 件の会話要約を取得。更新日、プロジェクト、最大 3 件のタスクを表示。手動の日記や API 呼び出しは不要です。
 5. **マルチ Agent 協調** —— join key で他の Agent をオフィスに招待し、全員のステータスをリアルタイム確認
 6. **中英日 3 言語対応** —— CN / EN / JP をワンクリック切替、UI テキスト・吹き出し・ローディング表示すべてが連動
 7. **アート資産カスタマイズ** —— サイドバーからキャラクター / 背景 / 装飾素材を管理、動的フレーム同期でちらつき防止
@@ -144,7 +146,7 @@ python3 app.py
 
 [http://127.0.0.1:19000](http://127.0.0.1:19000) を開く
 
-> ✅ ローカル開発ではデフォルト設定のままで構いませんが、本番環境では `.env.example` を `.env` にコピーし、`FLASK_SECRET_KEY` と `ASSET_DRAWER_PASS` に十分な長さのランダム値を設定してください。
+> ✅ ローカル開発ではデフォルト設定のままで構いませんが、本番環境では `.env.example` を参考にプロセスの環境変数として、`FLASK_SECRET_KEY` と `ASSET_DRAWER_PASS` に十分な長さのランダム値を設定してください。
 
 ### 4) 手動で状態確認（任意）
 
@@ -171,7 +173,7 @@ cloudflared tunnel --url http://127.0.0.1:19000
 python3 scripts/smoke_test.py --base-url http://127.0.0.1:19000
 ```
 
-すべてのチェックが `OK` と表示されればデプロイ成功です。
+smoke チェックはページと API の読み取りだけを行います。hooks は Codex でタスクを実行し、`/stats` のイベントでも確認してください。
 
 ---
 
@@ -208,7 +210,7 @@ Agent のルールファイルに次の手順を追加し、Star Office のプ�
 
 **Step 2：ゲストにプッシュスクリプトを実行してもらう**
 
-ゲストは `office-agent-push.py` をダウンロードし、3 つの変数を入力するだけ：
+配布用の [`frontend/office-agent-push.py`](./frontend/office-agent-push.py) をダウンロードし、`requests` をインストールして 3 つの変数を設定します：
 
 ```python
 JOIN_KEY = "ocj_starteam02"          # あなたが割り当てたキー
@@ -217,6 +219,7 @@ OFFICE_URL = "https://your-office.example"  # あなたのオフィス URL
 ```
 
 ```bash
+python3 -m pip install requests
 python3 office-agent-push.py
 ```
 
@@ -262,7 +265,7 @@ python3 office-agent-push.py
 | `POST /join-agent` | ゲスト参加 |
 | `POST /agent-push` | ゲストステータスプッシュ |
 | `POST /leave-agent` | ゲスト退出 |
-| `GET /yesterday-memo` | 昨日メモ取得 |
+| `GET /recent-memo` | Codex の最近の会話要約（旧 `/yesterday-memo` も利用可能） |
 | `GET /config/ai` | OpenAI Image API 設定取得（キーをマスク） |
 | `POST /config/ai` | OpenAI Image API 設定を保存 |
 | `GET /assets/generate-rpg-background/poll` | 画像生成の進捗確認 |
@@ -307,18 +310,6 @@ npm run dev
 
 ---
 
-## 📝 更新履歴
-
-| 日付 | 概要 | 詳細 |
-|------|------|------|
-| 2026-03-06 | 🔌 デフォルトポート変更 — OpenClaw Browser Control との競合を避けるため、バックエンドの既定ポートを 18791 から 19000 に変更。スクリプト、デスクトップシェル、ドキュメントの既定値も同期更新 | [`docs/CHANGELOG_2026-03.md`](./docs/CHANGELOG_2026-03.md) |
-| 2026-03-05 | 📱 安定性修正 — CDN キャッシュ修正、画像生成非同期化、モバイルサイドバー UX 改善、join key 有効期限・同時接続制御 | [`docs/UPDATE_REPORT_2026-03-05.md`](./docs/UPDATE_REPORT_2026-03-05.md) |
-| 2026-03-04 | 🔒 P0/P1 セキュリティ強化 — 弱パスワード拒否、バックエンド分割、stale ステータス自動 idle 復帰、スケルトンローディング | [`docs/UPDATE_REPORT_2026-03-04_P0_P1.md`](./docs/UPDATE_REPORT_2026-03-04_P0_P1.md) |
-| 2026-03-03 | 📋 オープンソース公開チェックリスト完了 | [`docs/OPEN_SOURCE_RELEASE_CHECKLIST.md`](./docs/OPEN_SOURCE_RELEASE_CHECKLIST.md) |
-| 2026-03-01 | 🎉 **v2 リビルド公開** — 3 言語対応、資産管理システム、AI 画像生成による模様替え、アート資産全面刷新 | [`docs/FEATURES_NEW_2026-03-01.md`](./docs/FEATURES_NEW_2026-03-01.md) |
-
----
-
 ## 📁 プロジェクト構成
 
 ```text
@@ -336,7 +327,7 @@ Star-Office-UI/
 ├── electron-shell/     # Electron デスクトップ版（任意）
 ├── docs/               # ドキュメント & スクリーンショット
 │   └── screenshots/
-├── office-agent-push.py  # ゲストプッシュスクリプト
+├── office-agent-push.py  # 毎回新規ゲストを作るローカルテスト用
 ├── set_state.py          # ステータス切替スクリプト
 ├── state.sample.json     # 状態ファイルテンプレート
 ├── join-keys.sample.json # Join Key テンプレート（起動時に join-keys.json を生成）
@@ -346,9 +337,3 @@ Star-Office-UI/
 ├── SKILL.md              # 汎用 Agent デプロイ手順
 └── LICENSE               # MIT ライセンス
 ```
-
----
-
-## ⭐ Star History
-
-[![Star History Chart](https://api.star-history.com/image?repos=oiuv/Star-Office-UI&type=date&legend=top-left)](https://www.star-history.com/?repos=oiuv%2FStar-Office-UI&type=date&legend=top-left)

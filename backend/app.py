@@ -24,7 +24,7 @@ from activity_service import apply_hook
 from store_utils import _save_json
 from pathlib import Path
 from security_utils import is_production_mode, is_strong_secret, is_strong_drawer_pass
-from memo_utils import get_yesterday_date_str, sanitize_content, extract_memo_from_file
+from memo_utils import load_recent_memos
 from store_utils import (
     load_agents_state as _store_load_agents_state,
     save_agents_state as _store_save_agents_state,
@@ -45,7 +45,6 @@ except Exception:
 
 # Paths (project-relative, no hardcoded absolute paths)
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MEMORY_DIR = os.path.join(os.path.dirname(ROOT_DIR), "memory")
 FRONTEND_DIR = os.path.join(ROOT_DIR, "frontend")
 FRONTEND_INDEX_FILE = os.path.join(FRONTEND_DIR, "index.html")
 FRONTEND_ELECTRON_STANDALONE_FILE = os.path.join(FRONTEND_DIR, "electron-standalone.html")
@@ -1086,50 +1085,24 @@ def health():
     })
 
 
+@app.route("/recent-memo", methods=["GET"])
 @app.route("/yesterday-memo", methods=["GET"])
-def get_yesterday_memo():
-    """获取昨日小日记"""
+def get_recent_memo():
+    """Read recent Codex summaries; retain the old route and text fields for clients."""
     try:
-        # 先尝试找昨天的文件
-        yesterday_str = get_yesterday_date_str()
-        yesterday_file = os.path.join(MEMORY_DIR, f"{yesterday_str}.md")
-        
-        target_file = None
-        target_date = yesterday_str
-        
-        if os.path.exists(yesterday_file):
-            target_file = yesterday_file
-        else:
-            # 如果昨天没有，找最近的一天
-            if os.path.exists(MEMORY_DIR):
-                files = [f for f in os.listdir(MEMORY_DIR) if f.endswith(".md") and re.match(r"\d{4}-\d{2}-\d{2}\.md", f)]
-                if files:
-                    files.sort(reverse=True)
-                    # 跳过今天的（如果存在）
-                    today_str = datetime.now().strftime("%Y-%m-%d")
-                    for f in files:
-                        if f != f"{today_str}.md":
-                            target_file = os.path.join(MEMORY_DIR, f)
-                            target_date = f.replace(".md", "")
-                            break
-        
-        if target_file and os.path.exists(target_file):
-            memo_content = extract_memo_from_file(target_file)
-            return jsonify({
-                "success": True,
-                "date": target_date,
-                "memo": memo_content
-            })
-        else:
-            return jsonify({
-                "success": False,
-                "msg": "没有找到昨日日记"
-            })
-    except Exception as e:
+        entries = load_recent_memos()
+        memo = "\n\n".join(
+            f"{entry['date']} · {entry['project']}\n{entry['title']}\n"
+            + "\n".join(f"· {task['title']}" for task in entry["tasks"])
+            for entry in entries
+        )
         return jsonify({
-            "success": False,
-            "msg": str(e)
-        }), 500
+            "success": True, "entries": entries,
+            "date": entries[0]["date"] if entries else "", "memo": memo,
+        })
+    except OSError:
+        app.logger.exception("Could not read Codex memory summaries")
+        return jsonify({"success": False, "entries": [], "msg": "无法读取 Codex 会话总结"}), 500
 
 
 @app.route("/set_state", methods=["POST"])

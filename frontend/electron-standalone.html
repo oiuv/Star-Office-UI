@@ -1592,6 +1592,7 @@
         }
     </style>
     <link rel="stylesheet" href="/static/guest-feedback.css?v={{VERSION_TIMESTAMP}}">
+    <link rel="stylesheet" href="/static/recent-memo.css?v={{VERSION_TIMESTAMP}}">
 </head>
 <body>
     <div id="window-controls">
@@ -1622,7 +1623,7 @@
     <div id="bottom-panels">
         <!-- Memo 面板 -->
         <div id="memo-panel">
-            <div id="memo-title">昨 日 小 记</div>
+            <div id="memo-title">最 近 小 记</div>
             <div id="memo-date"></div>
             <div class="memo-decoration">─ ─ ─ ─ ─</div>
             <div id="memo-content">
@@ -1773,6 +1774,7 @@
     </div>
 
     <a id="office-stats-link" href="/stats" target="_blank" rel="noopener noreferrer" style="position:fixed;right:12px;top:calc(env(safe-area-inset-top, 0px) + 52px);z-index:1000002;padding:8px 10px;background:#283b35;color:#c3efcd;border:2px solid #446d54;border-radius:5px;text-decoration:none;font:13px monospace;">📊 活动档案</a>
+    <script src="/static/recent-memo.js?v={{VERSION_TIMESTAMP}}"></script>
     <script src="/static/guest-feedback.js?v={{VERSION_TIMESTAMP}}"></script>
     <script src="/static/image-settings.js?v={{VERSION_TIMESTAMP}}"></script>
     <script src="/static/speech-bubbles.js?v={{VERSION_TIMESTAMP}}&amp;cat=1"></script>
@@ -1808,7 +1810,7 @@
                 assetHintNotInScene: '当前场景未检测到此对象，仍可替换文件（刷新后生效）',
                 assetHintDefault: '通用素材：建议保持原图尺寸、透明通道与视觉重心一致，避免错位或失真',
                 showCoords: '显示坐标', hideCoords: '隐藏坐标', moveView: '移动视野', lockView: '锁定视野',
-                memoTitle: '昨 日 小 记', guestTitle: '访 客 列 表', officeTitle: 'Star 小猫的办公室',
+                memoTitle: '最 近 小 记', guestTitle: '访 客 列 表', officeTitle: 'Star 小猫的办公室',
                 loadingOffice: '正在加载 Star 的像素办公室...',
                 panelExpand: '展开', panelCollapse: '收起',
                 hiddenTag: '已隐藏', assetListLoaded: '已加载资产', sceneCaptured: '场景抓取', assetListLoadFailed: '资产加载失败，请点“刷新”重试',
@@ -1842,7 +1844,7 @@
                 assetHintNotInScene: 'This object is not detected in current scene; you can still replace file (effective after refresh)',
                 assetHintDefault: 'Generic asset: keep source size, alpha channel, and visual anchor to avoid drift/distortion',
                 showCoords: 'Show Coords', hideCoords: 'Hide Coords', moveView: 'Pan View', lockView: 'Lock View',
-                memoTitle: 'YESTERDAY NOTES', guestTitle: 'VISITOR LIST', officeTitle: 'Star Cat Office',
+                memoTitle: 'RECENT NOTES', guestTitle: 'VISITOR LIST', officeTitle: 'Star Cat Office',
                 loadingOffice: 'Loading Star’s pixel office...',
                 panelExpand: 'Expand', panelCollapse: 'Collapse',
                 hiddenTag: 'Hidden', assetListLoaded: 'Assets loaded', sceneCaptured: 'Scene captured', assetListLoadFailed: 'Failed to load assets. Click Refresh and retry',
@@ -1876,7 +1878,7 @@
                 assetHintNotInScene: '現在のシーンでこのオブジェクトは未検出です。ファイル差し替えは可能（更新後に反映）',
                 assetHintDefault: '汎用素材：元サイズ・透過・視覚アンカーを維持し、ズレや崩れを防いでください',
                 showCoords: '座標表示', hideCoords: '座標非表示', moveView: '視点移動', lockView: '視点固定',
-                memoTitle: '昨日のメモ', guestTitle: '訪問者リスト', officeTitle: 'Star 猫のオフィス',
+                memoTitle: '最近のメモ', guestTitle: '訪問者リスト', officeTitle: 'Star 猫のオフィス',
                 loadingOffice: 'Star のピクセルオフィスを読み込み中...',
                 panelExpand: '展開', panelCollapse: '折りたたむ',
                 hiddenTag: '非表示', assetListLoaded: 'アセット読み込み', sceneCaptured: 'シーン取得', assetListLoadFailed: 'アセット読み込み失敗。更新して再試行してください',
@@ -2047,6 +2049,7 @@
             setText('asset-choose-btn', 'chooseImage');
             setText('asset-commit-refresh-btn', 'confirmUpload');
 
+            window.RecentMemo.translate(uiLang);
             const memoTitle = document.getElementById('memo-title');
             if (memoTitle) {
                 memoTitle.textContent = t('memoTitle');
@@ -2382,24 +2385,8 @@
         let loadingProgressBar, loadingProgressContainer, loadingOverlay, loadingText;
 
         // Memo 相关函数
-        async function loadMemo() {
-            const memoDate = document.getElementById('memo-date');
-            const memoContent = document.getElementById('memo-content');
-            
-            try {
-                const response = await fetch('/yesterday-memo?t=' + Date.now(), { cache: 'no-store' });
-                const data = await response.json();
-                
-                if (data.success && data.memo) {
-                    memoDate.textContent = data.date || '';
-                    memoContent.innerHTML = data.memo.replace(/\n/g, '<br>');
-                } else {
-                    memoContent.innerHTML = '<div id="memo-placeholder">暂无昨日日记</div>';
-                }
-            } catch (e) {
-                console.error('加载 memo 失败:', e);
-                memoContent.innerHTML = '<div id="memo-placeholder">加载失败</div>';
-            }
+        function loadMemo() {
+            return window.RecentMemo.load(uiLang);
         }
 
         // 更新加载进度
@@ -2639,7 +2626,7 @@
                     'plants-spritesheet': '随机绿植',
                     'flowers-bloom-v2': '随机花朵',
                     'office_bg_small': '办公室背景',
-                    'memo-bg': '昨日小记底图',
+                    'memo-bg': '最近小记底图',
                     'desk-v3': '办公桌',
                     'desk': '办公桌（旧）',
                     'guest_anim_1': '访客动画 1',
@@ -5286,7 +5273,7 @@ function toggleBrokerPanel() {
                 coordsOverlay.style.top = (pointer.y + 18) + 'px';
             });
 
-            // 加载昨日 memo
+            // 加载最近的 Codex 会话总结
             loadMemo();
 
             fetchStatus();

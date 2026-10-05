@@ -2,9 +2,9 @@
 
 🌐 Language: [中文](./README.md) | **English** | [日本語](./README.ja.md)
 
-![Star Office UI Cover](docs/screenshots/readme-cover-2.jpg)
+![Star Office UI Cover](docs/screenshots/office-current.png)
 
-**A pixel-art AI office dashboard** — visualize your AI assistant's work status in real time, so you can see at a glance who's doing what, what they did yesterday, and whether they're online.
+**A pixel-art AI office dashboard** — visualize your AI assistant's work status in real time, so you can see at a glance who's doing what, what they worked on recently, and whether they're online.
 
 Supports multi-agent collaboration, trilingual UI (CN/EN/JP), AI-powered room design, and desktop pet mode.
 **Codex hooks** are the recommended integration: automatically update characters and record sessions, tools, and subagent activity. Other AI agents can connect through scripts or the HTTP API.
@@ -15,6 +15,8 @@ This version is based on [ringhyacinth/Star-Office-UI](https://github.com/ringhy
 > Issues and PRs are welcome — thank you to everyone who contributes.
 
 ---
+
+> The browser office fills the viewport. Click the bottom office name for Recent Notes, Visitors, Room Design, Activity, and settings. Codex subagents join automatically without keys; after stopping they become offline and disappear after five minutes without events. Direct Python startup does not load `.env`; inject variables through your shell or service manager. Guest distribution uses `frontend/office-agent-push.py` (requires `requests`); the root script creates a fresh random test visitor on each launch. Recent Notes read the backend account's Codex summaries, not the visiting browser's files. See the [Chinese guide](./README.md) for the full current configuration and regression commands.
 
 ## ✨ Quick Start: Codex hooks (recommended)
 
@@ -108,7 +110,7 @@ Push states manually or from scripts for personal logs, remote collaboration, or
 1. **Automatic Codex hooks** — 12 lifecycle events drive animations and records, including sessions, tools, compaction, interrupts, and subagents
 2. **Activity and progression** — State counts and observed time, trends, tool statistics, filterable logs, JSON export, XP, levels, and achievements
 3. **Status Visualization** — 6 states (`idle` / `writing` / `researching` / `executing` / `syncing` / `error`) mapped to different office areas with animated sprites and speech bubbles
-4. **Yesterday Memo** — Automatically reads the latest daily log from `memory/*.md`, sanitizes it, and displays it as a "Yesterday Memo" card
+4. **Recent Notes** — Reads the latest five Codex summaries from `$CODEX_HOME/memories/rollout_summaries/` (default `~/.codex/`). Shows summary update dates, projects, and up to three tasks per entry; no API calls or manual diary required.
 5. **Multi-Agent Collaboration** — Invite other agents to join your office via join keys and see everyone's status in real time
 6. **Trilingual UI** — Switch between Chinese, English, and Japanese with one click; all UI text, bubbles, and loading messages update instantly
 7. **Custom Art Assets** — Manage characters, scenes, and decorations through the sidebar; dynamic frame sync prevents flickering
@@ -144,7 +146,7 @@ python3 app.py
 
 Open [http://127.0.0.1:19000](http://127.0.0.1:19000).
 
-> ✅ For local development you can start with the defaults; in production, copy `.env.example` to `.env` and set strong random values for `FLASK_SECRET_KEY` and `ASSET_DRAWER_PASS` to avoid weak passwords and session leaks.
+> ✅ For local development you can start with the defaults; in production, use `.env.example` as a reference and inject strong random values into the process environment for `FLASK_SECRET_KEY` and `ASSET_DRAWER_PASS` to avoid weak passwords and session leaks.
 
 ### 4) Verify states manually (optional)
 
@@ -171,7 +173,7 @@ Share the `https://xxx.trycloudflare.com` link with anyone.
 python3 scripts/smoke_test.py --base-url http://127.0.0.1:19000
 ```
 
-If all checks report `OK`, your deployment is good to go.
+The smoke check reads pages and APIs without pushing test states. To verify hooks, submit a Codex task and confirm its events in `/stats`.
 
 ---
 
@@ -208,7 +210,7 @@ When you start the backend for the first time, if there is no `join-keys.json` i
 
 **Step 2: Have the guest run the push script**
 
-The guest only needs to download `office-agent-push.py` and fill in 3 variables:
+Distribute [`frontend/office-agent-push.py`](./frontend/office-agent-push.py), install `requests`, and fill in these 3 variables:
 
 ```python
 JOIN_KEY = "ocj_starteam02"          # The key you assign
@@ -217,6 +219,7 @@ OFFICE_URL = "https://your-office.example"  # Your office URL
 ```
 
 ```bash
+python3 -m pip install requests
 python3 office-agent-push.py
 ```
 
@@ -262,7 +265,7 @@ The service must implement `/images/edits` or `/images/generations`; a chat-only
 | `POST /join-agent` | Guest joins the office |
 | `POST /agent-push` | Guest pushes status |
 | `POST /leave-agent` | Guest leaves |
-| `GET /yesterday-memo` | Get yesterday's memo |
+| `GET /recent-memo` | Get recent Codex summaries (`/yesterday-memo` remains an alias) |
 | `GET /config/ai` | Get OpenAI Image API settings (key masked) |
 | `POST /config/ai` | Save OpenAI Image API settings |
 | `GET /assets/generate-rpg-background/poll` | Poll image generation progress |
@@ -307,18 +310,6 @@ Please keep attribution when redistributing or demoing, and follow the original 
 
 ---
 
-## 📝 Changelog
-
-| Date | Summary | Details |
-|------|---------|---------|
-| 2026-03-06 | 🔌 Default port updated — backend default port changed from 18791 to 19000 to avoid conflicts with OpenClaw Browser Control; synced scripts, desktop shells, and docs defaults | [`docs/CHANGELOG_2026-03.md`](./docs/CHANGELOG_2026-03.md) |
-| 2026-03-05 | 📱 Stability fixes — CDN cache fix, async image generation, mobile sidebar UX, join key expiration & concurrency | [`docs/UPDATE_REPORT_2026-03-05.md`](./docs/UPDATE_REPORT_2026-03-05.md) |
-| 2026-03-04 | 🔒 P0/P1 Security hardening — weak password blocking, backend refactor, stale-state auto-idle, skeleton loading | [`docs/UPDATE_REPORT_2026-03-04_P0_P1.md`](./docs/UPDATE_REPORT_2026-03-04_P0_P1.md) |
-| 2026-03-03 | 📋 Open-source release checklist completed | [`docs/OPEN_SOURCE_RELEASE_CHECKLIST.md`](./docs/OPEN_SOURCE_RELEASE_CHECKLIST.md) |
-| 2026-03-01 | 🎉 **v2 Rebuild** — Trilingual support, asset management system, AI room design, full art asset overhaul | [`docs/FEATURES_NEW_2026-03-01.md`](./docs/FEATURES_NEW_2026-03-01.md) |
-
----
-
 ## 📁 Project Structure
 
 ```text
@@ -336,7 +327,7 @@ Star-Office-UI/
 ├── electron-shell/     # Electron desktop version (optional)
 ├── docs/               # Documentation & screenshots
 │   └── screenshots/
-├── office-agent-push.py  # Guest push script
+├── office-agent-push.py  # Random local test visitor
 ├── set_state.py          # Status switch script
 ├── state.sample.json     # State file template
 ├── join-keys.sample.json # Join key template (runtime generates join-keys.json)
@@ -346,9 +337,3 @@ Star-Office-UI/
 ├── SKILL.md              # General agent deployment guide
 └── LICENSE               # MIT License
 ```
-
----
-
-## ⭐ Star History
-
-[![Star History Chart](https://api.star-history.com/image?repos=oiuv/Star-Office-UI&type=date&legend=top-left)](https://www.star-history.com/?repos=oiuv%2FStar-Office-UI&type=date&legend=top-left)

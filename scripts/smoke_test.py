@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Star Office UI smoke test (non-destructive).
+"""Star Office UI smoke test (read endpoints only; no test events).
 
 Usage:
   python3 scripts/smoke_test.py --base-url http://127.0.0.1:19000
@@ -23,7 +23,10 @@ REQUIRED_ENDPOINTS = [
     ("GET", "/health", 200),
     ("GET", "/status", 200),
     ("GET", "/agents", 200),
-    ("GET", "/yesterday-memo", 200),
+    ("GET", "/recent-memo", 200),
+    ("GET", "/stats", 200),
+    ("GET", "/api/stats?period=today", 200),
+    ("GET", "/api/events?period=today&limit=1", 200),
 ]
 
 
@@ -65,13 +68,6 @@ def main() -> int:
             failures.append(f"{method} {path}: expected {expected}, got {code}, body={body[:200]}")
         else:
             print(f"  OK  {method} {path} -> {code}")
-
-    # non-destructive state update probe
-    code, body = req("POST", base + "/set_state", {"state": "idle", "detail": "smoke-check"}, token=token)
-    if code != 200:
-        failures.append(f"POST /set_state failed: {code}, body={body[:200]}")
-    else:
-        print("  OK  POST /set_state -> 200")
 
     if failures:
         print("\n[smoke] FAIL")

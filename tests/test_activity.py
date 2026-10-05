@@ -216,6 +216,33 @@ class AppTests(unittest.TestCase):
         stats=self.client.get("/api/stats").json
         self.assertTrue(stats["ok"]); self.assertEqual(stats["overview"]["events"],1)
         self.assertEqual(self.client.get("/stats").status_code,200)
+    def test_recent_memo_reads_configured_codex_home_and_keeps_alias(self):
+        directory = Path(self.tmp.name) / "memories" / "rollout_summaries"
+        directory.mkdir(parents=True)
+        (directory / "summary.md").write_text(
+            "updated_at: 2026-10-04T12:00:00Z\ncwd: /projects/office\n"
+            "# Office update\n## Task 1: Fix menu\nOutcome: success\n", encoding="utf-8"
+        )
+        with patch.dict(os.environ, {"CODEX_HOME": self.tmp.name}):
+            current = self.client.get("/recent-memo")
+            legacy = self.client.get("/yesterday-memo")
+        self.assertEqual(current.status_code, 200)
+        self.assertEqual(current.json, legacy.json)
+        self.assertEqual(current.json["entries"][0]["project"], "office")
+        self.assertIn("Fix menu", current.json["memo"])
+        self.assertNotIn("/projects/", current.get_data(as_text=True))
+
+    def test_recent_memo_empty_and_unavailable(self):
+        with patch.dict(os.environ, {"CODEX_HOME": self.tmp.name}):
+            response = self.client.get("/recent-memo")
+        self.assertEqual(response.json["entries"], [])
+        self.assertTrue(response.json["success"])
+        with patch.object(self.app, "load_recent_memos", side_effect=PermissionError("private-path")):
+            with self.assertLogs(self.app.app.logger, level="ERROR"):
+                response = self.client.get("/recent-memo")
+        self.assertEqual(response.status_code, 500)
+        self.assertNotIn("private-path", response.get_data(as_text=True))
+
     def test_remote_hook_requires_token(self):
         response=self.client.post("/hooks/codex",json=hook("Stop"),environ_overrides={"REMOTE_ADDR":"192.0.2.1"})
         self.assertEqual(response.status_code,403)
@@ -242,6 +269,27 @@ class AppTests(unittest.TestCase):
         self.client.post("/hooks/codex",json=hook("SubagentStart",agent_id="child"))
         self.assertEqual(self.client.get("/status").json["state"],"writing")
         self.assertTrue(any(a.get("source")=="codex" for a in self.client.get("/agents").json))
+    def test_subagent_lifecycle_retains_history_after_leaving(self):
+        self.client.post("/hooks/codex", json=hook("PreToolUse", tool_name="apply_patch"))
+        self.client.post("/hooks/codex", json=hook("SubagentStart", agent_id="child-12345678"))
+        guest = next(a for a in self.client.get("/agents").json if a.get("source") == "codex")
+        self.assertEqual((guest["name"], guest["state"], guest["area"], guest["authStatus"]),
+                         ("Agent 12345678", "executing", "writing", "approved"))
+        self.client.post("/hooks/codex", json=hook("PostToolUse", agent_id="child-12345678",
+                                                  tool_name="Bash", tool_response={"exit_code": 1}))
+        guest = next(a for a in self.client.get("/agents").json if a.get("source") == "codex")
+        self.assertEqual((guest["state"], guest["area"]), ("error", "error"))
+        self.client.post("/hooks/codex", json=hook("SubagentStop", agent_id="child-12345678"))
+        guest = next(a for a in self.client.get("/agents").json if a.get("source") == "codex")
+        self.assertEqual((guest["state"], guest["area"], guest["authStatus"]),
+                         ("idle", "breakroom", "offline"))
+        self.assertEqual(self.client.get("/status").json["state"], "writing")
+        with patch("time.time", return_value=time.time() + 301):
+            self.assertFalse(any(a.get("source") == "codex" for a in self.client.get("/agents").json))
+        events = self.app.event_store.events(0, time.time() + 1)
+        self.assertEqual(len(events), 4)
+        self.assertEqual(sum(e["metadata"].get("is_subagent", False) for e in events), 3)
+
     def test_manual_state_can_override_hooks(self):
         self.client.post("/hooks/codex",json=hook("PreToolUse",tool_name="Bash"))
         self.client.post("/set_state",json={"state":"idle","detail":"manual"})

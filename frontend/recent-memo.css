@@ -1,0 +1,24 @@
+/* Keep the existing paper panel; summaries remain plain text. */
+#memo-content { white-space: normal; min-width: 0; }
+#memo-content .recent-memo-entry { padding: 0 0 18px; margin: 0 0 18px; border-bottom: 1px solid #b9a47d80; }
+#memo-content .recent-memo-entry:last-child { padding-bottom: 0; margin-bottom: 0; border-bottom: 0; }
+#memo-content .recent-memo-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-bottom: 7px; font: 11px/1.6 system-ui, sans-serif; color: #796649; }
+#memo-content .recent-memo-project { font-weight: 650; overflow-wrap: anywhere; }
+#memo-content .recent-memo-time { white-space: nowrap; }
+#memo-content .recent-memo-title { margin: 0 0 8px; font: 600 14px/1.65 system-ui, sans-serif; color: inherit; overflow-wrap: anywhere; }
+#memo-content .recent-memo-tasks { padding: 0 0 0 18px; margin: 0; font: 13px/1.8 system-ui, sans-serif; }
+#memo-content .recent-memo-tasks li + li { margin-top: 6px; }
+#memo-content .recent-memo-outcome { display: inline-block; margin-left: 7px; padding: 0 5px; border: 1px solid #b9a47d80; border-radius: 2px; font-size: 10px; color: #796649; }
+/* The compact desktop panel needs a flat reading area for multi-entry summaries. */
+body.desktop-shell #memo-panel:not(.collapsed) {
+    background: #eddec0 !important; border: 1px solid #b9a47d !important;
+}
+body.desktop-shell #memo-panel .memo-decoration { display: none; }
+body.desktop-shell #memo-panel #memo-date {
+    position: static !important; margin: 8px 0 6px; text-align: left;
+    font: 10px/1.4 system-ui, sans-serif !important; color: #796649;
+}
+body.desktop-shell #memo-panel #memo-content {
+    position: static !important; min-height: 0; flex: 1 1 0;
+    padding: 6px 2px 0 0; border-top: 1px solid #b9a47d80; color: #463820;
+}

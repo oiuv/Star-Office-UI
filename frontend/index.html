@@ -876,6 +876,7 @@
     </style>
     <link rel="stylesheet" href="/static/office-shell.css?v={{VERSION_TIMESTAMP}}">
     <link rel="stylesheet" href="/static/guest-feedback.css?v={{VERSION_TIMESTAMP}}">
+    <link rel="stylesheet" href="/static/recent-memo.css?v={{VERSION_TIMESTAMP}}">
 </head>
 <body>
     <!-- 加载遮罩 -->
@@ -902,7 +903,7 @@
     <nav id="office-dock" popover="auto" aria-label="办公室工具" data-office-label="tools">
         <button id="office-memo-button" popovertarget="memo-panel" aria-expanded="false">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5"/></svg>
-            <span data-office-text="memo">昨日小记</span>
+            <span data-office-text="memo">最近小记</span>
         </button>
         <button id="office-guests-button" popovertarget="guest-agent-panel" aria-expanded="false">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20v-3a6 6 0 0 1 12 0v3M16 5a3 3 0 0 1 0 6M18 14a4 4 0 0 1 3 4v2"/></svg>
@@ -924,7 +925,7 @@
 
     <section id="memo-panel" class="office-panel" popover="auto" aria-labelledby="memo-title">
         <div class="office-panel-heading">
-            <h2 id="memo-title">昨日小记</h2>
+            <h2 id="memo-title">最近小记</h2>
             <button class="office-panel-close" popovertarget="memo-panel" popovertargetaction="hide" aria-label="关闭" data-office-label="close">×</button>
         </div>
         <div id="memo-date"></div>
@@ -1074,6 +1075,7 @@
         <div id="coords-display">X: 0 | Y: 0</div>
     </div>
     <script src="/static/office-shell.js?v={{VERSION_TIMESTAMP}}"></script>
+    <script src="/static/recent-memo.js?v={{VERSION_TIMESTAMP}}"></script>
     <script src="/static/guest-feedback.js?v={{VERSION_TIMESTAMP}}"></script>
     <script src="/static/image-settings.js?v={{VERSION_TIMESTAMP}}"></script>
     <script src="/static/speech-bubbles.js?v={{VERSION_TIMESTAMP}}&amp;cat=1"></script>
@@ -1107,7 +1109,7 @@
                 assetHintNotInScene: '当前场景未检测到此对象，仍可替换文件（刷新后生效）',
                 assetHintDefault: '通用素材：建议保持原图尺寸、透明通道与视觉重心一致，避免错位或失真',
                 showCoords: '显示坐标', hideCoords: '隐藏坐标', moveView: '移动视野', lockView: '锁定视野',
-                memoTitle: '昨 日 小 记', guestTitle: '访 客 列 表', officeTitle: 'Star 小猫的办公室',
+                memoTitle: '最 近 小 记', guestTitle: '访 客 列 表', officeTitle: 'Star 小猫的办公室',
                 loadingOffice: '正在加载 Star 的像素办公室...'
             },
             en: {
@@ -1135,7 +1137,7 @@
                 assetHintNotInScene: 'This object is not detected in current scene; you can still replace file (effective after refresh)',
                 assetHintDefault: 'Generic asset: keep source size, alpha channel, and visual anchor to avoid drift/distortion',
                 showCoords: 'Show Coords', hideCoords: 'Hide Coords', moveView: 'Pan View', lockView: 'Lock View',
-                memoTitle: 'YESTERDAY NOTES', guestTitle: 'VISITOR LIST', officeTitle: 'Star Cat Office',
+                memoTitle: 'RECENT NOTES', guestTitle: 'VISITOR LIST', officeTitle: 'Star Cat Office',
                 loadingOffice: 'Loading Star’s pixel office...'
             },
             ja: {
@@ -1163,7 +1165,7 @@
                 assetHintNotInScene: '現在のシーンでこのオブジェクトは未検出です。ファイル差し替えは可能（更新後に反映）',
                 assetHintDefault: '汎用素材：元サイズ・透過・視覚アンカーを維持し、ズレや崩れを防いでください',
                 showCoords: '座標表示', hideCoords: '座標非表示', moveView: '視点移動', lockView: '視点固定',
-                memoTitle: '昨日のメモ', guestTitle: '訪問者リスト', officeTitle: 'Star 猫のオフィス',
+                memoTitle: '最近のメモ', guestTitle: '訪問者リスト', officeTitle: 'Star 猫のオフィス',
                 loadingOffice: 'Star のピクセルオフィスを読み込み中...'
             }
         };
@@ -1238,6 +1240,7 @@
             setText('asset-reset-default-btn', 'resetToDefault');
             setText('asset-restore-prev-btn', 'restorePrevAsset');
 
+            window.RecentMemo.translate(uiLang);
             const memoTitle = document.getElementById('memo-title');
             if (memoTitle) memoTitle.textContent = t('memoTitle');
             const guestTitle = document.getElementById('guest-agent-panel-title');
@@ -1329,24 +1332,8 @@
         let loadingProgressBar, loadingProgressContainer, loadingOverlay, loadingText;
 
         // Memo 相关函数
-        async function loadMemo() {
-            const memoDate = document.getElementById('memo-date');
-            const memoContent = document.getElementById('memo-content');
-            
-            try {
-                const response = await fetch('/yesterday-memo?t=' + Date.now(), { cache: 'no-store' });
-                const data = await response.json();
-                
-                if (data.success && data.memo) {
-                    memoDate.textContent = data.date || '';
-                    memoContent.innerHTML = data.memo.replace(/\n/g, '<br>');
-                } else {
-                    memoContent.innerHTML = '<div id="memo-placeholder">暂无昨日日记</div>';
-                }
-            } catch (e) {
-                console.error('加载 memo 失败:', e);
-                memoContent.innerHTML = '<div id="memo-placeholder">加载失败</div>';
-            }
+        function loadMemo() {
+            return window.RecentMemo.load(uiLang);
         }
 
         // 更新加载进度
@@ -1597,7 +1584,7 @@
                     'plants-spritesheet': '随机绿植',
                     'flowers-bloom-v2': '随机花朵',
                     'office_bg_small': '办公室背景',
-                    'memo-bg': '昨日小记底图',
+                    'memo-bg': '最近小记底图',
                     'desk-v3': '办公桌',
                     'desk': '办公桌（旧）',
                     'guest_anim_1': '访客动画 1',
@@ -4133,7 +4120,7 @@ function toggleBrokerPanel() {
                 coordsOverlay.style.top = (pointer.y + 18) + 'px';
             });
 
-            // 加载昨日 memo
+            // 加载最近的 Codex 会话总结
             loadMemo();
 
             fetchStatus();

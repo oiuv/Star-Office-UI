@@ -1,12 +1,12 @@
-# Star Office UI
+# Star Office UI · Codex 版
 
 🌐 Language: **中文** | [English](./README.en.md) | [日本語](./README.ja.md)
 
-![新版全屏像素办公室：顶部工具栏、访客角色与左下角状态提示](docs/screenshots/office-current.png)
+![全屏像素办公室：底部门牌菜单、访客角色与左下角状态提示](docs/screenshots/office-current.png)
 
-**一个像素风格的 AI 办公室看板** —— 把 AI 助手的工作状态实时可视化，让你直观看到"谁在做什么、昨天做了什么、现在是否在线"。
+**一个由 Codex hooks 驱动的像素办公室看板** —— 把 AI 助手的工作状态实时可视化，让你直观看到"谁在做什么、最近做了什么、现在是否在线"。
 
-支持多 Agent 协作、中英日三语、AI 生图装修、桌面宠物模式。
+主界面是自适应全屏办公室，没有浏览器滚动条；点击底部办公室名称打开菜单，任务提示保留在房间左下角。支持多 Agent 协作、中英日切换、AI 生图装修和可选桌面宠物。
 推荐通过 **Codex hooks** 自动驱动角色状态并记录会话、工具和子 Agent 活动；其他 AI Agent 也可通过脚本或 HTTP API 接入。
 
 本项目基于 [ringhyacinth/Star-Office-UI](https://github.com/ringhyacinth/Star-Office-UI) 修改，当前开发与部署仓库为 [oiuv/Star-Office-UI](https://github.com/oiuv/Star-Office-UI)。
@@ -20,7 +20,7 @@
 
 完成以下三步，Codex 的任务开始、工具调用、上下文整理和本轮结束就会自动映射到办公室动画与活动记录。
 
-> **环境要求：Python 3.10+**。以下示例使用 `python`；macOS / Linux 可按环境改为 `python3`。状态文件只在首次安装时复制，已有配置请保留。
+> **环境要求：Python 3.10+**。以下示例使用 `python`；macOS / Linux 可按环境改为 `python3`。网页无需 Node.js 或前端构建；后端首次启动会初始化缺失的运行文件，已有状态与配置会保留。
 
 ### 1) 启动看板
 
@@ -28,7 +28,6 @@
 git clone https://github.com/oiuv/Star-Office-UI.git
 cd Star-Office-UI
 python -m pip install -r backend/requirements.txt
-cp state.sample.json state.json
 python backend/app.py
 ```
 
@@ -40,7 +39,7 @@ python backend/app.py
 python scripts/codex_hooks_config.py
 ```
 
-把输出配置合并到你使用 Codex 的项目 `.codex/hooks.json`，或用户目录的 `~/.codex/hooks.json`。已有 hooks 应合并事件数组。然后在 Codex 中使用 `/hooks` 检查并信任配置。
+把输出配置合并到你使用 Codex 的项目 `.codex/hooks.json`，或用户目录的 `~/.codex/hooks.json`（自定义 Codex 主目录时使用 `$CODEX_HOME/hooks.json`）。同一份办公室 hooks 只配置在一处，避免项目与全局重复执行；已有 hooks 应合并事件数组。然后在 Codex 中使用 `/hooks` 检查并信任配置。
 
 生成的脚本路径为绝对路径，因此 Codex 可以在其他项目中调用这份办公室集成。Python 解释器需可访问；可用 `--python` 指定解释器路径。
 
@@ -60,21 +59,11 @@ python scripts/codex_hooks_config.py
 
 主接入方式为 Codex hooks，采用 **6 种动画状态 + 12 种生命周期事件**。状态表示角色动作，事件表示触发原因；事件名称、描述、会话和工具标识分别记录，不需要增加 12 套动画。
 
-### 生成 hooks.json
+### 配置说明
 
-在 Star Office 项目根目录执行：
+按快速上手生成配置；生成器只输出 JSON，不会修改现有文件。也可使用 [hooks.example.json](./integrations/codex/hooks.example.json)，替换其中的脚本路径。`--python` 可指定 Python 解释器；Windows 路径会加引号，支持空格。
 
-~~~powershell
-python scripts/codex_hooks_config.py
-~~~
-
-将输出合并到希望接入的项目 `.codex/hooks.json`，或用户目录的 `~/.codex/hooks.json`。已有配置应合并各事件数组，避免覆盖原有 hooks。生成器只输出配置，不会修改已有文件，可用 `--python` 指定解释器。
-
-也可使用 [hooks.example.json](./integrations/codex/hooks.example.json)，将脚本路径替换成实际路径。Windows 路径会加引号，支持空格。
-
-生成器与示例均使用中文 `statusMessage`，所有事件设置 `timeout: 3`，其中 `PostToolUse` 使用异步执行。提示文字仅用于 Codex 的运行提示，桌宠状态与统计由事件内容决定。
-
-配置后在 Codex 中使用 `/hooks` 检查并信任新配置。官方要求信任确切的 hook 定义，改动后需重新审核；项目级 hooks 还需要项目被信任。脚本无需额外安装 Python 包，必须能访问这份源码。
+配置使用中文 `statusMessage`，超时为 3 秒，`PostToolUse` 异步执行。提示文字仅用于 Codex 运行提示，角色状态与统计由事件内容决定。hooks 定义变更后需在 `/hooks` 重新审核，项目级配置还要求信任该项目；脚本只依赖 Python 标准库。
 
 ### 事件与动画状态
 
@@ -88,12 +77,12 @@ python scripts/codex_hooks_config.py
 | PreCompact | syncing | 整理上下文 |
 | PostCompact | 恢复压缩前状态 | 继续工作 |
 | SubagentStart | 子角色 executing | 子 Agent 独立开始工作 |
-| SubagentStop | 子角色 idle | 子 Agent 本轮收尾 |
+| SubagentStop | 子角色 idle / 离线 | 子 Agent 本轮收尾 |
 | Stop | idle | 主角色本轮结束 |
 | Interrupt | idle | 中断，同时结束当前子角色的在线状态 |
 | SessionEnd | idle | 会话结束 |
 
-参考 [Codex 官方 hooks 文档](https://learn.chatgpt.com/docs/hooks)。脚本只观察事件，统一输出合法 JSON 空对象，不批准权限、不改写工具输入、不要求继续任务。失败和超时不会影响 Codex。
+参考 [Codex 官方 hooks 文档](https://learn.chatgpt.com/docs/hooks)。脚本只观察事件，统一输出合法 JSON 空对象，不批准权限、不改写工具输入、不要求继续任务。脚本捕获异常后仍返回 `{}` 和退出码 0；超时可能显示 hook 失败提示，但本集成不主动阻断任务。
 
 ### 本地与远程模式
 
@@ -101,37 +90,45 @@ python scripts/codex_hooks_config.py
 - **远程模式**：Codex 进程环境设置 `STAR_OFFICE_URL`，例如 `https://your-office.example`；客户端与后端设置相同 `STAR_OFFICE_HOOK_TOKEN`。未设置 Token 时仅接受直接来自 loopback 的 hook 请求，反向代理部署应始终设置 Token。
 - 默认数据库是 `data/office-events.sqlite3`，支持 `STAR_OFFICE_EVENTS_DB` 指定位置，数据库及 WAL/SHM 文件不会提交到 Git。备份时使用 SQLite 备份机制或停止写入后备份。
 - `STAR_OFFICE_STATE_FILE` 可指定兼容状态文件位置。`STAR_OFFICE_HOOK_DEBUG=1` 仅将失败类别写到 stderr。
-- 不读取或保存 prompt、命令正文、完整工具输出、transcript 或 cwd；保留事件名、工具名、会话/回合/子 Agent 标识及少量运行元数据。
+- **hook 活动记录**不保存 prompt、命令正文、完整工具输出、transcript 或 cwd；仅读取工具结果中的失败标记，保留事件名、工具名、会话/回合/子 Agent 标识及少量运行元数据。「最近小记」另行只读 Codex 总结文件。
+- 远程上报超时或失败时跳过该次记录，不重试，也不回退到本地数据库；远程后端需保持在线。
 - 异步 PostToolUse 迟到仍留日志，但不会复活已结束回合；多会话、子 Agent 分别记录。
 - 五分钟未更新的状态回到待命。长工具调用可能暂时视为离线，直到下一次 hook；时长是保守观测值。
 
 ---
 
-## 🤔 适合谁用？
+## 办公室怎么用
 
-### 使用 AI 编程或自动化任务的人
+点击底部办公室名称展开菜单，点击空白处或按 `Esc` 关闭：
 
-查看 AI 当前在写代码、查资料、执行命令还是等待权限。Codex 用户使用 hooks 自动同步；其他 Agent 可以调用状态脚本或 API。
+| 入口 | 功能 |
+|------|------|
+| 最近小记 | 读取本机 Codex 最近的会话总结，每次打开刷新 |
+| 访客列表 | 查看自动加入的 Codex 子 Agent 和通过密钥接入的外部访客 |
+| 装修房间 | 更换背景、管理素材与图片 API 配置 |
+| 活动档案 | 打开 `/stats`，查看统计、日志、经验与成就 |
+| 更多设置 | 切换语言、调整视野或手动切换角色状态 |
 
-### 同时运行多个 Agent 的个人或团队
+房间中的对话气泡从预设文案中按状态选择，不会调用模型，也不是 Agent 的原始对话。
 
-在一个办公室查看多个 Agent 与子 Agent 的状态，并通过活动档案回看工具调用、协作和任务收尾记录。
+### Codex 子 Agent 自动访客
 
-### 想要像素看板与工作记录的人
-
-手动或通过脚本推送状态，把它作为个人工作记录、远程协作看板或由自动化系统驱动的像素办公室。基础功能不需要生图 API。
+- 收到带 `agent_id` 的 hook 后，按会话与子 Agent ID 创建独立角色，名称为 `Agent ` 加 ID 末 8 位；约 3.5 秒内在页面刷新显示。
+- 子 Agent 独立更新自己的状态，不覆盖主角色小猫；不需要 join key 或 `office-agent-push.py`，不受外部访客密钥的并发数限制。
+- `SubagentStop` 后显示为离线并回到休息区；最后一次事件超过 5 分钟后从房间和列表移除，历史活动仍保留。
+- 父会话中断或结束时，其子 Agent 一并离线。多个 Codex 主会话接入时，主角色优先展示最近活跃的忙碌会话，其余会话作为访客显示。
 
 ---
 
 ## 📋 功能一览
 
 1. **Codex hooks 自动接入** —— 12 种生命周期事件驱动动画与记录，支持会话、工具、上下文整理、中断和子 Agent
-2. **活动档案与成长** —— 状态次数、观测时长、事件趋势、工具统计、筛选日志、JSON 导出，以及经验等级和成就
+2. **活动档案与成长** —— 状态次数、观测时长、事件趋势、工具统计、筛选日志、JSON 导出，以及经验等级和 24 枚历史累计成就
 3. **状态可视化** —— 6 种状态（`idle` / `writing` / `researching` / `executing` / `syncing` / `error`）自动映射到办公室不同区域，动画 + 气泡实时展示
-4. **昨日小记** —— 自动从 `memory/*.md` 读取最近一天的工作记录，脱敏后展示为"昨日小记"卡片
-5. **多 Agent 协作** —— 通过 join key 邀请其他 Agent 加入你的办公室，实时查看多人状态
-6. **中英日三语** —— CN / EN / JP 一键切换，界面文案、气泡、加载提示全部联动
-7. **美术资产自定义** —— 侧边栏管理角色 / 场景 / 装饰素材，支持动态帧同步，避免闪烁
+4. **最近小记** —— 读取 Codex 的最近 5 份会话总结，展示更新日期、项目、标题和任务完成情况
+5. **多 Agent 协作** —— Codex 子 Agent 自动加入；外部 Agent 通过 join key 接入
+6. **中英日三语** —— CN / EN / JP 一键切换，主要界面、气泡和加载提示联动；活动记录保留原始文案
+7. **美术资产自定义** —— 侧边栏管理角色 / 场景 / 装饰素材，支持动画素材与帧规格管理
 8. **AI 生图装修** —— 接入 OpenAI 兼容图片 API，默认使用 `gpt-image-2` 给办公室换背景；不接入 API 也能正常使用核心功能
 9. **移动端适配** —— 手机直接打开即可查看，适合外出时快速瞄一眼
 10. **安全加固** —— 侧边栏密码保护、生产环境弱密码拦截、Session Cookie 加固
@@ -140,66 +137,63 @@ python scripts/codex_hooks_config.py
 
 ---
 
-## 🚀 详细部署指南
+## 配置与运行检查
 
-### 1) 安装依赖
+### 常用配置
 
-```bash
-cd Star-Office-UI
-python3 -m pip install -r backend/requirements.txt
+直接执行 `python backend/app.py` **不会自动加载 `.env`**。`.env.example` 是配置参考，需由终端、服务管理器或部署工具注入环境变量。
+
+| 变量 | 用途 |
+|------|------|
+| `STAR_BACKEND_PORT` | 后端端口，默认 `19000` |
+| `CODEX_HOME` | 后端读取 Codex 总结的主目录，默认 `~/.codex` |
+| `STAR_OFFICE_EVENTS_DB` | 活动数据库；本地 hooks 和后端需指向同一文件 |
+| `STAR_OFFICE_STATE_FILE` | 兼容状态文件；本地 hooks 和后端需使用相同配置 |
+| `STAR_OFFICE_URL` | 仅在 Codex 客户端设置；留空为本地记录，填写 URL 为远程上报 |
+| `STAR_OFFICE_HOOK_TOKEN` | 远程 hooks 的共享 Token，客户端和后端保持一致 |
+| `STAR_OFFICE_HOOK_DEBUG` | `1` 时向 stderr 输出 hook 失败类别 |
+| `ASSET_DRAWER_PASS` | 装修验证码；本地默认 `1234` |
+| `FLASK_SECRET_KEY` | Flask 会话签名密钥 |
+| `STAR_OFFICE_ENV` | `production` 启用强密钥与装修密码启动检查 |
+
+PowerShell 示例（设置后在同一终端启动后端）：
+
+```powershell
+$env:STAR_BACKEND_PORT = "19000"
+$env:CODEX_HOME = "$env:USERPROFILE/.codex"
+python backend/app.py
 ```
 
-### 2) 初始化状态文件
+远程上报时，在**启动 Codex 的终端或应用环境**中设置：
 
-```bash
-cp state.sample.json state.json
+```powershell
+$env:STAR_OFFICE_URL = "https://your-office.example"
+$env:STAR_OFFICE_HOOK_TOKEN = "替换为与后端一致的随机密钥"
 ```
 
-### 3) 启动后端
+macOS / Linux 使用 `export NAME=value`。修改环境后重启相关进程；修改首页 HTML 后也需重启后端，以刷新内存缓存。
+
+### 验证与测试
+
+在项目根目录执行：
 
 ```bash
-cd backend
-python3 app.py
+python scripts/smoke_test.py --base-url http://127.0.0.1:19000
+python -B -m unittest discover -s tests -v
+node --test tests/test_stats.cjs tests/test_image_settings.cjs tests/test_speech_bubbles.cjs tests/test_recent_memo.cjs
 ```
 
-打开 [http://127.0.0.1:19000](http://127.0.0.1:19000)。
+smoke 检查页面与读取接口，不推送测试状态或增加活动记录。自动化测试使用临时数据库和模拟图片接口，不消耗 API 额度；Node.js 仅用于前端测试或桌面壳开发。hooks 是否真正接入，仍需在 Codex 中提交一次任务并确认 `/stats` 出现对应事件。
 
-> ✅ 首次部署可以先保留默认配置；在生产环境中，请复制 `.env.example` 为 `.env` 并设置强随机的 `FLASK_SECRET_KEY` 与 `ASSET_DRAWER_PASS`，避免弱密码和会话泄露。
+### 公网访问（可选）
 
-### 4) 手动验证状态（可选）
+生产环境设置 `STAR_OFFICE_ENV=production`、强随机 `FLASK_SECRET_KEY`（至少 24 字符）与 `ASSET_DRAWER_PASS`（至少 8 字符）。装修验证码和 hook Token 只保护各自接口，**不是整个网站的访问密码**；活动档案和最近小记也会展示给能访问看板的人，公开部署请在网关设置访问控制。
 
-在另一个终端进入项目根目录执行。Codex hooks 已配置时，日常状态由 hooks 自动同步。
-
-```bash
-python3 set_state.py writing "正在整理文档"
-python3 set_state.py syncing "同步进度中"
-python3 set_state.py error "发现问题，排查中"
-python3 set_state.py idle "待命中"
-```
-
-### 5) 公网访问（可选）
+已安装 Cloudflare Tunnel 时可使用：
 
 ```bash
 cloudflared tunnel --url http://127.0.0.1:19000
 ```
-
-拿到 `https://xxx.trycloudflare.com` 链接即可分享。
-
-### 6) 验证安装（可选）
-
-```bash
-python3 scripts/smoke_test.py --base-url http://127.0.0.1:19000
-```
-
-所有检查显示 `OK` 即表示部署成功。
-
-### 7) 运行回归测试（可选）
-
-~~~powershell
-python -B -m unittest discover -s tests -v
-~~~
-
-测试使用临时数据库和模拟图片接口，不消耗 API 额度。
 
 ---
 
@@ -217,7 +211,7 @@ python -B -m unittest discover -s tests -v
 - 完成任务后：执行 `python3 set_state.py idle "待命中"` 再回复
 ```
 
-**6 种状态 → 3 个区域的映射：**
+**访客的 6 种状态 → 3 个区域映射：**
 
 | 状态 | 办公室区域 | 触发场景 |
 |------|-----------|---------|
@@ -228,29 +222,34 @@ python -B -m unittest discover -s tests -v
 | `syncing` | 💻 工作区 | 同步数据 / 推送 |
 | `error` | 🐛 Bug 区 | 报错 / 异常排查 |
 
+主角色使用专用动画，例如 `syncing` 对应上下文整理时的小猫睡觉动画。
+
 状态推送同样进入活动档案，记录次数、描述和观测时长。会话、回合和工具等细分统计需要相应生命周期事件。
 
 ### 邀请其他 Agent 加入办公室
 
 **Step 1：准备 join key**
 
-首次启动后端时，如果当前目录下不存在 `join-keys.json`，服务会自动根据 `join-keys.sample.json` 生成一个运行时的 `join-keys.json`（内含示例 key，例如 `ocj_example_team_01`）。你可以在生成后的 `join-keys.json` 中自行添加、修改或删除 key，每个 key 默认支持最多 3 人同时在线。
+首次启动后端时，如果仓库根目录下不存在 `join-keys.json`，服务会自动根据 `join-keys.sample.json` 生成一个运行时的 `join-keys.json`（内含示例 key，例如 `ocj_example_team_01`）。你可以在生成后的 `join-keys.json` 中自行添加、修改或删除 key，每个 key 的 `maxConcurrent` 默认值为 3，可自行调整；这不是整个办公室的访客总上限。实际分发前请替换公开的示例密钥。
 
 **Step 2：让访客 Agent 运行推送脚本**
 
-访客只需下载 `office-agent-push.py`，填写 3 个变量即可：
+向访客分发 [`frontend/office-agent-push.py`](./frontend/office-agent-push.py)（也可从办公室 `/static/office-agent-push.py` 下载），安装 `requests` 并填写脚本顶部 3 个变量：
 
 ```python
-JOIN_KEY = "ocj_starteam02"          # 你分配的 key
+JOIN_KEY = "你分配的密钥"          # 你分配的 key
 AGENT_NAME = "小明的 Agent"            # 显示名称
 OFFICE_URL = "https://your-office.example"  # 你的办公室地址
 ```
 
 ```bash
-python3 office-agent-push.py
+python -m pip install requests
+python office-agent-push.py
 ```
 
-脚本会自动加入办公室并每 15 秒推送一次状态。访客会出现在看板上，根据状态自动走到对应区域。
+脚本首次加入后缓存身份，每 15 秒推送一次访客本机的状态。建议用 `OFFICE_LOCAL_STATE_FILE` 明确指定客户端的 `state.json`；没有可用状态文件时，回退到 `OFFICE_LOCAL_STATUS_URL`（默认本机 `/status`），可配合 `OFFICE_LOCAL_STATUS_TOKEN`。本地 Agent 需持续更新状态来源，脚本不会从聊天内容中推断工作情况。
+
+**根目录的同名脚本用于本机新访客测试**：从 `OFFICE_JOIN_KEY` 或忽略提交的 `office-agent.local.json` 读取密钥，每次运行生成「访客 + 随机名称」，不复用上次身份。不要将它当作稳定身份的访客分发脚本。
 
 **Step 3（可选）：访客安装 Skill**
 
@@ -259,6 +258,18 @@ python3 office-agent-push.py
 > 详细的访客接入说明见 [`frontend/join-office-skill.md`](./frontend/join-office-skill.md)
 
 ---
+
+## 最近小记
+
+点击办公室名称 →「最近小记」，查看当前后端账户的最近 5 份 Codex 会话总结，每份最多展示 3 项任务。
+默认读取 `~/.codex/memories/rollout_summaries/*.md`；设置 `CODEX_HOME` 时读取该目录下的 `memories/rollout_summaries/`，路径支持 `~`。
+按总结内的 `updated_at` 排序，显示后端本地日期；这表示总结更新时间，不代表所有任务都在当天完成。每次打开面板会重新读取。
+
+这是该 Codex 主目录下跨项目的近期总结，不是按昨天筛选，也不是实时聊天记录。总结是否存在、何时更新由 Codex 决定；hooks 记录活动并不会立即生成 memory。
+
+无需手写日记，也不调用图片或文本 API。办公室只读现有总结；未生成记录时显示「暂无 Codex 会话总结」。
+远程部署时读取的是服务器上的文件，需要将目标 Codex 目录挂载到后端并设置 `CODEX_HOME`。
+直接运行 `python backend/app.py` 时请在进程环境中设置变量，程序不会自动加载 `.env`。
 
 ## 📊 活动档案与成长
 
@@ -283,7 +294,20 @@ python3 office-agent-push.py
 
 ---
 
-## 🎨 OpenAI 图片接口（gpt-image-2）
+## 装修房间
+
+点击门牌 →「装修房间」，输入装修验证码后使用：
+
+| 入口 | 行为 |
+|------|------|
+| 搬新家 | 从 12 种内置主题中随机选择风格，调用图片 API 生成并替换房间背景 |
+| 找中介 | 输入自己的风格描述，结合房间参考图生成背景 |
+| 自己装 | 手动浏览、上传与替换背景、角色、装饰等素材 |
+| 回老家 | 恢复默认房间背景，不调用图片 API |
+
+支持「回上一个家」「收藏这个家」及恢复收藏。生图提示词要求保留布局，但实际效果取决于图片服务；只有生成操作需要图片 API。快速与精细使用同一模型：`gpt-image-*` 分别传 `quality=low` / `high`；自定义模型不强制这两个参数。生成完成后局部刷新房间。
+
+## 🎨 OpenAI 兼容图片接口
 
 在装修侧边栏的 API 设置中填写：
 
@@ -314,7 +338,7 @@ python3 office-agent-push.py
 | `POST /join-agent` | 访客加入办公室 |
 | `POST /agent-push` | 访客推送状态 |
 | `POST /leave-agent` | 访客离开 |
-| `GET /yesterday-memo` | 获取昨日小记 |
+| `GET /recent-memo` | 获取最近的 Codex 会话总结（兼容旧 `/yesterday-memo` 路径） |
 | `GET /config/ai` | 获取 OpenAI 图片 API 配置（Key 脱敏） |
 | `POST /config/ai` | 设置 OpenAI 图片 API 配置 |
 | `GET /assets/generate-rpg-background/poll` | 轮询生图进度 |
@@ -323,21 +347,17 @@ python3 office-agent-push.py
 
 ## 🖥 桌面宠物版（可选）
 
-`desktop-pet/` 提供 **Tauri** 桌面版本，`electron-shell/` 提供 **Electron** 桌面版本，可以把像素办公室变成一个透明窗口的桌面宠物。
+网页可直接使用，不需要桌面壳。Electron 版从仓库根目录运行：
 
 ```bash
-cd desktop-pet
-npm install
+cd electron-shell
+npm ci
 npm run dev
 ```
 
-- 启动时自动拉起 Python 后端
-- 窗口默认指向 `http://127.0.0.1:19000/?desktop=1`
-- 支持通过环境变量自定义项目路径和 Python 路径
+桌面壳复用 Python 后端，支持主窗口 / 迷你窗口切换和托盘；可用 `STAR_PROJECT_ROOT`、`STAR_BACKEND_PYTHON` 指定项目和解释器。详见 [Electron 说明](./electron-shell/README.md)。
 
-> ⚠️ 这是一个**可选的实验性功能**，目前主要在 macOS 上开发测试。详见 [`desktop-pet/README.md`](./desktop-pet/README.md)。
->
-> 🙏 桌面宠物版由 [@Zhaohan-Wang](https://github.com/Zhaohan-Wang) 独立开发，感谢他的贡献！
+[desktop-pet/](./desktop-pet/README.md) 保留实验性的 Tauri 版及其独立安装要求，主要在 macOS 上开发测试。感谢 [@Zhaohan-Wang](https://github.com/Zhaohan-Wang) 的桌面宠物贡献。浏览器首页与 `electron-standalone.html` 是分别维护的布局。
 
 ---
 
@@ -346,6 +366,7 @@ npm run dev
 ### 资产来源
 
 访客角色动画使用了 **LimeZu** 的免费资产：
+
 - [Animated Mini Characters 2 (Platformer) [FREE]](https://limezu.itch.io/animated-mini-characters-2-platform-free)
 
 请在二次发布 / 演示时保留来源说明，并遵守原作者许可条款。
@@ -359,39 +380,36 @@ npm run dev
 
 ---
 
-## 📝 更新日志
-
-| 日期 | 概要 | 详情 |
-|------|------|------|
-| 2026-03-06 | 🔌 默认端口调整 — 默认后端端口从 18791 调整为 19000，以避开 OpenClaw Browser Control 端口冲突；同步更新脚本、桌面壳与文档默认值 | [`docs/CHANGELOG_2026-03.md`](./docs/CHANGELOG_2026-03.md) |
-| 2026-03-05 | 📱 稳定性修复 — CDN 缓存修复、生图异步化、移动端侧边栏优化、Join Key 过期与并发控制 | [`docs/UPDATE_REPORT_2026-03-05.md`](./docs/UPDATE_REPORT_2026-03-05.md) |
-| 2026-03-04 | 🔒 P0/P1 安全加固 — 弱密码拦截、后端模块拆分、stale 状态自动回 idle、首屏骨架屏优化 | [`docs/UPDATE_REPORT_2026-03-04_P0_P1.md`](./docs/UPDATE_REPORT_2026-03-04_P0_P1.md) |
-| 2026-03-03 | 📋 开源发布检查清单完成 | [`docs/OPEN_SOURCE_RELEASE_CHECKLIST.md`](./docs/OPEN_SOURCE_RELEASE_CHECKLIST.md) |
-| 2026-03-01 | 🎉 **v2 重制发布** — 新增三语支持、资产管理系统、AI 生图装修、美术资产全面替换 | [`docs/FEATURES_NEW_2026-03-01.md`](./docs/FEATURES_NEW_2026-03-01.md) |
-
----
-
 ## 📁 项目结构
 
 ```text
 Star-Office-UI/
 ├── backend/            # Flask 后端
 │   ├── app.py
+│   ├── hook_events.py     # 12 类 hooks 到 6 种状态的映射
 │   ├── event_store.py     # 活动记录与统计
+│   ├── achievements.py    # 24 枚成就
+│   ├── memo_utils.py      # 只读 Codex 会话总结
 │   ├── image_client.py    # OpenAI 图片接口
 │   ├── requirements.txt
 │   └── run.sh
 ├── frontend/           # 前端页面与资产
 │   ├── stats.html         # 活动档案
-│   ├── index.html
+│   ├── index.html         # 浏览器全屏办公室
+│   ├── electron-standalone.html # 桌面布局
+│   ├── office-shell.js    # 门牌菜单与弹窗
+│   ├── recent-memo.js     # 最近小记
+│   ├── office-agent-push.py # 分发给访客的稳定身份脚本
 │   ├── join.html
 │   ├── invite.html
 │   └── layout.js
 ├── desktop-pet/        # Tauri 桌面宠物版（可选）
 ├── electron-shell/     # Electron 桌面壳（可选）
+├── tests/              # Python / Node 回归测试
+├── data/               # 本地活动数据库（不提交）
 ├── docs/               # 文档与截图
 │   └── screenshots/
-├── office-agent-push.py  # 访客推送脚本
+├── office-agent-push.py  # 本机随机新访客测试脚本
 ├── set_state.py          # 状态切换脚本
 ├── state.sample.json     # 状态文件模板
 ├── join-keys.sample.json # Join Key 模板（启动时生成 join-keys.json）
@@ -401,9 +419,3 @@ Star-Office-UI/
 ├── SKILL.md              # 通用 Agent 部署指南
 └── LICENSE               # MIT 许可
 ```
-
----
-
-## ⭐ Star History
-
-[![Star History Chart](https://api.star-history.com/image?repos=oiuv/Star-Office-UI&type=date&legend=top-left)](https://www.star-history.com/?repos=oiuv%2FStar-Office-UI&type=date&legend=top-left)
