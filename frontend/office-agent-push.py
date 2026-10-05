@@ -11,6 +11,7 @@ Star Office - Agent 状态主动推送脚本
 
 import json
 import os
+import secrets
 import time
 import sys
 from datetime import datetime
@@ -204,7 +205,12 @@ def fetch_local_status():
 
 def do_join(local):
     import requests
+    # Persist before the request so retries retain identity even if its reply is lost.
+    if not local.get("clientId"):
+        local["clientId"] = secrets.token_hex(16)
+        save_local_state(local)
     payload = {
+        "clientId": local["clientId"],
         "name": local.get("agentName", AGENT_NAME),
         "joinKey": local.get("joinKey", JOIN_KEY),
         "state": "idle",

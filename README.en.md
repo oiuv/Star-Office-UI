@@ -206,7 +206,7 @@ Add these rules to your agent instructions and run `set_state.py` from the Star 
 
 **Step 1: Prepare join keys**
 
-When you start the backend for the first time, if there is no `join-keys.json` in the project root, the service will automatically create one based on `join-keys.sample.json` (which contains an example key such as `ocj_example_team_01`). You can then edit the generated `join-keys.json` to add, modify, or remove keys; by default each key supports up to 3 concurrent users.
+When you start the backend for the first time, if there is no `join-keys.json` in the project root, the service will automatically create one based on `join-keys.sample.json` (which contains an example key such as `ocj_example_team_01`). You can then edit the generated `join-keys.json` to add, modify, or remove keys; by default each key supports up to 9 concurrent visitors.
 
 **Step 2: Have the guest run the push script**
 

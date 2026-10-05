@@ -1,5 +1,5 @@
 const { app, BrowserWindow, Tray, Menu, ipcMain, shell, nativeImage } = require("electron");
-const { spawn } = require("child_process");
+const { spawnBackend } = require("./backend-process");
 const fs = require("fs");
 const path = require("path");
 const net = require("net");
@@ -151,34 +151,6 @@ async function readStateWithFallback(projectRoot) {
   }
 }
 
-function spawnBackend(projectRoot) {
-  const script = path.join(projectRoot, "backend", "app.py");
-  if (!fs.existsSync(script)) {
-    console.warn(`backend/app.py not found: ${script}`);
-    return null;
-  }
-
-  const candidates = [];
-  if (process.env.STAR_BACKEND_PYTHON) candidates.push(process.env.STAR_BACKEND_PYTHON);
-  candidates.push(path.join(projectRoot, ".venv", "bin", "python"));
-  candidates.push("python3");
-  candidates.push("python");
-
-  for (const bin of candidates) {
-    try {
-      const child = spawn(bin, [script], {
-        cwd: projectRoot,
-        stdio: "inherit",
-      });
-      console.log(`backend started with ${bin}`);
-      return child;
-    } catch (e) {
-      console.warn(`failed to spawn ${bin}: ${e.message}`);
-    }
-  }
-  return null;
-}
-
 function ensureElectronStandaloneSnapshot(projectRoot) {
   const src = path.join(projectRoot, "frontend", "index.html");
   const dst = path.join(projectRoot, "frontend", "electron-standalone.html");
@@ -327,7 +299,9 @@ function createWindows(projectRoot) {
   const v = Date.now();
   const mainUrl = `${BACKEND_BASE_URL}/electron-standalone?desktop=1&v=${v}`;
   mainWindow.loadURL(mainUrl);
-  miniWindow.loadFile(path.join(projectRoot, "desktop-pet", "src", "minimized.html"));
+  miniWindow.loadFile(path.join(projectRoot, "desktop-pet", "src", "minimized.html"), {
+    query: { backendUrl: BACKEND_BASE_URL },
+  });
 }
 
 function createTray(projectRoot) {
@@ -509,7 +483,7 @@ async function bootstrap() {
   if (iconPath) console.log(`app icon: ${iconPath}`);
 
   if (!(await tcpReachable(BACKEND_HOST, BACKEND_PORT, 400))) {
-    backendChild = spawnBackend(projectRoot);
+    backendChild = await spawnBackend(projectRoot);
     const ready = await waitBackendReady(20000);
     if (!ready) console.warn("backend not ready within 20s");
   } else {

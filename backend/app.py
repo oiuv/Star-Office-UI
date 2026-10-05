@@ -3,6 +3,7 @@
 
 from flask import Flask, jsonify, send_from_directory, make_response, request, session
 from datetime import datetime, timedelta
+from functools import wraps
 import json
 import os
 import random
@@ -99,8 +100,61 @@ app.config.update(
     PERMANENT_SESSION_LIFETIME=timedelta(hours=12),
 )
 
-# Guard join-agent critical section to enforce per-key concurrency under parallel requests
+# Serialize visitor read-modify-write operations, including cleanup and reconnects.
 join_lock = threading.Lock()
+DEFAULT_VISITOR_LIMIT = 9
+
+
+def serialized_visitors(func):
+    @wraps(func)
+    def wrapped(*args, **kwargs):
+        with join_lock:
+            return func(*args, **kwargs)
+    return wrapped
+
+
+def visitor_timestamp(value):
+    # Naive timestamps retain their historical meaning: server-local time.
+    return datetime.fromisoformat(str(value).replace("Z", "+00:00")).timestamp()
+
+
+def join_key_error(key_item):
+    if not key_item:
+        return "接入密钥无效"
+    expires_at = key_item.get("expiresAt")
+    if expires_at not in (None, ""):
+        try:
+            expired = time.time() >= visitor_timestamp(expires_at)
+        except (ValueError, TypeError, OverflowError, OSError):
+            return "接入密钥 expiresAt 格式无效，请联系管理员修正"
+        if expired:
+            return "该接入密钥已过期，请联系管理员更新"
+    return None
+
+
+def visitor_online(agent, now):
+    if agent.get("isMain") or agent.get("authStatus") != "approved":
+        return False
+    for field in ("lastPushAt", "updated_at"):
+        if agent.get(field):
+            try:
+                return now - visitor_timestamp(agent[field]) <= 300
+            except (ValueError, TypeError, OverflowError, OSError):
+                continue
+    # Old records without timestamps still occupy a slot until explicitly removed.
+    return True
+
+
+def visitor_capacity_error(agents, key_item, target=None):
+    now = time.time()
+    if target and visitor_online(target, now):
+        return None  # An active visitor already owns a slot.
+    limit = int(key_item.get("maxConcurrent", DEFAULT_VISITOR_LIMIT))
+    active = sum(a.get("joinKey") == key_item["key"] and visitor_online(a, now)
+                 for a in agents if a is not target)
+    if active >= limit:
+        return jsonify({"ok": False, "msg": f"该接入密钥当前并发已达上限（{limit}），请稍后重试"}), 429
+    return None
 event_store = EventStore()
 
 # Async background task registry for long-running operations (e.g. image generation)
@@ -658,6 +712,7 @@ if os.path.exists(RUNTIME_CONFIG_FILE):
 
 
 @app.route("/agents", methods=["GET"])
+@serialized_visitors
 def get_agents():
     """Get full agents list (for multi-agent UI), with auto-cleanup on access"""
     agents = load_agents_state()
@@ -694,15 +749,8 @@ def get_agents():
                 pass
 
         # 2) 超时未推送自动离线（超过5分钟）
-        last_push_at_str = a.get("lastPushAt")
-        if auth_status == "approved" and last_push_at_str:
-            try:
-                last_push_at = datetime.fromisoformat(last_push_at_str)
-                age = (now - last_push_at).total_seconds()
-                if age > 300:  # 5分钟无推送自动离线
-                    a["authStatus"] = "offline"
-            except Exception:
-                pass
+        if auth_status == "approved" and not visitor_online(a, time.time()):
+            a["authStatus"] = "offline"
 
         cleaned_agents.append(a)
 
@@ -712,7 +760,7 @@ def get_agents():
         save_join_keys(keys_data)
 
     # Credentials stay server-side. Codex actors have their own durable snapshots.
-    public_agents = [{k: v for k, v in a.items() if k != "joinKey"} for a in cleaned_agents]
+    public_agents = [{k: v for k, v in a.items() if k not in {"joinKey", "clientId"}} for a in cleaned_agents]
     primary = (event_store.main_state() or {}).get("actor_id")
     for actor in event_store.actors():
         if actor["source"] != "codex" or actor["actor_id"] == primary:
@@ -731,6 +779,7 @@ def get_agents():
 
 
 @app.route("/agent-approve", methods=["POST"])
+@serialized_visitors
 def agent_approve():
     """Approve an agent (set authStatus to approved)"""
     try:
@@ -744,6 +793,15 @@ def agent_approve():
         if not target:
             return jsonify({"ok": False, "msg": "未找到 agent"}), 404
 
+        keys_data = load_join_keys()
+        key_item = next((k for k in keys_data.get("keys", []) if k.get("key") == target.get("joinKey")), None)
+        error = join_key_error(key_item)
+        if error:
+            return jsonify({"ok": False, "msg": error}), 403
+        capacity_error = visitor_capacity_error(agents, key_item, target)
+        if capacity_error is not None:
+            return capacity_error
+        target["lastPushAt"] = datetime.now().isoformat()
         target["authStatus"] = "approved"
         target["authApprovedAt"] = datetime.now().isoformat()
         target["authExpiresAt"] = (datetime.now() + timedelta(hours=24)).isoformat()  # 兼容字段；已批准访客的有效期由接入密钥 expiresAt 决定
@@ -755,6 +813,7 @@ def agent_approve():
 
 
 @app.route("/agent-reject", methods=["POST"])
+@serialized_visitors
 def agent_reject():
     """Reject an agent (set authStatus to rejected and optionally revoke key)"""
     try:
@@ -793,6 +852,7 @@ def agent_reject():
 
 
 @app.route("/join-agent", methods=["POST"])
+@serialized_visitors
 def join_agent():
     """Validate a reusable join key and automatically approve the agent"""
     try:
@@ -811,126 +871,46 @@ def join_agent():
         if not join_key:
             return jsonify({"ok": False, "msg": "请提供接入密钥"}), 400
 
+        client_id = data.get("clientId") or ""
+        if not isinstance(client_id, str):
+            return jsonify({"ok": False, "msg": "clientId 必须是字符串"}), 400
+        client_id = client_id.strip()
         keys_data = load_join_keys()
         key_item = next((k for k in keys_data.get("keys", []) if k.get("key") == join_key), None)
-        if not key_item:
-            return jsonify({"ok": False, "msg": "接入密钥无效"}), 403
-        # key 可复用：不再因为 used=true 拒绝
+        error = join_key_error(key_item)
+        if error:
+            return jsonify({"ok": False, "msg": error}), 403
 
-        with join_lock:
-            # 在锁内重新读取，避免并发请求都基于同一旧快照通过校验
-            keys_data = load_join_keys()
-            key_item = next((k for k in keys_data.get("keys", []) if k.get("key") == join_key), None)
-            if not key_item:
-                return jsonify({"ok": False, "msg": "接入密钥无效"}), 403
+        agents = load_agents_state()
+        # Display names are not identities. Legacy clients without clientId join anew.
+        existing = next((a for a in agents if client_id and a.get("clientId") == client_id
+                         and a.get("joinKey") == join_key and not a.get("isMain")), None)
+        capacity_error = visitor_capacity_error(agents, key_item, existing)
+        if capacity_error is not None:
+            return capacity_error
 
-            # Key-level expiration check
-            key_expires_at_str = key_item.get("expiresAt")
-            if key_expires_at_str:
-                try:
-                    key_expires_at = datetime.fromisoformat(key_expires_at_str)
-                    if datetime.now() > key_expires_at:
-                        return jsonify({"ok": False, "msg": "该接入密钥已过期，活动已结束 🎉"}), 403
-                except Exception:
-                    pass
-
-            agents = load_agents_state()
-
-            # 并发上限：同一个 key “同时在线”最多 3 个。
-            # 在线判定：lastPushAt/updated_at 在 5 分钟内；否则视为 offline，不计入并发。
-            now = datetime.now()
-            existing = next((a for a in agents if a.get("name") == name and not a.get("isMain")), None)
-            existing_id = existing.get("agentId") if existing else None
-
-            def _age_seconds(dt_str):
-                if not dt_str:
-                    return None
-                try:
-                    dt = datetime.fromisoformat(dt_str)
-                    return (now - dt).total_seconds()
-                except Exception:
-                    return None
-
-            # opportunistic offline marking
-            for a in agents:
-                if a.get("isMain"):
-                    continue
-                if a.get("authStatus") != "approved":
-                    continue
-                age = _age_seconds(a.get("lastPushAt"))
-                if age is None:
-                    age = _age_seconds(a.get("updated_at"))
-                if age is not None and age > 300:
-                    a["authStatus"] = "offline"
-
-            max_concurrent = int(key_item.get("maxConcurrent", 3))
-            active_count = 0
-            for a in agents:
-                if a.get("isMain"):
-                    continue
-                if a.get("agentId") == existing_id:
-                    continue
-                if a.get("joinKey") != join_key:
-                    continue
-                if a.get("authStatus") != "approved":
-                    continue
-                age = _age_seconds(a.get("lastPushAt"))
-                if age is None:
-                    age = _age_seconds(a.get("updated_at"))
-                if age is None or age <= 300:
-                    active_count += 1
-
-            if active_count >= max_concurrent:
-                save_agents_state(agents)
-                return jsonify({"ok": False, "msg": f"该接入密钥当前并发已达上限（{max_concurrent}），请稍后或换另一个 key"}), 429
-
-            if existing:
-                existing["state"] = state
-                existing["detail"] = detail
-                existing["updated_at"] = datetime.now().isoformat()
-                existing["area"] = state_to_area(state)
-                existing["source"] = "remote-openclaw"
-                existing["joinKey"] = join_key
-                existing["authStatus"] = "approved"
-                existing["authApprovedAt"] = datetime.now().isoformat()
-                existing["authExpiresAt"] = (datetime.now() + timedelta(hours=24)).isoformat()
-                existing["lastPushAt"] = datetime.now().isoformat()  # join 视为上线，纳入并发/离线判定
-                if not existing.get("avatar"):
-                    import random
-                    existing["avatar"] = random.choice(["guest_role_1", "guest_role_2", "guest_role_3", "guest_role_4", "guest_role_5", "guest_role_6"])
-                agent_id = existing.get("agentId")
-            else:
-                # Use ms + random suffix to avoid collisions under concurrent joins
-                import random
-                import string
-                agent_id = "agent_" + str(int(datetime.now().timestamp() * 1000)) + "_" + "".join(random.choices(string.ascii_lowercase + string.digits, k=4))
-                agents.append({
-                    "agentId": agent_id,
-                    "name": name,
-                    "isMain": False,
-                    "state": state,
-                    "detail": detail,
-                    "updated_at": datetime.now().isoformat(),
-                    "area": state_to_area(state),
-                    "source": "remote-openclaw",
-                    "joinKey": join_key,
-                    "authStatus": "approved",
-                    "authApprovedAt": datetime.now().isoformat(),
-                    "authExpiresAt": (datetime.now() + timedelta(hours=24)).isoformat(),
-                    "lastPushAt": datetime.now().isoformat(),
-                    "avatar": random.choice(["guest_role_1", "guest_role_2", "guest_role_3", "guest_role_4", "guest_role_5", "guest_role_6"])
-                })
-
-            key_item["used"] = True
-            key_item["usedBy"] = name
-            key_item["usedByAgentId"] = agent_id
-            key_item["usedAt"] = datetime.now().isoformat()
-            key_item["reusable"] = True
-
-            # 拿到有效 key 直接批准，不再等待主人手动点击
-            # （状态已在上面 existing/new 分支写入）
-            save_agents_state(agents)
-            save_join_keys(keys_data)
+        now = datetime.now()
+        if existing is None:
+            import uuid
+            existing = {"agentId": "agent_" + uuid.uuid4().hex, "isMain": False}
+            agents.append(existing)
+        agent_id = existing["agentId"]
+        existing.update({
+            "name": name, "state": state, "detail": detail,
+            "updated_at": now.isoformat(), "area": state_to_area(state),
+            "source": "remote-openclaw", "joinKey": join_key,
+            "authStatus": "approved", "authApprovedAt": now.isoformat(),
+            "authExpiresAt": (now + timedelta(hours=24)).isoformat(),
+            "lastPushAt": now.isoformat(),
+        })
+        if client_id:
+            existing["clientId"] = client_id
+        if not existing.get("avatar"):
+            existing["avatar"] = "guest_role_" + str(random.randint(1, 6))
+        key_item.update({"used": True, "usedBy": name, "usedByAgentId": agent_id,
+                         "usedAt": now.isoformat(), "reusable": True})
+        save_agents_state(agents)
+        save_join_keys(keys_data)
 
         return jsonify({"ok": True, "agentId": agent_id, "authStatus": "approved", "nextStep": "已自动批准，立即开始推送状态"})
     except Exception as e:
@@ -938,6 +918,7 @@ def join_agent():
 
 
 @app.route("/leave-agent", methods=["POST"])
+@serialized_visitors
 def leave_agent():
     """Remove an agent and clear the usage metadata of its reusable join key
 
@@ -958,9 +939,11 @@ def leave_agent():
         target = None
         if agent_id:
             target = next((a for a in agents if a.get("agentId") == agent_id and not a.get("isMain")), None)
-        if (not target) and name:
-            # fallback: remove by name only if agentId not provided
-            target = next((a for a in agents if a.get("name") == name and not a.get("isMain")), None)
+        elif name:
+            matches = [a for a in agents if a.get("name") == name and not a.get("isMain")]
+            if len(matches) > 1:
+                return jsonify({"ok": False, "msg": "存在同名访客，请使用 agentId"}), 409
+            target = matches[0] if matches else None
 
         if not target:
             return jsonify({"ok": False, "msg": "没有找到要离开的 agent"}), 404
@@ -996,6 +979,7 @@ def get_status():
 
 
 @app.route("/agent-push", methods=["POST"])
+@serialized_visitors
 def agent_push():
     """Remote openclaw actively pushes status to office.
 
@@ -1028,16 +1012,9 @@ def agent_push():
         if not key_item:
             return jsonify({"ok": False, "msg": "joinKey 无效"}), 403
 
-        # Key-level expiration check
-        key_expires_at_str = key_item.get("expiresAt")
-        if key_expires_at_str:
-            try:
-                key_expires_at = datetime.fromisoformat(key_expires_at_str)
-                if datetime.now() > key_expires_at:
-                    return jsonify({"ok": False, "msg": "该接入密钥已过期，活动已结束 🎉"}), 403
-            except Exception:
-                pass
-
+        error = join_key_error(key_item)
+        if error:
+            return jsonify({"ok": False, "msg": error}), 403
 
         agents = load_agents_state()
         target = next((a for a in agents if a.get("agentId") == agent_id and not a.get("isMain")), None)
@@ -1050,13 +1027,15 @@ def agent_push():
         auth_status = target.get("authStatus", "pending")
         if auth_status not in {"approved", "offline"}:
             return jsonify({"ok": False, "msg": "agent 未获授权，请等待主人批准"}), 403
-        if auth_status == "offline":
+        if target.get("joinKey") != join_key:
+            return jsonify({"ok": False, "msg": "joinKey 不匹配"}), 403
+        capacity_error = visitor_capacity_error(agents, key_item, target)
+        if capacity_error is not None:
+            return capacity_error
+        if not visitor_online(target, time.time()):
             target["authStatus"] = "approved"
             target["authApprovedAt"] = datetime.now().isoformat()
             target["authExpiresAt"] = (datetime.now() + timedelta(hours=24)).isoformat()
-
-        if target.get("joinKey") != join_key:
-            return jsonify({"ok": False, "msg": "joinKey 不匹配"}), 403
 
         target["state"] = state
         target["detail"] = detail

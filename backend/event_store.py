@@ -201,7 +201,6 @@ class EventStore:
             day = datetime.fromtimestamp(row["occurred_at"]).strftime("%Y-%m-%d")
             item = daily.setdefault(day, {"date": day, "events": 0, "turns": 0})
             item["events"] += 1
-            item["turns"] += row["event_name"] == "Stop"
         def observed_end(row, end):
             if json.loads(row["metadata"]).get("is_subagent"):
                 for terminal in terminators:
@@ -235,6 +234,10 @@ class EventStore:
         period_rewards = [r for r in rewards.values() if since <= r["occurred_at"] <= until]
         period_xp = sum(points[r["event_name"]] for r in period_rewards)
         completed_turns = sum(r["event_name"] == "Stop" for r in period_rewards)
+        for row in period_rewards:
+            if row["event_name"] == "Stop":
+                day = datetime.fromtimestamp(row["occurred_at"]).strftime("%Y-%m-%d")
+                daily[day]["turns"] += 1
         badges = build_achievements(achievement_rows)
         seconds = [r["seconds"] for r in durations]
         return {"since": since, "until": until, "states": states, "hooks": hooks,

@@ -14,6 +14,7 @@ import time
 import unittest
 import urllib.error
 from pathlib import Path
+from datetime import datetime, timedelta, timezone
 from contextlib import redirect_stdout
 from unittest.mock import patch
 
@@ -116,8 +117,21 @@ class LedgerTests(unittest.TestCase):
         self.send("Stop",1)
         stats=self.stats()
         self.assertEqual(stats["hooks"]["Stop"],2)
+        self.assertEqual(sum(day["turns"] for day in stats["daily"]),1)
         self.assertEqual(stats["overview"]["turns"],1)
         self.assertEqual(stats["game"]["xp"],20)
+    def test_repeated_stop_crossing_midnight_belongs_to_first_day(self):
+        midnight = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
+        self.base = midnight - 10
+        self.send("Stop", 0)
+        self.send("Stop", 20)
+        stats = self.stats(0, midnight + 30)
+        self.assertEqual([day["turns"] for day in stats["daily"]], [1, 0])
+        today = self.stats(midnight, midnight + 30)
+        self.assertEqual(today["overview"]["turns"], 0)
+        self.assertEqual(today["daily"][0]["turns"], 0)
+        self.assertEqual(today["hooks"]["Stop"], 1)
+
     def test_tool_duration_correlated_by_id(self):
         self.send("PreToolUse",0,tool_use_id="tool-one",tool_name="Bash")
         self.send("PostToolUse",7,tool_use_id="tool-one",tool_name="Bash")
@@ -264,6 +278,108 @@ class AppTests(unittest.TestCase):
     def test_agents_do_not_leak_join_key(self):
         self.app.save_agents_state([{"agentId":"guest","name":"Guest","isMain":False,"joinKey":"SECRET_KEY","authStatus":"approved"}])
         self.assertNotIn("SECRET_KEY",self.client.get("/agents").get_data(as_text=True))
+    def seed_visitor_keys(self, **fields):
+        self.app.save_join_keys({"keys": [{"key": "team", **fields}, {"key": "other", **fields}]})
+
+    def join_visitor(self, name="Guest", key="team", **fields):
+        return self.client.post("/join-agent", json={"name": name, "joinKey": key, **fields})
+
+    def push_visitor(self, agent_id, key="team"):
+        return self.client.post("/agent-push", json={"agentId": agent_id, "joinKey": key, "state": "writing"})
+
+    def test_same_names_are_independent_and_retries_reuse_client_identity(self):
+        self.seed_visitor_keys()
+        first = self.join_visitor(clientId="client-one").json["agentId"]
+        same_key = self.join_visitor(clientId="client-two").json["agentId"]
+        other_key = self.join_visitor(key="other", clientId="client-one").json["agentId"]
+        self.assertEqual(len({first, same_key, other_key}), 3)
+        retry = self.join_visitor(name="Renamed", clientId="client-one")
+        self.assertEqual(retry.json["agentId"], first)
+        self.assertEqual(self.push_visitor(first).status_code, 200)
+        self.assertEqual(self.push_visitor(first, key="other").status_code, 403)
+        guests = [a for a in self.client.get("/agents").json if not a.get("isMain")]
+        self.assertEqual(len(guests), 3)
+        self.assertEqual(next(a["name"] for a in guests if a["agentId"] == first), "Renamed")
+        self.assertTrue(all("clientId" not in a and "joinKey" not in a for a in guests))
+
+    def test_legacy_same_name_joins_and_leave_are_unambiguous(self):
+        self.seed_visitor_keys()
+        first = self.join_visitor().json["agentId"]
+        second = self.join_visitor().json["agentId"]
+        self.assertNotEqual(first, second)
+        self.assertEqual(self.client.post("/leave-agent", json={"name": "Guest"}).status_code, 409)
+        self.assertEqual(self.client.post("/leave-agent", json={"agentId": "missing", "name": "Guest"}).status_code, 404)
+        self.assertEqual(self.client.post("/leave-agent", json={"agentId": first}).status_code, 200)
+        self.assertEqual(self.push_visitor(second).status_code, 200)
+
+    def test_nine_default_slots_exclude_main_and_codex(self):
+        self.seed_visitor_keys()
+        self.client.post("/hooks/codex", json=hook("SubagentStart", agent_id="child"))
+        ids = [self.join_visitor(clientId=f"client-{i}").json["agentId"] for i in range(9)]
+        self.assertEqual(self.join_visitor().status_code, 429)
+        self.assertEqual(self.join_visitor(clientId="client-0").json["agentId"], ids[0])
+        self.assertEqual(self.push_visitor(ids[0]).status_code, 200)
+        self.assertEqual(self.join_visitor(key="other").status_code, 200)
+        self.client.post("/leave-agent", json={"agentId": ids[0]})
+        self.assertEqual(self.join_visitor().status_code, 200)
+
+    def test_offline_and_unswept_stale_guests_cannot_bypass_capacity(self):
+        for status in ("offline", "approved"):
+            with self.subTest(status=status):
+                self.seed_visitor_keys(maxConcurrent=1)
+                self.app.save_agents_state([])
+                first = self.join_visitor(clientId="returning").json["agentId"]
+                agents = self.app.load_agents_state()
+                target = next(a for a in agents if a["agentId"] == first)
+                target.update(authStatus=status, lastPushAt=(datetime.now(timezone.utc)-timedelta(minutes=6)).isoformat())
+                self.app.save_agents_state(agents)
+                second = self.join_visitor(clientId="active").json["agentId"]
+                before = self.app.load_agents_state()
+                self.assertEqual(self.push_visitor(first).status_code, 429)
+                self.assertEqual(self.join_visitor(clientId="returning").status_code, 429)
+                self.assertEqual(self.client.post("/agent-approve", json={"agentId": first}).status_code, 429)
+                self.assertEqual(self.app.load_agents_state(), before)
+                self.assertEqual(self.push_visitor(second).status_code, 200)
+                self.client.post("/leave-agent", json={"agentId": second})
+                self.assertEqual(self.push_visitor(first).status_code, 200)
+
+    def test_expiry_formats_on_join_push_and_approval(self):
+        self.seed_visitor_keys()
+        agent_id = self.join_visitor().json["agentId"]
+        past = datetime.now(timezone.utc)-timedelta(days=1)
+        future = datetime.now(timezone.utc)+timedelta(days=1)
+        cases = [(None, 200), ("", 200), ("not-a-date", 403), ("   ", 403), (False, 403),
+                 (past.isoformat(), 403), (past.isoformat().replace("+00:00", "Z"), 403),
+                 (past.astimezone(timezone(timedelta(hours=8))).isoformat(), 403),
+                 (future.isoformat(), 200), (future.isoformat().replace("+00:00", "Z"), 200),
+                 ((datetime.now()-timedelta(days=1)).isoformat(), 403),
+                 ((datetime.now()+timedelta(days=1)).isoformat(), 200)]
+        for expiry, code in cases:
+            with self.subTest(expiry=expiry):
+                self.seed_visitor_keys(expiresAt=expiry, maxConcurrent=50)
+                self.assertEqual(self.join_visitor().status_code, code)
+                self.assertEqual(self.push_visitor(agent_id).status_code, code)
+                self.assertEqual(self.client.post("/agent-approve", json={"agentId": agent_id}).status_code, code)
+
+    def test_parallel_join_and_resume_share_one_capacity_check(self):
+        self.seed_visitor_keys(maxConcurrent=1)
+        returning = self.join_visitor().json["agentId"]
+        agents = self.app.load_agents_state()
+        next(a for a in agents if a["agentId"] == returning)["authStatus"] = "offline"
+        self.app.save_agents_state(agents)
+        import threading
+        barrier = threading.Barrier(8)
+        def enter(i):
+            client = self.app.app.test_client()
+            barrier.wait(timeout=5)
+            if i == 0:
+                return client.post("/agent-push", json={"agentId": returning, "joinKey": "team", "state": "idle"}).status_code
+            return client.post("/join-agent", json={"name": "Same name", "joinKey": "team", "clientId": str(i)}).status_code
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+            codes = list(pool.map(enter, range(8)))
+        self.assertEqual(codes.count(200), 1)
+        self.assertEqual(codes.count(429), 7)
+
     def test_subagents_visible_without_overwriting_main(self):
         self.client.post("/hooks/codex",json=hook("PreToolUse",tool_name="apply_patch"))
         self.client.post("/hooks/codex",json=hook("SubagentStart",agent_id="child"))

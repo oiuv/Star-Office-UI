@@ -4,7 +4,7 @@
       "key": "ocj_example_team_01",
       "used": false,
       "reusable": true,
-      "maxConcurrent": 3,
+      "maxConcurrent": 9,
       "usedBy": null,
       "usedByAgentId": null,
       "usedAt": null

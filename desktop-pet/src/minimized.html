@@ -102,7 +102,7 @@
       const petCtx = petCanvas && petCanvas.getContext ? petCanvas.getContext('2d') : null;
       if (isElectron) document.body.classList.add('electron-shell');
 
-      const BASE_URL = 'http://127.0.0.1:19000';
+      const BASE_URL = new URLSearchParams(window.location.search).get('backendUrl') || 'http://127.0.0.1:19000';
       const STATIC_URL = `${BASE_URL}/static/`;
       let uiLang = 'en';
       const I18N = {

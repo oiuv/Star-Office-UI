@@ -180,7 +180,7 @@ macOS / Linux 使用 `export NAME=value`。修改环境后重启相关进程；�
 ```bash
 python scripts/smoke_test.py --base-url http://127.0.0.1:19000
 python -B -m unittest discover -s tests -v
-node --test tests/test_stats.cjs tests/test_image_settings.cjs tests/test_speech_bubbles.cjs tests/test_recent_memo.cjs tests/test_desktop_window.cjs
+node --test tests/test_stats.cjs tests/test_image_settings.cjs tests/test_speech_bubbles.cjs tests/test_recent_memo.cjs tests/test_desktop_window.cjs tests/test_desktop_backend.cjs tests/test_guest_positions.cjs
 ```
 
 smoke 检查页面与读取接口，不推送测试状态或增加活动记录。自动化测试使用临时数据库和模拟图片接口，不消耗 API 额度；Node.js 仅用于前端测试或桌面壳开发。hooks 是否真正接入，仍需在 Codex 中提交一次任务并确认 `/stats` 出现对应事件。
@@ -230,7 +230,12 @@ cloudflared tunnel --url http://127.0.0.1:19000
 
 **Step 1：准备 join key**
 
-首次启动后端时，如果仓库根目录下不存在 `join-keys.json`，服务会自动根据 `join-keys.sample.json` 生成一个运行时的 `join-keys.json`（内含示例 key，例如 `ocj_example_team_01`）。你可以在生成后的 `join-keys.json` 中自行添加、修改或删除 key，每个 key 的 `maxConcurrent` 默认值为 3，可自行调整；这不是整个办公室的访客总上限。实际分发前请替换公开的示例密钥。
+首次启动后端时，如果仓库根目录下不存在 `join-keys.json`，服务会自动根据 `join-keys.sample.json` 生成一个运行时的 `join-keys.json`（内含示例 key，例如 `ocj_example_team_01`）。你可以在生成后的 `join-keys.json` 中自行添加、修改或删除 key，每个 key 的 `maxConcurrent` 默认值为 9，可自行调整；这不是整个办公室的访客总上限。实际分发前请替换公开的示例密钥。已有配置不会自动覆盖，如需调整请修改对应的 `maxConcurrent`。
+
+- 主人不占访客名额；单个密钥接入 9 名普通访客时，加上主人共 10 人。Codex hooks 自动呈现的会话和子 Agent 不受此限制。
+- 超过 5 分钟没有推送的普通访客不占在线名额，恢复推送时重新检查容量；满员返回 HTTP 429，推送脚本会在下次轮询重试。
+- 名称可以重复。新版推送脚本持久化 `clientId`，用它和接入密钥识别同一客户端的重复加入；未传 `clientId` 的客户端每次加入都创建新访客。根目录测试脚本仍在每次启动时创建全新访客。
+- `expiresAt` 可省略；支持 ISO 8601 本地时间、`Z` 或时区偏移（如 `2026-12-31T23:59:59+08:00`）。填写无效格式会返回明确错误。
 
 **Step 2：让访客 Agent 运行推送脚本**
 
