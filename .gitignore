@@ -42,3 +42,6 @@ join-keys.json
 data/*.sqlite3*
 office-agent.local.json
 office-agent-state.json
+
+# Playwright CLI local artifacts
+/.playwright-cli/
