@@ -407,7 +407,7 @@ test('Collection and monthly badge show independent progress and translate with 
   assert.ok(content(f.nodes.get('full-collection')).includes('7 / 24'));
   assert.ok(content(f.nodes.get('monthly-challenge')).includes('2026-10 · 收获时节'));
   assert.ok(content(f.nodes.get('monthly-challenge')).includes('9 / 10'));
-  assert.ok(content(f.nodes.get('monthly-challenge')).includes('提交任务'));
+  assert.ok(content(f.nodes.get('monthly-challenge')).includes('提交消息'));
   assert.ok(!content(f.nodes.get('monthly-challenge')).includes('结束回合'));
   assert.ok(content(f.nodes.get('monthly-challenge')).includes('100 / 100 ✓'));
   assert.ok(content(f.nodes.get('monthly-challenge')).includes('1,000 / 1,000 ✓'));
@@ -415,11 +415,11 @@ test('Collection and monthly badge show independent progress and translate with 
   await f.period('7d');
   f.language('en');
   assert.ok(content(f.nodes.get('monthly-challenge')).includes('Harvest time'));
-  assert.ok(content(f.nodes.get('monthly-challenge')).includes('Tasks submitted'));
+  assert.ok(content(f.nodes.get('monthly-challenge')).includes('Messages submitted'));
   assert.ok(content(f.nodes.get('full-collection')).includes('7 / 24'));
   f.language('ja');
   assert.ok(content(f.nodes.get('monthly-challenge')).includes('実りの季節'));
-  assert.ok(content(f.nodes.get('monthly-challenge')).includes('タスク送信'));
+  assert.ok(content(f.nodes.get('monthly-challenge')).includes('メッセージ送信'));
   assert.ok(content(f.nodes.get('monthly-archive')).includes('秋の便り'));
 });
 test('Polling lights earned collections and starts a fresh month while retaining past badges',async()=>{

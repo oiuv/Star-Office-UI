@@ -35,7 +35,7 @@
       explorationTimeNote:"时间类探索按后端本地时区和真实任务事件判定，挂机与心跳不触发。",
       collectionDone:"全部集齐，收藏圆满。继续提升进阶等级吧！",
       badgeMilestone:"里程碑",
-      group_prompts:"任务接收",
+      group_prompts:"任务委托",
       group_turns:"回合交付",
       group_tool_attempts:"工具探索",
       group_tools:"工具成果",
@@ -73,12 +73,12 @@
       monthlyDays:"本月还剩 {count} 天（含今天）",
       monthlyDone:"本月徽章已入藏",
       monthly_active_days:"活跃天数",
-      monthly_prompts:"提交任务",
+      monthly_prompts:"提交消息",
       monthly_tools:"成功工具调用",
       monthlyArchive:"月度收藏",
       monthlyCount:"已收藏 {count} 枚",
       monthlyEmpty:"首枚月度徽章正在路上。",
-      monthlyNote:"按后端本地自然月计算，与日期筛选无关。任务提交、收工或工具成功计为活跃；历史达标月份自动入藏，新月重新计数。",
+      monthlyNote:"按后端本地自然月计算，与日期筛选无关。消息提交、收工或工具成功计为活跃；历史达标月份自动入藏，新月重新计数。",
       monthlyThemes:["新年启程", "暖灯相伴", "春芽初生", "雨后新绿", "向阳而行", "夏日微光", "盛夏星河", "逐风远行", "金秋来信", "收获时节", "炉边小憩", "岁末星光"],
       badgeGrowing:"可成长",
       badgeLevelProgress:"升级进度",
@@ -143,7 +143,7 @@
       average:'工具平均耗时',measured:'个配对样本',xpPeriod:'本期经验值',late:'迟到事件，未改变角色',online:'在线',offline:'离线',
       mainCharacter:'主角色',codexDriver:'Codex hooks',stateDriver:'主动调用',lastUpdate:'最近更新',presenceNote:'Star 为办公室主角色，在线按最近 5 分钟收到的状态更新判断。',
       first_turn:'初次收工',teamwork:'协作伙伴',context_keeper:'记忆管理员',
-      stateLabels:['待命','写作','调研','执行','同步','异常'],hookLabels:['接收任务','工具执行前','等待权限','工具结果','会话开始','会话结束','子 Agent 开始','子 Agent 收尾','压缩前','压缩后','回合结束','用户中断']
+      stateLabels:['待命','写作','调研','执行','同步','异常'],hookLabels:['提交消息','工具执行前','等待权限','工具结果','会话开始','会话结束','子 Agent 开始','子 Agent 收尾','压缩前','压缩后','回合结束','用户中断']
     },
     en: {
       achievements:"Regular achievements",
@@ -172,7 +172,7 @@
       explorationTimeNote:"Time discoveries use the backend’s local timezone and real task events. Idle time and heartbeats do not trigger them.",
       collectionDone:"Every badge collected. Keep growing your advanced badges!",
       badgeMilestone:"Milestone",
-      group_prompts:"New assignments",
+      group_prompts:"Task assignments",
       group_turns:"Turn finishes",
       group_tool_attempts:"Tool exploration",
       group_tools:"Tool results",
@@ -210,12 +210,12 @@
       monthlyDays:"{count} days left, including today",
       monthlyDone:"This month’s badge is collected",
       monthly_active_days:"Active days",
-      monthly_prompts:"Tasks submitted",
+      monthly_prompts:"Messages submitted",
       monthly_tools:"Successful tools",
       monthlyArchive:"Monthly collection",
       monthlyCount:"{count} collected",
       monthlyEmpty:"Your first monthly badge is on its way.",
-      monthlyNote:"Uses the backend’s local calendar month, independent of date filters. Prompts, finishes or successful tools count as activity. Qualifying past months are collected automatically; new months start fresh.",
+      monthlyNote:"Uses the backend’s local calendar month, independent of date filters. Message submissions, finishes or successful tools count as activity. Qualifying past months are collected automatically; new months start fresh.",
       monthlyThemes:["New beginnings", "Warm lamplight", "First sprouts", "After the rain", "Toward the sun", "Summer glow", "Summer stars", "Following the wind", "Autumn letters", "Harvest time", "By the hearth", "Year-end starlight"],
       badgeGrowing:"Growing",
       badgeLevelProgress:"Level progress",
@@ -280,7 +280,7 @@
       average:'Average tool time',measured:'paired samples',xpPeriod:'XP this period',late:'Late event; character unchanged',online:'online',offline:'offline',
       mainCharacter:'Main character',codexDriver:'Codex hooks',stateDriver:'State updates',lastUpdate:'Last update',presenceNote:'Star is the main office character. Presence reflects state updates received within the last 5 minutes.',
       first_turn:'First finish',teamwork:'Team player',context_keeper:'Memory keeper',
-      stateLabels:['Idle','Writing','Research','Executing','Syncing','Error'],hookLabels:['New prompt','Before tool','Permission wait','Tool result','Session starts','Session ends','Subagent starts','Subagent ends','Before compact','After compact','Turn ends','Interrupted']
+      stateLabels:['Idle','Writing','Research','Executing','Syncing','Error'],hookLabels:['Message submitted','Before tool','Permission wait','Tool result','Session starts','Session ends','Subagent starts','Subagent ends','Before compact','After compact','Turn ends','Interrupted']
     },
     ja: {
       achievements:"通常の実績",
@@ -309,7 +309,7 @@
       explorationTimeNote:"時間の発見はバックエンドの現地時間と実際のタスクで判定します。放置やハートビートでは解除されません。",
       collectionDone:"すべて収集！上級バッジの成長を続けましょう。",
       badgeMilestone:"節目",
-      group_prompts:"依頼の受付",
+      group_prompts:"タスク依頼",
       group_turns:"ターンの完了",
       group_tool_attempts:"ツールの探索",
       group_tools:"ツールの成果",
@@ -347,12 +347,12 @@
       monthlyDays:"今月は残り {count} 日（今日を含む）",
       monthlyDone:"今月のバッジを獲得",
       monthly_active_days:"活動日数",
-      monthly_prompts:"タスク送信",
+      monthly_prompts:"メッセージ送信",
       monthly_tools:"ツール成功",
       monthlyArchive:"月間コレクション",
       monthlyCount:"{count} 個を収集",
       monthlyEmpty:"最初の月間バッジを目指しましょう。",
-      monthlyNote:"バックエンドの現地暦月で集計し、期間選択には影響されません。依頼・終了・ツール成功を活動とします。過去の達成月も自動収集し、新しい月はゼロから開始します。",
+      monthlyNote:"バックエンドの現地暦月で集計し、期間選択には影響されません。メッセージ送信・ターン終了・ツール成功を活動とします。過去の達成月も自動収集し、新しい月はゼロから開始します。",
       monthlyThemes:["新年の旅立ち", "暖かな灯り", "春の芽吹き", "雨上がり", "太陽へ", "夏の光", "夏の星空", "風を追って", "秋の便り", "実りの季節", "炉辺の休息", "年末の星明かり"],
       badgeGrowing:"成長できる",
       badgeLevelProgress:"レベル進捗",
@@ -417,7 +417,7 @@
       average:'ツール平均時間',measured:'組のサンプル',xpPeriod:'期間 XP',late:'遅延イベント：状態変更なし',online:'オンライン',offline:'オフライン',
       mainCharacter:'メインキャラクター',codexDriver:'Codex hooks',stateDriver:'状態更新',lastUpdate:'最終更新',presenceNote:'Star はオフィスのメインキャラクターです。直近 5 分の状態更新をもとにオンラインを表示します。',
       first_turn:'初めての完了',teamwork:'協力者',context_keeper:'記憶管理者',
-      stateLabels:['待機','執筆','調査','実行','同期','エラー'],hookLabels:['新しいタスク','ツール実行前','権限待ち','ツール結果','セッション開始','セッション終了','子 Agent 開始','子 Agent 終了','圧縮前','圧縮後','ターン終了','中断']
+      stateLabels:['待機','執筆','調査','実行','同期','エラー'],hookLabels:['メッセージ送信','ツール実行前','権限待ち','ツール結果','セッション開始','セッション終了','子 Agent 開始','子 Agent 終了','圧縮前','圧縮後','ターン終了','中断']
     }
   };
   let lang = 'zh';
