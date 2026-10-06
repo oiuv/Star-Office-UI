@@ -37,7 +37,7 @@ REPEATABLE_ACHIEVEMENTS = frozenset({
     "tool_1000", "compact_50", "delegate_10", "teamwork_10",
 })
 LEVEL_TIERS = (10, 7, 5, 3, 2, 1)
-MONTHLY_TARGETS = (("active_days", 10), ("turns", 30), ("tools", 300))
+MONTHLY_TARGETS = (("active_days", 10), ("prompts", 100), ("tools", 1000))
 
 
 def achievement_progress(badge_id, category, hook, target, current):
@@ -168,16 +168,16 @@ def build_monthly_badges(rows, now=None):
         if row["occurred_at"] > now or row["event_name"] not in {"UserPromptSubmit", "Stop", "PostToolUse"}:
             continue
         date = datetime.fromtimestamp(row["occurred_at"])
-        month = months.setdefault(date.strftime("%Y-%m"), {"days": set(), "turns": 0, "tools": 0})
+        month = months.setdefault(date.strftime("%Y-%m"), {"days": set(), "prompts": 0, "tools": 0})
         month["days"].add(date.date())
-        if row["event_name"] == "Stop":
-            month["turns"] += 1
+        if row["event_name"] == "UserPromptSubmit":
+            month["prompts"] += 1
         elif row["event_name"] == "PostToolUse":
             month["tools"] += 1
 
     def badge_for(key):
-        counts = months.get(key, {"days": set(), "turns": 0, "tools": 0})
-        totals = {"active_days": len(counts["days"]), "turns": counts["turns"], "tools": counts["tools"]}
+        counts = months.get(key, {"days": set(), "prompts": 0, "tools": 0})
+        totals = {"active_days": len(counts["days"]), "prompts": counts["prompts"], "tools": counts["tools"]}
         goals = [{"metric": metric, "current": totals[metric], "target": target}
                  for metric, target in MONTHLY_TARGETS]
         return {"month": key, "earned": all(g["current"] >= g["target"] for g in goals), "goals": goals}

@@ -1,7 +1,12 @@
 (() => {
   'use strict';
   const STATES = ['idle','writing','researching','executing','syncing','error'];
-  const HOOKS = ['PreToolUse','PermissionRequest','PostToolUse','PreCompact','PostCompact','SessionStart','SessionEnd','UserPromptSubmit','SubagentStart','SubagentStop','Stop','Interrupt'];
+  // Group related events for display; this is not a strict event timeline.
+  const HOOKS = [
+    'UserPromptSubmit','PreToolUse','PermissionRequest','PostToolUse',
+    'SessionStart','SessionEnd','SubagentStart','SubagentStop',
+    'PreCompact','PostCompact','Stop','Interrupt'
+  ];
   const TEXT = {
     zh: {
       achievements:"常规成就",
@@ -68,7 +73,7 @@
       monthlyDays:"本月还剩 {count} 天（含今天）",
       monthlyDone:"本月徽章已入藏",
       monthly_active_days:"活跃天数",
-      monthly_turns:"结束回合",
+      monthly_prompts:"提交任务",
       monthly_tools:"成功工具调用",
       monthlyArchive:"月度收藏",
       monthlyCount:"已收藏 {count} 枚",
@@ -138,7 +143,7 @@
       average:'工具平均耗时',measured:'个配对样本',xpPeriod:'本期经验值',late:'迟到事件，未改变角色',online:'在线',offline:'离线',
       mainCharacter:'主角色',codexDriver:'Codex hooks',stateDriver:'主动调用',lastUpdate:'最近更新',presenceNote:'Star 为办公室主角色，在线按最近 5 分钟收到的状态更新判断。',
       first_turn:'初次收工',teamwork:'协作伙伴',context_keeper:'记忆管理员',
-      stateLabels:['待命','写作','调研','执行','同步','异常'],hookLabels:['工具执行前','等待权限','工具结果','压缩前','压缩后','会话开始','会话结束','接收任务','子 Agent 开始','子 Agent 收尾','回合结束','用户中断']
+      stateLabels:['待命','写作','调研','执行','同步','异常'],hookLabels:['接收任务','工具执行前','等待权限','工具结果','会话开始','会话结束','子 Agent 开始','子 Agent 收尾','压缩前','压缩后','回合结束','用户中断']
     },
     en: {
       achievements:"Regular achievements",
@@ -205,7 +210,7 @@
       monthlyDays:"{count} days left, including today",
       monthlyDone:"This month’s badge is collected",
       monthly_active_days:"Active days",
-      monthly_turns:"Turns ended",
+      monthly_prompts:"Tasks submitted",
       monthly_tools:"Successful tools",
       monthlyArchive:"Monthly collection",
       monthlyCount:"{count} collected",
@@ -275,7 +280,7 @@
       average:'Average tool time',measured:'paired samples',xpPeriod:'XP this period',late:'Late event; character unchanged',online:'online',offline:'offline',
       mainCharacter:'Main character',codexDriver:'Codex hooks',stateDriver:'State updates',lastUpdate:'Last update',presenceNote:'Star is the main office character. Presence reflects state updates received within the last 5 minutes.',
       first_turn:'First finish',teamwork:'Team player',context_keeper:'Memory keeper',
-      stateLabels:['Idle','Writing','Research','Executing','Syncing','Error'],hookLabels:['Before tool','Permission wait','Tool result','Before compact','After compact','Session starts','Session ends','New prompt','Subagent starts','Subagent ends','Turn ends','Interrupted']
+      stateLabels:['Idle','Writing','Research','Executing','Syncing','Error'],hookLabels:['New prompt','Before tool','Permission wait','Tool result','Session starts','Session ends','Subagent starts','Subagent ends','Before compact','After compact','Turn ends','Interrupted']
     },
     ja: {
       achievements:"通常の実績",
@@ -342,7 +347,7 @@
       monthlyDays:"今月は残り {count} 日（今日を含む）",
       monthlyDone:"今月のバッジを獲得",
       monthly_active_days:"活動日数",
-      monthly_turns:"終了ターン",
+      monthly_prompts:"タスク送信",
       monthly_tools:"ツール成功",
       monthlyArchive:"月間コレクション",
       monthlyCount:"{count} 個を収集",
@@ -412,7 +417,7 @@
       average:'ツール平均時間',measured:'組のサンプル',xpPeriod:'期間 XP',late:'遅延イベント：状態変更なし',online:'オンライン',offline:'オフライン',
       mainCharacter:'メインキャラクター',codexDriver:'Codex hooks',stateDriver:'状態更新',lastUpdate:'最終更新',presenceNote:'Star はオフィスのメインキャラクターです。直近 5 分の状態更新をもとにオンラインを表示します。',
       first_turn:'初めての完了',teamwork:'協力者',context_keeper:'記憶管理者',
-      stateLabels:['待機','執筆','調査','実行','同期','エラー'],hookLabels:['ツール実行前','権限待ち','ツール結果','圧縮前','圧縮後','セッション開始','セッション終了','新しいタスク','子 Agent 開始','子 Agent 終了','ターン終了','中断']
+      stateLabels:['待機','執筆','調査','実行','同期','エラー'],hookLabels:['新しいタスク','ツール実行前','権限待ち','ツール結果','セッション開始','セッション終了','子 Agent 開始','子 Agent 終了','圧縮前','圧縮後','ターン終了','中断']
     }
   };
   let lang = 'zh';

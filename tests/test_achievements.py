@@ -32,10 +32,10 @@ def at(year, month, day, hour=12):
 
 
 def month_events(year=2026, month=1, days=10):
-    rows = [event("Stop", f"{year}-{month}-turn-{i}", turn_id=f"{year}-{month}-turn-{i}",
-                  occurred_at=at(year, month, i % days + 1)) for i in range(30)]
+    rows = [event("UserPromptSubmit", f"{year}-{month}-prompt-{i}", turn_id=f"{year}-{month}-prompt-{i}",
+                  occurred_at=at(year, month, i % days + 1)) for i in range(100)]
     rows += [event("PostToolUse", f"{year}-{month}-tool-{i}", tool_id=f"{year}-{month}-tool-{i}",
-                   occurred_at=at(year, month, days)) for i in range(300)]
+                   occurred_at=at(year, month, days)) for i in range(1000)]
     return rows
 
 
@@ -304,7 +304,7 @@ class MonthlyTests(unittest.TestCase):
         result = build_monthly_badges(rows, at(2026, 1, 20))
         self.assertTrue(result["current"]["earned"])
         self.assertEqual(len(result["earned"]), 1)
-        for metric, excluded in [("tools", rows[-1:]), ("turns", rows[:1])]:
+        for metric, excluded in [("tools", rows[-1:]), ("prompts", rows[:1])]:
             ids = {row["event_id"] for row in excluded}
             result = build_monthly_badges([r for r in rows if r["event_id"] not in ids], at(2026, 1, 20))
             self.assertFalse(result["current"]["earned"], metric)
@@ -316,12 +316,34 @@ class MonthlyTests(unittest.TestCase):
         for days in (5, 9, 10):
             result = build_monthly_badges(month_events(days=days), at(2026, 1, 20))
             goals = result["current"]["goals"]
-            self.assertEqual([g["target"] for g in goals], [10, 30, 300])
-            self.assertEqual([g["current"] for g in goals], [days, 30, 300])
+            self.assertEqual([g["metric"] for g in goals], ["active_days", "prompts", "tools"])
+            self.assertEqual([g["target"] for g in goals], [10, 100, 1000])
+            self.assertEqual([g["current"] for g in goals], [days, 100, 1000])
             self.assertEqual(result["current"]["earned"], days >= 10)
 
+    def test_stops_keep_active_days_but_cannot_replace_prompt_submissions(self):
+        rows = [dict(row, event_name="Stop") if row["event_name"] == "UserPromptSubmit" else row
+                for row in month_events()]
+        result = build_monthly_badges(rows, at(2026, 1, 20))
+        self.assertEqual([g["current"] for g in result["current"]["goals"]], [10, 0, 1000])
+        self.assertFalse(result["current"]["earned"])
+
+    def test_prompt_replays_do_not_unlock_early_or_count_again_in_next_month(self):
+        rows = month_events()
+        removed = rows.pop(0)
+        replay = dict(rows[0], event_id="same-turn-again")
+        result = build_monthly_badges(rows + [replay], at(2026, 1, 20))
+        self.assertEqual(result["current"]["goals"][1]["current"], 99)
+        self.assertFalse(result["current"]["earned"])
+        rows.append(removed)
+        self.assertTrue(build_monthly_badges(rows, at(2026, 1, 20))["current"]["earned"])
+        replay["occurred_at"] = at(2026, 2, 1)
+        result = build_monthly_badges([replay] + rows, at(2026, 2, 2))
+        self.assertEqual([g["current"] for g in result["current"]["goals"]], [0, 0, 0])
+        self.assertEqual([b["month"] for b in result["earned"]], ["2026-01"])
+
     def test_month_rollover_keeps_earned_history_and_resets_current(self):
-        rows = month_events() + [event("Stop", "feb", occurred_at=at(2026, 2, 1))]
+        rows = month_events() + [event("UserPromptSubmit", "feb", occurred_at=at(2026, 2, 1))]
         result = build_monthly_badges(rows, at(2026, 2, 1))
         self.assertEqual([b["month"] for b in result["earned"]], ["2026-01"])
         self.assertEqual(result["current"]["month"], "2026-02")
@@ -352,7 +374,7 @@ class MonthlyTests(unittest.TestCase):
         self.assertEqual(build_monthly_badges([], at(2024, 2, 28))["current"]["days_left"], 2)
         self.assertEqual(build_monthly_badges([], at(2026, 2, 28))["current"]["days_left"], 1)
         midnight = at(2026, 3, 1, 0)
-        rows = [event("Stop", "last", occurred_at=midnight - 1), event("Stop", "first", occurred_at=midnight)]
+        rows = [event("UserPromptSubmit", "last", occurred_at=midnight - 1), event("UserPromptSubmit", "first", occurred_at=midnight)]
         result = build_monthly_badges(rows, midnight)
         self.assertEqual(result["current"]["month"], "2026-03")
         self.assertEqual(result["current"]["goals"][1]["current"], 1)
@@ -376,7 +398,7 @@ class MonthlyTests(unittest.TestCase):
                 recent = EventStore(path).stats(at(2026, 2, 1, 0), at(2026, 2, 1))
             self.assertEqual(full["game"]["monthly"], recent["game"]["monthly"])
             self.assertEqual(len(recent["game"]["monthly"]["earned"]), 1)
-            self.assertEqual(recent["game"]["xp"], 30 * 20 + 300 * 2)
+            self.assertEqual(recent["game"]["xp"], 1000 * 2)
             self.assertEqual(recent["game"]["period_xp"], 0)
 
 

@@ -395,7 +395,7 @@ test('The tenth discovery remains secret until the backend awards it',async()=>{
 
 const monthlyFixture = {
   current:{month:'2026-10',earned:false,days_left:27,goals:[
-    {metric:'active_days',current:9,target:10},{metric:'turns',current:134,target:30},{metric:'tools',current:2338,target:300}
+    {metric:'active_days',current:9,target:10},{metric:'prompts',current:134,target:100},{metric:'tools',current:2338,target:1000}
   ]},
   earned:[{month:'2026-09',earned:true,goals:[]}]
 };
@@ -407,14 +407,19 @@ test('Collection and monthly badge show independent progress and translate with 
   assert.ok(content(f.nodes.get('full-collection')).includes('7 / 24'));
   assert.ok(content(f.nodes.get('monthly-challenge')).includes('2026-10 · 收获时节'));
   assert.ok(content(f.nodes.get('monthly-challenge')).includes('9 / 10'));
-  assert.ok(content(f.nodes.get('monthly-challenge')).includes('300 / 300 ✓'));
+  assert.ok(content(f.nodes.get('monthly-challenge')).includes('提交任务'));
+  assert.ok(!content(f.nodes.get('monthly-challenge')).includes('结束回合'));
+  assert.ok(content(f.nodes.get('monthly-challenge')).includes('100 / 100 ✓'));
+  assert.ok(content(f.nodes.get('monthly-challenge')).includes('1,000 / 1,000 ✓'));
   assert.ok(content(f.nodes.get('monthly-archive')).includes('2026-09'));
   await f.period('7d');
   f.language('en');
   assert.ok(content(f.nodes.get('monthly-challenge')).includes('Harvest time'));
+  assert.ok(content(f.nodes.get('monthly-challenge')).includes('Tasks submitted'));
   assert.ok(content(f.nodes.get('full-collection')).includes('7 / 24'));
   f.language('ja');
   assert.ok(content(f.nodes.get('monthly-challenge')).includes('実りの季節'));
+  assert.ok(content(f.nodes.get('monthly-challenge')).includes('タスク送信'));
   assert.ok(content(f.nodes.get('monthly-archive')).includes('秋の便り'));
 });
 test('Polling lights earned collections and starts a fresh month while retaining past badges',async()=>{
