@@ -533,6 +533,23 @@ class ScriptTests(unittest.TestCase):
             self.assertEqual(result.returncode,0); self.assertEqual(json.loads(result.stdout),{})
             self.assertEqual(json.loads(state.read_text(encoding="utf-8"))["state"],"writing")
             self.assertEqual(EventStore(db).stats(0,time.time())["hooks"]["PreToolUse"],1)
+    def test_generated_hook_command_runs_spaced_paths_with_current_interpreter(self):
+        spec=importlib.util.spec_from_file_location("hooks_config",ROOT/"scripts/codex_hooks_config.py")
+        module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+        with tempfile.TemporaryDirectory(prefix="star hooks '") as directory:
+            script=Path(directory)/"observer spaced.py"
+            script.write_text('import json,sys; print(json.dumps([sys.executable,sys.dont_write_bytecode,json.load(sys.stdin)]))',encoding="utf-8")
+            handler=module.build_config(script=script)["hooks"]["Stop"][0]["hooks"][0]
+            command=handler["commandWindows"] if os.name=="nt" else handler["command"]
+            result=subprocess.run(command,shell=True,input='{"probe":42}',capture_output=True,text=True,timeout=5)
+            self.assertEqual(result.returncode,0,result.stderr)
+            interpreter,no_bytecode,payload=json.loads(result.stdout)
+            self.assertEqual(Path(interpreter),Path(sys.executable))
+            self.assertTrue(no_bytecode)
+            self.assertEqual(payload,{"probe":42})
+            override=module.build_config(python="/custom path/python")
+            self.assertIn("/custom path/python",override["hooks"]["Stop"][0]["hooks"][0]["command"])
+
     def test_config_generator_has_all_events_and_timeouts(self):
         spec=importlib.util.spec_from_file_location("hooks_config",ROOT/"scripts/codex_hooks_config.py")
         module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
@@ -547,7 +564,7 @@ class ScriptTests(unittest.TestCase):
                 self.assertEqual(generated["timeout"],3)
                 for field in ("type", "timeout", "statusMessage"):
                     self.assertEqual(generated[field],documented[field])
-                self.assertEqual(generated.get("async",False),event=="PostToolUse")
+                self.assertFalse(generated.get("async",False))
                 self.assertEqual(generated.get("async",False),documented.get("async",False))
         result = subprocess.run(
             [sys.executable, "-B", str(ROOT / "scripts/codex_hooks_config.py")],

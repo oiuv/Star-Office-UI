@@ -4,6 +4,7 @@ import json
 import time
 from collections import Counter
 from datetime import datetime
+from hook_events import SHARED_HOOKS
 
 # Eight growth tracks: first activity, a fixed milestone, then unlimited growth.
 ACHIEVEMENTS = (
@@ -58,19 +59,30 @@ def achievement_progress(badge_id, category, hook, target, current):
     return badge
 
 
+def eligible_activities(rows):
+    """All badges use native events shared by Codex and Claude Code only."""
+    for row in rows:
+        metadata = row["metadata"]
+        if isinstance(metadata, str):
+            metadata = json.loads(metadata)
+        original = metadata.get("original_event_name", row["event_name"])
+        if row["event_name"] in SHARED_HOOKS and original in SHARED_HOOKS:
+            yield row
+
+
 def unique_activities(rows, include_failed=False):
     """Share business-identity deduplication across lifetime and calendar badges."""
     seen = set()
-    for row in rows:
+    for row in eligible_activities(rows):
         name = row["event_name"]
-        if name == "PostToolUse" and row["outcome"] != "ok" and not include_failed:
+        if name in {"PostToolUse", "Stop"} and row["outcome"] != "ok" and not include_failed:
             continue
         identity = row["event_id"]
         if name in {"SessionStart", "SessionEnd"}:
             identity = row["session_id"] or identity
         elif name in {"PreToolUse", "PostToolUse", "PermissionRequest"}:
             identity = row["tool_id"] or identity
-        elif name in {"UserPromptSubmit", "Stop", "Interrupt"}:
+        elif name in {"UserPromptSubmit", "Stop"}:
             identity = row["turn_id"] or identity
         elif name in {"SubagentStart", "SubagentStop"}:
             identity = row["turn_id"] or row["session_id"] or identity
@@ -99,19 +111,19 @@ def build_collection(badges):
 
 # Separate from the regular catalog: optional discoveries never block completion.
 EXPLORATION_IDS = (
-    "session_closed", "first_compact", "first_permission", "first_interrupt",
+    "session_closed", "first_compact", "first_permission", "tool_chain",
     "weekend_worker", "night_owl", "early_bird", "session_resumed", "second_wind",
 )
 EXPLORATION_HOOKS = {
     "SessionEnd": "session_closed", "PreCompact": "first_compact",
-    "PermissionRequest": "first_permission", "Interrupt": "first_interrupt",
+    "PermissionRequest": "first_permission",
 }
 
 
 def build_explorations(rows, now=None):
     """Reveal a discovery only after earning it; locked slots carry no spoilers."""
     now = time.time() if now is None else now
-    ordered = sorted((row for row in rows if row["occurred_at"] <= now),
+    ordered = sorted((row for row in eligible_activities(rows) if row["occurred_at"] <= now),
                      key=lambda row: (row["occurred_at"], row["event_id"]))
     earned = set()
     # A resumed SessionStart shares the initial session ID, so inspect its
@@ -124,7 +136,8 @@ def build_explorations(rows, now=None):
             if isinstance(metadata, dict) and metadata.get("source") == "resume":
                 earned.add("session_resumed")
 
-    failed_at = {}
+    recovery_at = {}
+    turn_tools = {}
     for row in unique_activities(ordered, include_failed=True):
         name = row["event_name"]
         if name in EXPLORATION_HOOKS:
@@ -138,12 +151,23 @@ def build_explorations(rows, now=None):
                     earned.add("night_owl")
             elif 5 <= date.hour < 8:
                 earned.add("early_bird")
-        if name == "PostToolUse" and row["session_id"]:
+        if row["session_id"]:
             key = (row["actor_id"], row["session_id"])
-            if row["outcome"] == "error":
-                failed_at[key] = row["occurred_at"]
-            elif row["outcome"] == "ok" and key in failed_at and row["occurred_at"] > failed_at[key]:
-                earned.add("second_wind")
+            if name == "PermissionRequest":
+                recovery_at[key] = (row["occurred_at"], None)
+            elif name == "PostToolUse":
+                if row["outcome"] == "error":
+                    recovery_at[key] = (row["occurred_at"], row["tool_id"] or row["event_id"])
+                elif row["outcome"] == "ok" and key in recovery_at:
+                    at, failed_tool = recovery_at[key]
+                    if row["occurred_at"] > at and (failed_tool is None or (row["tool_id"] or row["event_id"]) != failed_tool):
+                        earned.add("second_wind")
+            if row["turn_id"]:
+                turn = (*key, row["turn_id"])
+                if name == "PostToolUse" and row["outcome"] == "ok":
+                    turn_tools.setdefault(turn, set()).add(row["tool_id"] or row["event_id"])
+                elif name == "Stop" and row["outcome"] == "ok" and len(turn_tools.get(turn, ())) >= 3:
+                    earned.add("tool_chain")
 
     if all(badge_id in earned for badge_id in EXPLORATION_IDS):
         earned.add("exploration_master")

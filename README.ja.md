@@ -1,13 +1,13 @@
-# Star Office UI
+# STAR OFFICE · AI Agent ピクセルオフィス
 
 🌐 Language: [中文](./README.md) | [English](./README.en.md) | **日本語**
 
-![Star Office UI カバー](docs/screenshots/office-current.png)
+![STAR OFFICE カバー](docs/screenshots/office-current.png)
 
 **ピクセルアート風 AI オフィスダッシュボード** —— AI アシスタントの作業状態をリアルタイムで可視化し、「誰が何をしているか」「最近何をしたか」「今オンラインか」を直感的に把握できます。
 
 マルチ Agent 協調、中英日 3 言語、AI 画像生成による模様替え、デスクトップペットモードに対応。
-推奨の接続方法は **Codex hooks**。キャラクターの状態を自動更新し、セッション、ツール、子 Agent の活動を記録します。他の AI Agent もスクリプトや HTTP API で接続できます。
+推奨の接続方法は **Codex / Claude Code hooks**。キャラクターの状態を自動更新し、セッション、ツール、子 Agent の活動を記録します。他の AI Agent もスクリプトや HTTP API で接続できます。
 
 本バージョンは [ringhyacinth/Star-Office-UI](https://github.com/ringhyacinth/Star-Office-UI) を基に改修しています。開発とデプロイには [oiuv/Star-Office-UI](https://github.com/oiuv/Star-Office-UI) を使用してください。
 
@@ -17,6 +17,14 @@
 ---
 
 > ブラウザー版は全画面表示です。下部のオフィス名から最近のメモ、訪問者、模様替え、活動記録、設定を開きます。Codex の子 Agent はキーなしで自動参加し、終了後はオフライン、最後のイベントから 5 分で非表示になります。Python での直接起動は `.env` を読み込みません。環境変数はシェルやサービス管理ツールで設定してください。配布用は `frontend/office-agent-push.py`（`requests` が必要）、ルートの同名スクリプトは毎回新規ゲストを作るテスト用です。メモはバックエンド実行ユーザーの Codex 要約を読みます。最新の設定・テスト手順は[中国語ガイド](./README.md)を参照してください。
+
+## Claude Code hooks
+
+Claude は実行ファイルの `command` と引数リストの `args` で直接起動し、シェルの引用符処理の違いを避けます。標準設定では重要な 13 イベントを同期、観測用の 19 イベントを非同期で実行します。WorktreeCreate は受信可能ですが自動登録せず、独自の作成処理から送信します。非対話セッション終了時には未完了の非同期記録が取り消される場合があります。
+
+`python scripts/claude_hooks_config.py` を実行し、出力の `hooks` をプロジェクトの `.claude/settings.json`（または `.claude/settings.local.json`）、もしくはユーザーの `~/.claude/settings.json` にマージします。既存の設定・イベント配列を保持し、オフィスの hooks は一つの階層だけに登録してください。`/hooks` で確認してタスクを実行し、`/stats` を開きます。
+
+現在の Python を使い、ローカル SQLite と `/hooks/claude_code` のリモート送信に対応します。URL・Token の環境変数は Codex と共通です。接続元の識別とセッション終了処理は分離し、失敗したツール・応答には成功 XP を付与しません。古いクライアントにないイベントは更新または設定から除外してください。最近のメモは引き続き Codex の要約のみを読みます。詳細は[中国語ガイド](./README.md)を参照してください。
 
 ## ✨ クイックスタート：Codex hooks（推奨）
 
@@ -34,7 +42,7 @@ cp state.sample.json state.json
 python backend/app.py
 ```
 
-[http://127.0.0.1:19000](http://127.0.0.1:19000) を開きます。バックエンドを起動したまま、別のターミナルで Star Office のプロジェクトルートに移動してください。
+[http://127.0.0.1:19000](http://127.0.0.1:19000) を開きます。バックエンドを起動したまま、別のターミナルで STAR OFFICE のプロジェクトルートに移動してください。
 
 ### 2) Codex hooks を設定
 
@@ -44,7 +52,7 @@ python scripts/codex_hooks_config.py
 
 出力を Codex で使用するプロジェクトの `.codex/hooks.json`、またはユーザー設定の `~/.codex/hooks.json` に統合します。既存の hooks がある場合はイベント配列をマージしてください。Codex の `/hooks` で内容を確認して信頼を承認します。
 
-生成されるスクリプトパスは絶対パスなので、別のプロジェクトからも呼び出せます。必要に応じて `--python` で Python のパスを指定してください。
+両生成器は現在の Python 実行ファイル（`sys.executable`）とスクリプトの絶対パスを使用します。プロジェクトの仮想環境で生成してください。`--python` で変更可能です。設定例の実行ファイルとスクリプトパスは両方とも置き換えます。`-B` によりバイトコードキャッシュを書き込みません。
 
 ### 3) タスクを送信して活動を確認
 
@@ -54,13 +62,15 @@ AI アシスタントに、このリポジトリの [SKILL.md](./SKILL.md) に�
 
 ![活動アーカイブ：月間コレクションと注目の目標](docs/screenshots/activity-current.png)
 
+通常・隠し・月間実績は Codex と Claude Code 共通の 11 種類のネイティブイベントのみで判定します。Interrupt と Claude 専用の 22 種類は統計に使用し、正規化された失敗イベントも実績の対象外です。
+
 ---
 
 ## 🔌 Codex hooks 設定
 
 **6 種類のアニメーション状態 + 12 種類のライフサイクルイベント**を使用します。状態は動作を、イベントはその理由を表します。生成される設定は全 12 イベントに対応しています。
 
-生成器と設定例は中国語の `statusMessage` を使い、全イベントのタイムアウトを 3 秒に設定します。`PostToolUse` は非同期で実行します。表示メッセージは Codex の進行状況表示にのみ使用され、オフィスのアニメーションと統計はイベントの内容から決まります。
+生成器と設定例は中国語の `statusMessage` を使い、全イベントのタイムアウトを 3 秒に設定します。Codex の 12 イベントはすべて同期で実行します。セッション終了時に未完了のバックグラウンド hooks が取り消されるため、ツール結果とライフサイクル記録を優先します。表示メッセージは Codex の進行状況表示にのみ使用され、オフィスのアニメーションと統計はイベントの内容から決まります。
 
 | Hook | アニメーション / 意味 |
 |------|-----------------------|
@@ -183,10 +193,10 @@ smoke チェックはページと API の読み取りだけを行います。hoo
 
 ### ステータス自動同期
 
-Agent のルールファイルに次の手順を追加し、Star Office のプロジェクトルートから `set_state.py` を実行します。または `state` と `detail` を指定して `POST /set_state` を送信できます：
+Agent のルールファイルに次の手順を追加し、STAR OFFICE のプロジェクトルートから `set_state.py` を実行します。または `state` と `detail` を指定して `POST /set_state` を送信できます：
 
 ```markdown
-## Star Office ステータス同期ルール
+## STAR OFFICE ステータス同期ルール
 - タスク開始時：`python3 set_state.py <状態> "<説明>"` を実行してから作業開始
 - タスク完了時：`python3 set_state.py idle "待機中"` を実行してから返答
 ```

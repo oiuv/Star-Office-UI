@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Star 的像素办公室</title>
+    <title>STAR OFFICE · AI Agent 像素办公室</title>
     <style>
         @font-face {
             font-family: 'ArkPixel';
@@ -1109,8 +1109,8 @@
                 assetHintNotInScene: '当前场景未检测到此对象，仍可替换文件（刷新后生效）',
                 assetHintDefault: '通用素材：建议保持原图尺寸、透明通道与视觉重心一致，避免错位或失真',
                 showCoords: '显示坐标', hideCoords: '隐藏坐标', moveView: '移动视野', lockView: '锁定视野',
-                memoTitle: '最 近 小 记', guestTitle: '访 客 列 表', officeTitle: 'Star 小猫的办公室',
-                loadingOffice: '正在加载 Star 的像素办公室...'
+                memoTitle: '最 近 小 记', guestTitle: '访 客 列 表', officeTitle: 'Star 小猫的办公室', pageTitle: 'STAR OFFICE · AI Agent 像素办公室',
+                loadingOffice: '正在加载 STAR OFFICE...'
             },
             en: {
                 controlTitle: 'Star Status',
@@ -1137,8 +1137,8 @@
                 assetHintNotInScene: 'This object is not detected in current scene; you can still replace file (effective after refresh)',
                 assetHintDefault: 'Generic asset: keep source size, alpha channel, and visual anchor to avoid drift/distortion',
                 showCoords: 'Show Coords', hideCoords: 'Hide Coords', moveView: 'Pan View', lockView: 'Lock View',
-                memoTitle: 'RECENT NOTES', guestTitle: 'VISITOR LIST', officeTitle: 'Star Cat Office',
-                loadingOffice: 'Loading Star’s pixel office...'
+                memoTitle: 'RECENT NOTES', guestTitle: 'VISITOR LIST', officeTitle: 'Star Cat Office', pageTitle: 'STAR OFFICE · AI Agent Pixel Office',
+                loadingOffice: 'Loading STAR OFFICE...'
             },
             ja: {
                 controlTitle: 'Star ステータス',
@@ -1165,8 +1165,8 @@
                 assetHintNotInScene: '現在のシーンでこのオブジェクトは未検出です。ファイル差し替えは可能（更新後に反映）',
                 assetHintDefault: '汎用素材：元サイズ・透過・視覚アンカーを維持し、ズレや崩れを防いでください',
                 showCoords: '座標表示', hideCoords: '座標非表示', moveView: '視点移動', lockView: '視点固定',
-                memoTitle: '最近のメモ', guestTitle: '訪問者リスト', officeTitle: 'Star 猫のオフィス',
-                loadingOffice: 'Star のピクセルオフィスを読み込み中...'
+                memoTitle: '最近のメモ', guestTitle: '訪問者リスト', officeTitle: 'Star 猫のオフィス', pageTitle: 'STAR OFFICE · AI Agent ピクセルオフィス',
+                loadingOffice: 'STAR OFFICE を読み込み中...'
             }
         };
 
@@ -1180,6 +1180,7 @@
         }
 
         function applyLanguage() {
+            document.title = t('pageTitle');
             const setText = (id, key) => { const el = document.getElementById(id); if (el) el.textContent = t(key); };
             const setPh = (id, key) => { const el = document.getElementById(id); if (el) el.placeholder = t(key); };
 
@@ -3168,8 +3169,8 @@ function toggleBrokerPanel() {
                 subtitle.textContent = (statuses[agent.authStatus] || agent.authStatus || '待授权') + ' · ' + (states[agent.state] || agent.state || '待命');
                 info.append(title, subtitle); row.append(info);
                 const actions = document.createElement('div'); actions.className = 'guest-agent-buttons';
-                if (agent.source === 'codex') {
-                    const label = document.createElement('span'); label.textContent = 'Codex hooks'; label.style.fontSize = '11px'; actions.append(label);
+                if (['codex','claude_code'].includes(agent.source)) {
+                    const label = document.createElement('span'); label.textContent = agent.source === 'claude_code' ? 'Claude Code hooks' : 'Codex hooks'; label.style.fontSize = '11px'; actions.append(label);
                 } else {
                     const leave = document.createElement('button'); leave.className = 'leave-btn'; leave.textContent = '离开房间';
                     leave.addEventListener('click', () => leaveGuestAgent(agent.agentId, name)); actions.append(leave);

@@ -8,7 +8,7 @@ import uuid
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
-from hook_events import HOOKS, STATES, short_text
+from hook_events import SHARED_HOOKS, ALL_HOOKS, STATES, PROVIDERS, short_text
 from achievements import build_achievements, build_collection, build_explorations, build_monthly_badges
 
 DEFAULT_DB = Path(__file__).resolve().parent.parent / "data" / "office-events.sqlite3"
@@ -90,9 +90,19 @@ class EventStore:
             if db.execute("SELECT 1 FROM events WHERE event_id=?", (e["event_id"],)).fetchone():
                 return {"duplicate": True, "applied": False}
             previous = db.execute("SELECT * FROM actors WHERE actor_id=?", (actor,)).fetchone()
+            if e["source"] == "claude_code" and not e["turn_id"]:
+                # Older clients lack prompt_id. Keep a local turn across synchronous
+                # hooks, without reading or storing prompts/transcripts.
+                if name == "UserPromptSubmit":
+                    e["turn_id"] = str(uuid.uuid4())
+                elif previous:
+                    e["turn_id"] = previous["turn_id"] or ""
             applied = not previous or at >= previous["updated_at"]
+            if e["metadata"].get("observe_only"):
+                applied = False
+                e["state"] = previous["state"] if previous else "idle"
             if previous and name not in {"UserPromptSubmit", "SessionStart", "SubagentStart"}:
-                if e["turn_id"] and previous["closed_turn"] == e["turn_id"]:
+                if e["turn_id"] and previous["closed_turn"] == e["turn_id"] and name not in {"SessionEnd", "SubagentStop"}:
                     applied = False
                 if previous["ended"] and name not in {"Stop", "Interrupt", "SessionEnd", "SubagentStop"}:
                     applied = False
@@ -122,9 +132,9 @@ class EventStore:
                     (actor, e["actor_name"], e["session_id"], e["state"], e["detail"], at,
                      e["turn_id"], closed, resume, e["source"], int(e["metadata"].get("is_subagent", False)),
                      int(name in {"SessionEnd", "SubagentStop"})))
-                if name in {"Interrupt", "SessionEnd"} and e["session_id"]:
-                    db.execute("UPDATE actors SET state='idle', detail=?, ended=1, closed_turn=turn_id, updated_at=? WHERE session_id=? AND is_subagent=1 AND updated_at<=?",
-                               ("父会话已结束或中断", at, e["session_id"], at))
+                if name in {"Interrupt", "SessionEnd"} and e["session_id"] and not e["metadata"].get("is_subagent"):
+                    db.execute("UPDATE actors SET state='idle', detail=?, ended=1, closed_turn=turn_id, updated_at=? WHERE session_id=? AND source=? AND is_subagent=1 AND updated_at<=?",
+                               ("父会话已结束或中断", at, e["session_id"], e["source"], at))
             if e["tool_id"] and name in {"PreToolUse", "PostToolUse"}:
                 if name == "PreToolUse":
                     db.execute("""INSERT INTO tools(actor_id,tool_id,tool_name,state,started_at) VALUES (?,?,?,?,?)
@@ -153,7 +163,7 @@ class EventStore:
 
     def main_state(self, db=None):
         actors = self.actors(db=db)
-        roots = [a for a in actors if a["source"] == "codex" and not a["is_subagent"]]
+        roots = [a for a in actors if a["source"] in PROVIDERS and not a["is_subagent"]]
         if not roots:
             return None
         manual = [a for a in actors if a["actor_id"] == "main"]
@@ -172,10 +182,11 @@ class EventStore:
         if state:
             conditions.append("state=?"); args.append(state)
         if hook:
-            conditions.append("event_name=?"); args.append(hook)
+            conditions.append("COALESCE(json_extract(metadata, '$.original_event_name'), event_name)=?"); args.append(hook)
         with self.connect() as db:
             rows = db.execute("SELECT * FROM events WHERE " + " AND ".join(conditions) + " ORDER BY occurred_at DESC, received_at DESC LIMIT ?", [*args, limit]).fetchall()
-        return [{**dict(row), "metadata": json.loads(row["metadata"])} for row in rows]
+        return [{**dict(row), "event_name": json.loads(row["metadata"]).get("original_event_name", row["event_name"]),
+                 "metadata": json.loads(row["metadata"])} for row in rows]
 
     def stats(self, since, until):
         with self.connect() as db:
@@ -187,24 +198,27 @@ class EventStore:
             reward_rows = db.execute("SELECT * FROM events WHERE event_name IN ('Stop','SubagentStop','PostToolUse') AND outcome='ok'").fetchall()
             achievement_rows = db.execute(
                 "SELECT event_id,event_name,actor_id,session_id,turn_id,tool_id,outcome,occurred_at,metadata FROM events "
-                "WHERE event_name IN (" + ",".join("?" for _ in HOOKS) + ")", HOOKS
+                "WHERE event_name IN (" + ",".join("?" for _ in SHARED_HOOKS) + ")", SHARED_HOOKS
             ).fetchall()
-            terminators = db.execute("SELECT session_id, occurred_at FROM events WHERE applied=1 AND event_name IN ('SessionEnd','Interrupt') AND occurred_at<=? ORDER BY occurred_at", (until,)).fetchall()
+            terminators = db.execute("SELECT source, session_id, occurred_at, metadata FROM events WHERE applied=1 AND event_name IN ('SessionEnd','Interrupt') AND occurred_at<=? ORDER BY occurred_at", (until,)).fetchall()
         states = {s: {"count": 0, "transitions": 0, "seconds": 0} for s in STATES}
-        hooks = {h: 0 for h in HOOKS}
+        hooks = {h: 0 for h in ALL_HOOKS}
         daily = {}
         for row in rows:
             states[row["state"]]["count"] += 1
             states[row["state"]]["transitions"] += row["transition"]
-            if row["event_name"] in hooks:
-                hooks[row["event_name"]] += 1
+            raw_name = json.loads(row["metadata"]).get("original_event_name", row["event_name"])
+            if raw_name in hooks:
+                hooks[raw_name] += 1
             day = datetime.fromtimestamp(row["occurred_at"]).strftime("%Y-%m-%d")
             item = daily.setdefault(day, {"date": day, "events": 0, "turns": 0})
             item["events"] += 1
         def observed_end(row, end):
             if json.loads(row["metadata"]).get("is_subagent"):
                 for terminal in terminators:
-                    if terminal["session_id"] == row["session_id"] and row["occurred_at"] <= terminal["occurred_at"] <= end:
+                    if (terminal["source"] == row["source"] and terminal["session_id"] == row["session_id"]
+                            and not json.loads(terminal["metadata"]).get("is_subagent")
+                            and row["occurred_at"] <= terminal["occurred_at"] <= end):
                         return terminal["occurred_at"]
             return end
         previous = {}
@@ -243,7 +257,7 @@ class EventStore:
         return {"since": since, "until": until, "states": states, "hooks": hooks,
                 "overview": {"events": len(rows), "state_updates": sum(r["event_name"] == "StateUpdate" for r in rows),
                     "heartbeats": sum(r["heartbeat"] for r in rows), "transitions": sum(r["transition"] for r in rows),
-                    "sessions": len({r["session_id"] for r in rows if r["session_id"]}),
+                    "sessions": len({(r["source"], r["session_id"]) for r in rows if r["session_id"]}),
                     "turns": completed_turns, "tools": len(tools), "tool_errors": failed,
                     "permission_requests": hooks["PermissionRequest"], "interrupts": hooks["Interrupt"],
                     "compactions": hooks["PostCompact"], "subagents": hooks["SubagentStart"],

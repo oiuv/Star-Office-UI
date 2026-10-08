@@ -1,4 +1,4 @@
-# Star Office Tauri Desktop Shell
+# STAR OFFICE · AI Agent 像素办公室（Tauri 桌面端）
 
 这个目录用于把 `Star-Office-UI` 包成桌面应用（透明窗口），并在启动时自动拉起后端进程。
 

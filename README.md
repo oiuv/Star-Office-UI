@@ -1,13 +1,13 @@
-# Star Office UI · Codex 版
+# STAR OFFICE · AI Agent 像素办公室
 
 🌐 Language: **中文** | [English](./README.en.md) | [日本語](./README.ja.md)
 
 ![全屏像素办公室：底部门牌菜单、访客角色与左下角状态提示](docs/screenshots/office-current.png)
 
-**一个由 Codex hooks 驱动的像素办公室看板** —— 把 AI 助手的工作状态实时可视化，让你直观看到"谁在做什么、最近做了什么、现在是否在线"。
+**一个由 Codex / Claude Code hooks 驱动的像素办公室看板** —— 把 AI 助手的工作状态实时可视化，让你直观看到"谁在做什么、最近做了什么、现在是否在线"。
 
 主界面是自适应全屏办公室，没有浏览器滚动条；点击底部办公室名称打开菜单，任务提示保留在房间左下角。支持多 Agent 协作、中英日切换、AI 生图装修和可选桌面宠物。
-推荐通过 **Codex hooks** 自动驱动角色状态并记录会话、工具和子 Agent 活动；其他 AI Agent 也可通过脚本或 HTTP API 接入。
+推荐通过 **Codex / Claude Code hooks** 自动驱动角色状态并记录会话、工具和子 Agent 活动；其他 AI Agent 也可通过脚本或 HTTP API 接入。
 
 本项目基于 [ringhyacinth/Star-Office-UI](https://github.com/ringhyacinth/Star-Office-UI) 修改，当前开发与部署仓库为 [oiuv/Star-Office-UI](https://github.com/oiuv/Star-Office-UI)。
 
@@ -31,7 +31,7 @@ python -m pip install -r backend/requirements.txt
 python backend/app.py
 ```
 
-打开 [http://127.0.0.1:19000](http://127.0.0.1:19000)。保持后端运行，另开终端进入 Star Office 项目根目录，继续配置 hooks。
+打开 [http://127.0.0.1:19000](http://127.0.0.1:19000)。保持后端运行，另开终端进入 STAR OFFICE 项目根目录，继续配置 hooks。
 
 ### 2) 生成并启用 Codex hooks
 
@@ -41,7 +41,7 @@ python scripts/codex_hooks_config.py
 
 把输出配置合并到你使用 Codex 的项目 `.codex/hooks.json`，或用户目录的 `~/.codex/hooks.json`（自定义 Codex 主目录时使用 `$CODEX_HOME/hooks.json`）。同一份办公室 hooks 只配置在一处，避免项目与全局重复执行；已有 hooks 应合并事件数组。然后在 Codex 中使用 `/hooks` 检查并信任配置。
 
-生成的脚本路径为绝对路径，因此 Codex 可以在其他项目中调用这份办公室集成。Python 解释器需可访问；可用 `--python` 指定解释器路径。
+两个生成器默认使用运行生成器的 Python 解释器绝对路径（`sys.executable`），脚本也使用绝对路径，可从其他项目调用。建议用项目虚拟环境生成配置：`.\.venv\Scripts\python.exe -B scripts\codex_hooks_config.py`；Claude 对应 `scripts\claude_hooks_config.py`。可用 `--python` 显式覆盖解释器，示例文件中的解释器及脚本路径均需替换。
 
 ### 3) 提交任务，查看动画与统计
 
@@ -61,9 +61,9 @@ python scripts/codex_hooks_config.py
 
 ### 配置说明
 
-按快速上手生成配置；生成器只输出 JSON，不会修改现有文件。也可使用 [hooks.example.json](./integrations/codex/hooks.example.json)，替换其中的脚本路径。`--python` 可指定 Python 解释器；Windows 路径会加引号，支持空格。
+按快速上手生成配置；生成器只输出 JSON，不会修改现有文件。也可使用 [hooks.example.json](./integrations/codex/hooks.example.json)，替换其中的解释器及脚本路径。`--python` 可指定 Python 解释器；Windows 路径会加引号，支持空格。
 
-配置使用中文 `statusMessage`，超时为 3 秒，`PostToolUse` 异步执行。提示文字仅用于 Codex 运行提示，角色状态与统计由事件内容决定。hooks 定义变更后需在 `/hooks` 重新审核，项目级配置还要求信任该项目；脚本只依赖 Python 标准库。
+配置使用中文 `statusMessage`，12 类事件全部同步，超时为 3 秒，以优先记录工具结果、XP、成就和生命周期。Codex 会取消会话结束时未完成的后台 hooks，因此 `PostToolUse` 也保持同步。提示文字仅用于 Codex 运行提示，角色状态与统计由事件内容决定。hooks 定义变更后需在 `/hooks` 重新审核，项目级配置还要求信任该项目；脚本只依赖 Python 标准库。
 
 ### 事件与动画状态
 
@@ -94,6 +94,31 @@ python scripts/codex_hooks_config.py
 - 远程上报超时或失败时跳过该次记录，不重试，也不回退到本地数据库；远程后端需保持在线。
 - 异步 PostToolUse 迟到仍留日志，但不会复活已结束回合；多会话、子 Agent 分别记录。
 - 五分钟未更新的状态回到待命。长工具调用可能暂时视为离线，直到下一次 hook；时长是保守观测值。
+
+---
+
+## 🔌 Claude Code hooks 接入
+
+在项目根目录执行：
+
+```bash
+python scripts/claude_hooks_config.py
+```
+
+生成器只输出 JSON；把 `hooks` 合并到 Claude Code 项目的 `.claude/settings.json`、`.claude/settings.local.json`，或用户的 `~/.claude/settings.json`，保留其他设置及已有事件数组。同一份办公室集成只安装在一个层级。生成配置使用当前 Python 的绝对路径；换解释器时可指定 `--python`。使用 `command`（解释器）加 `args`（参数列表）直接启动进程，无需经过 Bash 或 PowerShell 的路径引号处理；不使用 Codex 专用的 `commandWindows`。两边均以 `-B` 执行观察器，避免生成 Python 字节码缓存。
+
+在 Claude Code 的 `/hooks` 中确认配置，然后提交任务。办公室与 `/stats` 会显示 Claude Code 的主会话、工具和子 Agent 活动。配置示例见 [Claude Code hooks](./integrations/claude_code/hooks.example.json)，协议参考 [官方 hooks 文档](https://code.claude.com/docs/en/hooks)。
+
+- 支持接收 Claude Code 官方 33 类事件，活动日志、筛选和 hooks 计数保留原始名称；默认生成 32 类观察配置。`WorktreeCreate` 会替换默认 worktree 创建逻辑并要求返回实际路径，因此不自动注册；已有自定义创建器可在创建成功后把 payload 传给 `claude_hook.py`（此事件不输出 `{}`），或上报 HTTP。平台接收能力不等于自动订阅了所有事件。
+- `FileChanged` 默认接收其他 hooks 已指定的监视文件；可用 `--watch-file package.json --watch-file pyproject.toml` 明确监视文件名。它不是全磁盘监视器。`MessageDisplay` 记录批次标识而不保存消息正文，交互流式输出可能产生较多事件。
+- 额外观察事件只记日志和计数，不改变角色状态、不增加 XP 或成就。共用六种动画状态、SQLite 活动账本、XP 和成就门槛；Codex 与 Claude Code 的角色、工具及会话终止分别隔离，已有 Codex 配置和历史数据继续使用。
+- 本地入口为 `claude_hook.py`；远程上报 `POST /hooks/claude_code`，环境变量与 Token 要求同 Codex。远程传原生 Claude Code payload，无需手动转换。
+- `PostToolUseFailure` 归一为 `PostToolUse` + 失败结果；`StopFailure` 归一为失败的 `Stop`，不领取完成回合 XP 或成就。记录保留 `metadata.original_event_name`，不会保存原始错误正文。
+- 使用原生 `prompt_id` 关联回合，`tool_use_id` 关联工具，`agent_id` 关联子 Agent。旧客户端缺少 `prompt_id` 时，由账本将同步 hooks 关联到最近的提示词回合；无法精确识别旧客户端跨回合迟到或重放的事件。建议使用最新版，并避免重复安装。
+- Claude Code 不注册 Codex 的 `Interrupt`。工具失败、会话退出不冒充用户中断；中断只计入统计与日志，不作为成就数据源。仅启用客户端实际支持的事件；旧版本缺少 `PostCompact` 或 `StopFailure` 时应升级或移除对应配置。
+- 采用混合执行：13 类关键事件同步（会话、提示词、工具前后/失败、权限等待、压缩、子 Agent、回复结束/失败），超时 3 秒；19 类日志观察事件异步，不阻塞 Agent。Claude 不对 `async: true` 强制执行 hook 的 `timeout`，`claude -p` 退出时会取消未完成的异步 hooks，因此日志观察事件尽力记录，不能承诺零漏记；关键事件保留同步以确保活动统计与离线投影可靠。
+- 观察器遇错仍输出 `{}` 并返回 0，不批准权限、不要求继续任务。敏感输入裁剪规则与 Codex 相同。
+- 活动档案默认合并两个来源，日志及角色名区分来源；本阶段尚未提供按 provider 筛选。最近小记仍只读取 Codex summaries，不代表 Claude Code 已有会话总结接入。
 
 ---
 
@@ -203,10 +228,10 @@ cloudflared tunnel --url http://127.0.0.1:19000
 
 ### 状态自动同步
 
-在 Agent 的规则文件中加入以下规则，让它主动调用 `set_state.py`；也可发送 `POST /set_state`，请求字段为 `state` 和 `detail`。在 Star Office 项目根目录执行脚本：
+在 Agent 的规则文件中加入以下规则，让它主动调用 `set_state.py`；也可发送 `POST /set_state`，请求字段为 `state` 和 `detail`。在 STAR OFFICE 项目根目录执行脚本：
 
 ```markdown
-## Star Office 状态同步规则
+## STAR OFFICE 状态同步规则
 - 接到任务时：先执行 `python3 set_state.py <状态> "<描述>"` 再开始工作
 - 完成任务后：执行 `python3 set_state.py idle "待命中"` 再回复
 ```
@@ -280,7 +305,7 @@ python office-agent-push.py
 
 访问 [http://127.0.0.1:19000/stats](http://127.0.0.1:19000/stats)，或点击办公室的「活动档案」。
 
-支持今日、近 7 天、近 30 天、全部的事件、会话、回合和工具统计，六类状态的次数与观测时长，十二类 hooks 计数，权限等待、中断、压缩、子 Agent、每日趋势、筛选日志，以及最新 200 条 JSON 导出。
+支持今日、近 7 天、近 30 天、全部的事件、会话、回合和工具统计，六类状态的次数与观测时长，Codex 12 类 / Claude Code 33 类 hooks 计数，权限等待、中断、压缩、子 Agent、每日趋势、筛选日志，以及最新 200 条 JSON 导出。
 
 工具耗时通过 `tool_use_id` 配对开始/结束；只有明确错误标记或非零退出码才计为失败。回合结束 +20 XP、工具成功 +2、子 Agent 收尾 +10，100 XP 升一级。重复回放同一回合/工具不会重复领奖，主动状态心跳不产生经验值；成就和月度徽章不额外发放 XP。
 
@@ -293,15 +318,15 @@ python office-agent-push.py
 | 成长线 | 基础（1 次） | 固定里程碑 | 进阶徽章 | Lv.1 / Lv.2 / Lv.3 累计门槛 |
 | --- | --- | --- | --- | --- |
 | 开始会话 | 初来办公室 | 办公室常客：10 次 | 资深常驻 | 50 / 100 / 200 |
-| 提交任务 | 新的委托 | 任务接力：25 次 | 委托达人 | 100 / 200 / 400 |
+| 提交任务 | 新的委托 | 任务接力：25 次 | 运筹帷幄 | 100 / 200 / 400 |
 | 结束回合 | 初次收工 | 稳步交付：25 次 | 有始有终 | 100 / 200 / 400 |
-| 发起工具 | 工具上手 | 实践能手：100 次 | 探索行家 | 1,000 / 2,000 / 4,000 |
-| 工具成功 | 初试成功 | 工具熟练者：100 次 | 工具大师 | 1,000 / 2,000 / 4,000 |
+| 发起工具 | 工具上手 | 实践能手：100 次 | 开拓先锋 | 1,000 / 2,000 / 4,000 |
+| 工具成功 | 初试成功 | 工具熟练者：100 次 | 工具宗师 | 1,000 / 2,000 / 4,000 |
 | 整理完成 | 记忆管理员 | 思路常新：10 次 | 记忆典藏 | 50 / 100 / 200 |
-| 协作启动 | 邀请搭档 | 组建小队：5 次 | 协作发起人 | 10 / 20 / 40 |
+| 协作启动 | 邀请搭档 | 组建小队：5 次 | 协作指挥官 | 10 / 20 / 40 |
 | 协作收尾 | 协作伙伴 | 配合渐佳：5 次 | 默契团队 | 10 / 20 / 40 |
 
-会话结束、开始整理、权限确认、主动中断移入独立的隐藏探索，不影响常规成就收集；全部 12 类 hooks 仍正常记录和统计。
+所有常规、隐藏、月度成就只使用 Codex 与 Claude Code 共用的 11 类原生 hooks；`Interrupt` 和 Claude Code 独有的 22 类事件仅参与统计等功能，不解锁成就。归一为 `PostToolUse` / `Stop` 的独有失败事件也不能绕过这一限制。会话结束、开始整理、权限确认等趣味经历归入独立的隐藏探索，不影响常规成就收集。
 
 宽屏每条成长线左侧上下排列两枚固定徽章，右侧进阶卡片跨两行，两列总高度一致；窄屏按基础、里程碑、进阶依次纵向显示。已解锁、未解锁、可成长筛选会自动调整布局，不留下空位。
 
@@ -309,7 +334,7 @@ python office-agent-push.py
 
 成就使用办公室全部历史记录，不受日期筛选影响。工具按工具 ID、回合按回合 ID、会话按会话 ID 去重；上下文整理按独立事件 ID 计数，缺少业务 ID 时使用事件 ID。明确失败的工具结果不计入成功成就。
 
-历史记录自动按新规则换算，XP 不清零。在“可成长”筛选中最多关注 3 枚进阶徽章，未解锁也可关注。选择保存在当前浏览器；旧关注的任务提交、工具发起里程碑分别迁移到同一成长线的“委托达人 / 探索行家”，已经关注的其他进阶徽章保留。
+历史记录自动按新规则换算，XP 不清零。在“可成长”筛选中最多关注 3 枚进阶徽章，未解锁也可关注。选择保存在当前浏览器；旧关注的任务提交、工具发起里程碑分别迁移到同一成长线的“运筹帷幄 / 开拓先锋”，已经关注的其他进阶徽章保留。
 
 ### 全成就与月度收藏
 
@@ -332,15 +357,15 @@ python office-agent-push.py
 | 好好道别 | 结束 1 个会话（SessionEnd） |
 | 整理行囊 | 开始 1 次上下文整理（PreCompact） |
 | 等待确认 | 收到 1 次权限确认（PermissionRequest） |
-| 适时暂停 | 主动中断 1 次（Interrupt） |
+| 一气呵成 | 同一角色、同一会话的一个回合中，至少 3 次不同工具调用成功后结束回合 |
 | 周末加班 | 周六或周日结束 1 个回合 |
 | 夜猫子 | 22:00 至次日 05:00 前结束 1 个回合 |
 | 晨光来客 | 05:00 至 08:00 前提交 1 个任务 |
 | 旧事新篇 | 收到 source=resume 的 SessionStart，恢复已有会话 |
-| 柳暗花明 | 同一角色、同一会话中，工具失败后成功完成另一工具调用 |
+| 柳暗花明 | 同一角色、同一会话中，权限等待后工具成功，或工具失败后另一工具调用成功 |
 | 办公室探秘家 | 集齐前 9 枚隐藏探索 |
 
-时间事件按活动标识去重，跨日重放不会重复触发。恢复会话依据恢复事件的元数据识别；工具失败后的成功必须来自更晚的另一工具调用，不跨角色或会话拼接。
+时间事件按活动标识去重，跨日重放不会重复触发。恢复会话依据恢复事件的元数据识别；权限等待后的成功必须更晚，工具失败后的成功还须来自另一工具调用，不跨角色或会话拼接。“一气呵成”不跨回合累加，工具重放不重复计数。原先依赖 Interrupt 的“适时暂停”由新探索替代，历史记录按共用事件重新判定。
 
 </details>
 
@@ -401,6 +426,7 @@ python office-agent-push.py
 | 端点 | 说明 |
 |------|------|
 | `POST /hooks/codex` | 接收 Codex hook 事件；远程使用 Bearer Token |
+| `POST /hooks/claude_code` | 接收 Claude Code hook 事件；同样的认证与输入大小限制 |
 | `GET /api/stats?period=today` | 活动统计；支持 `today` / `7d` / `30d` / `all` |
 | `GET /api/events?period=7d&limit=50` | 活动日志；`limit` 为 1–200，可加 `state` / `hook` 筛选 |
 | `GET /health` | 健康检查 |

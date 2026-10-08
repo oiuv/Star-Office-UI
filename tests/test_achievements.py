@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "backend"))
 from achievements import (ACHIEVEMENTS, REPEATABLE_ACHIEVEMENTS, achievement_progress,
                           build_achievements, build_collection, build_explorations, build_monthly_badges)
 from event_store import EventStore
-from hook_events import HOOKS
+from hook_events import HOOKS, ALL_HOOKS, SHARED_HOOKS
 
 
 def event(name, identity, **extra):
@@ -40,6 +40,20 @@ def month_events(year=2026, month=1, days=10):
 
 
 class AchievementTests(unittest.TestCase):
+    def test_achievements_ignore_nonshared_and_normalized_exclusive_events(self):
+        self.assertEqual(len(SHARED_HOOKS), 11)
+        self.assertNotIn("Interrupt", SHARED_HOOKS)
+        excluded = [event(name, name, occurred_at=at(2026, 10, 3, 23))
+                    for name in ("Interrupt", "Notification", "TaskCompleted", "StopFailure", "PostToolUseFailure")]
+        excluded += [event("Stop", "normalized-stop", metadata={"original_event_name": "StopFailure"},
+                           occurred_at=at(2026, 10, 3, 23)),
+                     event("PostToolUse", "normalized-tool", metadata=json.dumps({"original_event_name": "PostToolUseFailure"}),
+                           occurred_at=at(2026, 10, 3, 23)),
+                     event("SessionStart", "nonshared-resume", metadata={"original_event_name": "Setup", "source": "resume"})]
+        self.assertEqual(build_achievements(excluded), build_achievements([]))
+        self.assertEqual(build_explorations(excluded), build_explorations([]))
+        self.assertEqual(build_monthly_badges(excluded), build_monthly_badges([]))
+
     def test_eight_tracks_have_two_fixed_badges_and_one_advanced(self):
         catalog = badges([])
         self.assertEqual(len(catalog), 24)
@@ -154,7 +168,7 @@ class AchievementTests(unittest.TestCase):
             for i, name in enumerate(HOOKS):
                 store.record(event(name, i))
             data = store.stats(0, 2000)
-            self.assertEqual(data["hooks"], dict.fromkeys(HOOKS, 1))
+            self.assertEqual(data["hooks"], {**dict.fromkeys(ALL_HOOKS, 0), **dict.fromkeys(HOOKS, 1)})
             self.assertEqual(sum(b["earned"] for b in data["game"]["badges"]), 8)
             self.assertEqual(data["game"]["xp"], 32)
 
@@ -194,7 +208,7 @@ class AchievementTests(unittest.TestCase):
 
 def discovery_events():
     rows = [event(name, name, occurred_at=at(2026, 10, 5), session_id="main-session")
-            for name in ("SessionEnd", "PreCompact", "PermissionRequest", "Interrupt")]
+            for name in ("SessionEnd", "PreCompact", "PermissionRequest")]
     rows += [
         event("Stop", "weekend", occurred_at=at(2026, 10, 3)),
         event("Stop", "night", occurred_at=at(2026, 10, 5, 22)),
@@ -204,6 +218,10 @@ def discovery_events():
         event("PostToolUse", "failure", occurred_at=at(2026, 10, 5, 11), session_id="recovery", tool_id="failed", outcome="error"),
         event("PostToolUse", "success", occurred_at=at(2026, 10, 5, 11) + 1, session_id="recovery", tool_id="success"),
     ]
+    rows += [event("PostToolUse", f"chain-{i}", occurred_at=at(2026, 10, 5, 12) + i,
+                   session_id="chain-session", turn_id="chain-turn", tool_id=f"chain-{i}") for i in range(3)]
+    rows.append(event("Stop", "chain-stop", occurred_at=at(2026, 10, 5, 12) + 3,
+                      session_id="chain-session", turn_id="chain-turn"))
     return rows
 
 
@@ -212,6 +230,25 @@ def discovered(rows, now=None):
 
 
 class ExplorationTests(unittest.TestCase):
+    def test_tool_chain_requires_three_successes_before_stop_in_one_actor_session_turn(self):
+        tools = [event("PostToolUse", f"t{i}", actor_id="a", session_id="s", turn_id="turn", tool_id=f"t{i}", occurred_at=1000+i) for i in range(3)]
+        stop = event("Stop", "done", actor_id="a", session_id="s", turn_id="turn", occurred_at=1003)
+        self.assertIn("tool_chain", discovered(tools + [stop], 2000))
+        for rows in (tools, tools[:2]+[tools[0],stop], tools+[dict(stop, actor_id="b")],
+                     tools+[dict(stop, session_id="other")], tools+[dict(stop, turn_id="other")],
+                     tools+[dict(stop, outcome="error")], tools+[dict(stop, occurred_at=999)],
+                     tools[:2]+[dict(tools[2], outcome="error"),stop]):
+            self.assertNotIn("tool_chain", discovered(rows, 2000))
+
+    def test_permission_wait_recovery_uses_shared_hooks_and_isolates_actors_and_sessions(self):
+        wait = event("PermissionRequest", "wait", actor_id="a", session_id="s", tool_id="tool")
+        success = event("PostToolUse", "ok", actor_id="a", session_id="s", tool_id="tool", occurred_at=1001)
+        self.assertIn("second_wind", discovered([wait, success], 2000))
+        for changed in ({"actor_id": "b"}, {"session_id": "other"}, {"occurred_at": 1000}, {"outcome": "error"}):
+            self.assertNotIn("second_wind", discovered([wait, dict(success, **changed)], 2000))
+        excluded = dict(wait, metadata={"original_event_name": "PermissionDenied"})
+        self.assertNotIn("second_wind", discovered([excluded, success], 2000))
+
     def test_ten_locked_slots_reveal_no_names_conditions_or_progress(self):
         locked = build_explorations([], at(2026, 10, 10))
         self.assertEqual(len(locked), 10)
@@ -272,9 +309,14 @@ class ExplorationTests(unittest.TestCase):
         self.assertNotIn("second_wind", discovered([dict(fail, session_id=""), dict(success, session_id="")], 2000))
         self.assertEqual(badges([fail, success])["tool_1000"]["current"], 1)
 
+    def test_recovery_uses_event_ids_when_older_records_lack_tool_ids(self):
+        fail = event("PostToolUse", "failed-call", actor_id="a", session_id="s", outcome="error")
+        success = event("PostToolUse", "later-call", actor_id="a", session_id="s", occurred_at=1001)
+        self.assertIn("second_wind", discovered([fail, success], 2000))
+
     def test_rare_hook_discoveries_do_not_change_regular_collection(self):
-        rows = [event(name, name) for name in ("SessionEnd", "PreCompact", "PermissionRequest", "Interrupt")]
-        self.assertEqual(discovered(rows, 2000), {"session_closed", "first_compact", "first_permission", "first_interrupt"})
+        rows = [event(name, name) for name in ("SessionEnd", "PreCompact", "PermissionRequest")]
+        self.assertEqual(discovered(rows, 2000), {"session_closed", "first_compact", "first_permission"})
         self.assertEqual(build_achievements(rows), build_achievements([]))
         self.assertEqual(build_collection(build_achievements(rows))["target"], 24)
         self.assertEqual(build_collection(build_achievements(rows))["current"], 0)
@@ -291,7 +333,7 @@ class ExplorationTests(unittest.TestCase):
             self.assertEqual(full["game"]["exploration"], recent["game"]["exploration"])
             self.assertEqual(sum(b["earned"] for b in recent["game"]["exploration"]), 10)
             self.assertEqual(recent["game"]["collection"]["target"], 24)
-            self.assertEqual(recent["game"]["xp"], 42)
+            self.assertEqual(recent["game"]["xp"], 68)
             self.assertEqual(recent["game"]["period_xp"], 0)
 
 

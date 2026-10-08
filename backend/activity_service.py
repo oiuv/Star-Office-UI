@@ -6,9 +6,9 @@ from event_store import EventStore
 from hook_events import normalize_hook
 from store_utils import _save_json
 
-def apply_hook(payload, store=None, state_file=None):
+def apply_hook(payload, store=None, state_file=None, provider="codex"):
     store = store or EventStore()
-    event = normalize_hook(payload)
+    event = normalize_hook(payload, provider)
     result = store.record(event)
     if result["applied"] and not event["metadata"]["is_subagent"]:
         path = state_file or os.getenv("STAR_OFFICE_STATE_FILE") or Path(__file__).resolve().parent.parent / "state.json"

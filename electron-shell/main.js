@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const net = require("net");
 const { MAIN_WINDOW_SIZE, resizeMainWindow } = require("./window-layout");
-const APP_NAME = "Star Office UI";
+const APP_NAME = "STAR OFFICE · AI Agent 像素办公室";
 const BACKEND_HOST = process.env.STAR_BACKEND_HOST || "127.0.0.1";
 const rawBackendPort = Number(process.env.STAR_BACKEND_PORT || 19000);
 const BACKEND_PORT = Number.isFinite(rawBackendPort) && rawBackendPort > 0 ? rawBackendPort : 19000;
@@ -219,7 +219,7 @@ function createAssetWindow(projectRoot) {
     minHeight: 580,
     x,
     y,
-    title: "Star Decorate Room",
+    title: "STAR OFFICE · 装修房间",
     frame: false,
     transparent: true,
     hasShadow: false,
@@ -294,7 +294,7 @@ function createWindows(projectRoot) {
       nodeIntegration: false,
     },
   });
-  miniWindow.setTitle("Star Office UI Mini");
+  miniWindow.setTitle("STAR OFFICE · Mini");
 
   const v = Date.now();
   const mainUrl = `${BACKEND_BASE_URL}/electron-standalone?desktop=1&v=${v}`;
@@ -509,5 +509,6 @@ app.on("before-quit", () => {
   }
 });
 
-if (app.setName) app.setName(APP_NAME);
+// Keep the existing Electron profile name so saved preferences remain available.
+if (app.setName) app.setName("Star Office UI");
 app.whenReady().then(bootstrap);

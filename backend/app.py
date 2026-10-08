@@ -18,7 +18,7 @@ import hmac
 import ipaddress
 import time
 from event_store import EventStore, period_bounds
-from hook_events import HOOKS, STATES
+from hook_events import HOOKS, ALL_HOOKS, STATES, PROVIDERS
 from image_client import DEFAULT_MODEL, generate_image, validate_base_url
 from io import BytesIO
 from activity_service import apply_hook
@@ -763,7 +763,7 @@ def get_agents():
     public_agents = [{k: v for k, v in a.items() if k not in {"joinKey", "clientId"}} for a in cleaned_agents]
     primary = (event_store.main_state() or {}).get("actor_id")
     for actor in event_store.actors():
-        if actor["source"] != "codex" or actor["actor_id"] == primary:
+        if actor["source"] not in PROVIDERS or actor["actor_id"] == primary:
             continue
         if time.time() - actor["updated_at"] > 300:
             continue
@@ -771,7 +771,7 @@ def get_agents():
             "agentId": actor["actor_id"], "name": actor["actor_name"], "isMain": False,
             "state": actor["state"] if actor["online"] else "idle", "detail": actor["detail"],
             "area": state_to_area(actor["state"] if actor["online"] else "idle"),
-            "source": "codex", "authStatus": "approved" if actor["online"] else "offline",
+            "source": actor["source"], "authStatus": "approved" if actor["online"] else "offline",
             "updated_at": datetime.fromtimestamp(actor["updated_at"]).isoformat(),
             "avatar": "guest_role_" + str(int(actor["actor_id"][-2:], 16) % 6 + 1),
         })
@@ -1111,8 +1111,9 @@ def set_state_endpoint():
         return jsonify({"status": "error", "msg": str(e)}), 500
 
 
-@app.route("/hooks/codex", methods=["POST"])
-def codex_hook_endpoint():
+@app.route("/hooks/codex", methods=["POST"], defaults={"provider": "codex"})
+@app.route("/hooks/claude_code", methods=["POST"], defaults={"provider": "claude_code"})
+def codex_hook_endpoint(provider):
     token = os.getenv("STAR_OFFICE_HOOK_TOKEN", "")
     if token:
         auth = request.headers.get("Authorization", "")
@@ -1128,11 +1129,11 @@ def codex_hook_endpoint():
     if request.content_length and request.content_length > 2_000_000:
         return jsonify({"ok": False, "msg": "Hook input too large"}), 413
     try:
-        return jsonify(apply_hook(request.get_json(silent=True), event_store, STATE_FILE))
+        return jsonify(apply_hook(request.get_json(silent=True), event_store, STATE_FILE, provider=provider))
     except ValueError as error:
         return jsonify({"ok": False, "msg": str(error)}), 400
     except Exception:
-        app.logger.exception("Codex event ingestion failed")
+        app.logger.exception("Agent event ingestion failed")
         return jsonify({"ok": False, "msg": "Activity store unavailable"}), 503
 
 
@@ -1164,7 +1165,7 @@ def activity_events():
         state, hook = request.args.get("state"), request.args.get("hook")
         if state and state not in STATES:
             raise ValueError("Invalid state")
-        if hook and hook not in HOOKS and hook != "StateUpdate":
+        if hook and hook not in ALL_HOOKS and hook != "StateUpdate":
             raise ValueError("Invalid hook")
         return jsonify({"ok": True, "events": event_store.events(since, until, limit, state, hook)})
     except ValueError as error:

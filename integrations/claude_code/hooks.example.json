@@ -1,0 +1,503 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "Setup": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "async": true,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "UserPromptExpansion": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "async": true,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "PermissionDenied": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "async": true,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "PostToolBatch": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "async": true,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "async": true,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "MessageDisplay": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "async": true,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "TaskCreated": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "async": true,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "async": true,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "StopFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "TeammateIdle": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "async": true,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "InstructionsLoaded": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "async": true,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "ConfigChange": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "async": true,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "CwdChanged": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "async": true,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "DirectoryAdded": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "async": true,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "FileChanged": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "async": true,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "WorktreeRemove": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "async": true,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "PreModelSwitch": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "async": true,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "PostModelSwitch": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "async": true,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "Elicitation": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "async": true,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "ElicitationResult": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "async": true,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/absolute/path/python.exe",
+            "timeout": 3,
+            "args": [
+              "-B",
+              "C:/AI/Star-Office-UI/claude_hook.py"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

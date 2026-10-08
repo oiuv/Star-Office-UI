@@ -1,5 +1,5 @@
 {
-  "productName": "Star Desktop Pet",
+  "productName": "STAR OFFICE",
   "version": "0.1.0",
   "identifier": "com.star.desktop-pet",
   "build": { "frontendDist": "../src" },
@@ -9,7 +9,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Star Desktop Pet",
+        "title": "STAR OFFICE · AI Agent 像素办公室",
         "x": 80,
         "y": 60,
         "width": 700,

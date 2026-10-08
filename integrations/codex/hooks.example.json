@@ -1,15 +1,15 @@
 {
-  "description": "Star Office UI Codex lifecycle integration; replace paths, or generate with scripts/codex_hooks_config.py",
+  "description": "STAR OFFICE Codex lifecycle integration; replace interpreter and script paths, or generate with scripts/codex_hooks_config.py",
   "hooks": {
     "SessionStart": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
-            "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
+            "command": "\"/absolute/path/python3\" -B \"/absolute/path/Star-Office-UI/codex_hook.py\"",
+            "commandWindows": "\"C:\\absolute\\path\\python.exe\" -B \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
             "timeout": 3,
-            "statusMessage": "Star Office: 初始化"
+            "statusMessage": "STAR OFFICE: 初始化"
           }
         ]
       }
@@ -19,10 +19,10 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
-            "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
+            "command": "\"/absolute/path/python3\" -B \"/absolute/path/Star-Office-UI/codex_hook.py\"",
+            "commandWindows": "\"C:\\absolute\\path\\python.exe\" -B \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
             "timeout": 3,
-            "statusMessage": "Star Office: 收尾"
+            "statusMessage": "STAR OFFICE: 收尾"
           }
         ]
       }
@@ -32,10 +32,10 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
-            "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
+            "command": "\"/absolute/path/python3\" -B \"/absolute/path/Star-Office-UI/codex_hook.py\"",
+            "commandWindows": "\"C:\\absolute\\path\\python.exe\" -B \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
             "timeout": 3,
-            "statusMessage": "Star Office: 接收任务"
+            "statusMessage": "STAR OFFICE: 接收任务"
           }
         ]
       }
@@ -45,10 +45,10 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
-            "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
+            "command": "\"/absolute/path/python3\" -B \"/absolute/path/Star-Office-UI/codex_hook.py\"",
+            "commandWindows": "\"C:\\absolute\\path\\python.exe\" -B \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
             "timeout": 3,
-            "statusMessage": "Star Office: 执行中"
+            "statusMessage": "STAR OFFICE: 执行中"
           }
         ]
       }
@@ -58,10 +58,10 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
-            "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
+            "command": "\"/absolute/path/python3\" -B \"/absolute/path/Star-Office-UI/codex_hook.py\"",
+            "commandWindows": "\"C:\\absolute\\path\\python.exe\" -B \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
             "timeout": 3,
-            "statusMessage": "Star Office: 请求权限"
+            "statusMessage": "STAR OFFICE: 请求权限"
           }
         ]
       }
@@ -71,11 +71,10 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
-            "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
+            "command": "\"/absolute/path/python3\" -B \"/absolute/path/Star-Office-UI/codex_hook.py\"",
+            "commandWindows": "\"C:\\absolute\\path\\python.exe\" -B \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
             "timeout": 3,
-            "async": true,
-            "statusMessage": "Star Office: 处理工具结果"
+            "statusMessage": "STAR OFFICE: 处理工具结果"
           }
         ]
       }
@@ -85,10 +84,10 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
-            "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
+            "command": "\"/absolute/path/python3\" -B \"/absolute/path/Star-Office-UI/codex_hook.py\"",
+            "commandWindows": "\"C:\\absolute\\path\\python.exe\" -B \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
             "timeout": 3,
-            "statusMessage": "Star Office: 保存上下文"
+            "statusMessage": "STAR OFFICE: 保存上下文"
           }
         ]
       }
@@ -98,10 +97,10 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
-            "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
+            "command": "\"/absolute/path/python3\" -B \"/absolute/path/Star-Office-UI/codex_hook.py\"",
+            "commandWindows": "\"C:\\absolute\\path\\python.exe\" -B \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
             "timeout": 3,
-            "statusMessage": "Star Office: 恢复工作"
+            "statusMessage": "STAR OFFICE: 恢复工作"
           }
         ]
       }
@@ -111,10 +110,10 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
-            "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
+            "command": "\"/absolute/path/python3\" -B \"/absolute/path/Star-Office-UI/codex_hook.py\"",
+            "commandWindows": "\"C:\\absolute\\path\\python.exe\" -B \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
             "timeout": 3,
-            "statusMessage": "Star Office: Agent 工作中"
+            "statusMessage": "STAR OFFICE: Agent 工作中"
           }
         ]
       }
@@ -124,10 +123,10 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
-            "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
+            "command": "\"/absolute/path/python3\" -B \"/absolute/path/Star-Office-UI/codex_hook.py\"",
+            "commandWindows": "\"C:\\absolute\\path\\python.exe\" -B \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
             "timeout": 3,
-            "statusMessage": "Star Office: Agent 收尾"
+            "statusMessage": "STAR OFFICE: Agent 收尾"
           }
         ]
       }
@@ -137,10 +136,10 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
-            "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
+            "command": "\"/absolute/path/python3\" -B \"/absolute/path/Star-Office-UI/codex_hook.py\"",
+            "commandWindows": "\"C:\\absolute\\path\\python.exe\" -B \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
             "timeout": 3,
-            "statusMessage": "Star Office: 待命"
+            "statusMessage": "STAR OFFICE: 待命"
           }
         ]
       }
@@ -150,10 +149,10 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"/absolute/path/Star-Office-UI/codex_hook.py\"",
-            "commandWindows": "python \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
+            "command": "\"/absolute/path/python3\" -B \"/absolute/path/Star-Office-UI/codex_hook.py\"",
+            "commandWindows": "\"C:\\absolute\\path\\python.exe\" -B \"C:\\AI\\Star-Office-UI\\codex_hook.py\"",
             "timeout": 3,
-            "statusMessage": "Star Office: 已中断"
+            "statusMessage": "STAR OFFICE: 已中断"
           }
         ]
       }

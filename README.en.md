@@ -1,13 +1,13 @@
-# Star Office UI
+# STAR OFFICE · AI Agent Pixel Office
 
 🌐 Language: [中文](./README.md) | **English** | [日本語](./README.ja.md)
 
-![Star Office UI Cover](docs/screenshots/office-current.png)
+![STAR OFFICE Cover](docs/screenshots/office-current.png)
 
 **A pixel-art AI office dashboard** — visualize your AI assistant's work status in real time, so you can see at a glance who's doing what, what they worked on recently, and whether they're online.
 
 Supports multi-agent collaboration, trilingual UI (CN/EN/JP), AI-powered room design, and desktop pet mode.
-**Codex hooks** are the recommended integration: automatically update characters and record sessions, tools, and subagent activity. Other AI agents can connect through scripts or the HTTP API.
+**Codex / Claude Code hooks** are the recommended integrations: automatically update characters and record sessions, tools, and subagent activity. Other AI agents can connect through scripts or the HTTP API.
 
 This version is based on [ringhyacinth/Star-Office-UI](https://github.com/ringhyacinth/Star-Office-UI). Development and deployment use [oiuv/Star-Office-UI](https://github.com/oiuv/Star-Office-UI).
 
@@ -17,6 +17,14 @@ This version is based on [ringhyacinth/Star-Office-UI](https://github.com/ringhy
 ---
 
 > The browser office fills the viewport. Click the bottom office name for Recent Notes, Visitors, Room Design, Activity, and settings. Codex subagents join automatically without keys; after stopping they become offline and disappear after five minutes without events. Direct Python startup does not load `.env`; inject variables through your shell or service manager. Guest distribution uses `frontend/office-agent-push.py` (requires `requests`); the root script creates a fresh random test visitor on each launch. Recent Notes read the backend account's Codex summaries, not the visiting browser's files. See the [Chinese guide](./README.md) for the full current configuration and regression commands.
+
+## Claude Code hooks
+
+The default configuration keeps 13 lifecycle events synchronous and runs 19 observation events asynchronously. WorktreeCreate is accepted but needs a custom creator; it is not registered automatically. Async observations may be cancelled when a non-interactive session exits.
+
+Run `python scripts/claude_hooks_config.py` and merge the printed `hooks` into project `.claude/settings.json` (or `.claude/settings.local.json`) or user `~/.claude/settings.json`. Preserve existing settings and hook arrays; install the office observer at only one level. Check `/hooks`, submit a task, then open `/stats`.
+
+Claude command hooks use executable `command` plus an `args` list to avoid shell quoting differences. The observer uses the current Python interpreter, supports local SQLite recording and remote `/hooks/claude_code` with the same URL/token environment variables as Codex. Provider identities and session termination are isolated. Tool failures are recorded without success XP; response failures do not earn completion badges. Missing events on older clients require upgrading or removing those entries. Recent Notes still read Codex summaries only. See the [Chinese guide](./README.md) for mappings, older-client limits and verification details.
 
 ## ✨ Quick Start: Codex hooks (recommended)
 
@@ -34,7 +42,7 @@ cp state.sample.json state.json
 python backend/app.py
 ```
 
-Open [http://127.0.0.1:19000](http://127.0.0.1:19000). Leave the backend running and open another terminal in the Star Office project root.
+Open [http://127.0.0.1:19000](http://127.0.0.1:19000). Leave the backend running and open another terminal in the STAR OFFICE project root.
 
 ### 2) Configure Codex hooks
 
@@ -44,7 +52,7 @@ python scripts/codex_hooks_config.py
 
 Merge the output into the `.codex/hooks.json` of the project where you use Codex, or your user-level `~/.codex/hooks.json`. Merge event arrays with existing hooks. Use `/hooks` in Codex to review and trust the configuration.
 
-The generated command uses an absolute script path, so Codex can call it from other projects. Use `--python` to specify an interpreter path when needed.
+Both generators default to the current Python executable (`sys.executable`) and an absolute script path. Generate with the project virtual environment to keep the interpreter consistent. Use `--python` to override it; replace both interpreter and script paths in the examples. Hooks run with `-B` to avoid writing bytecode caches.
 
 ### 3) Submit a task and view activity
 
@@ -54,13 +62,15 @@ You can also ask an AI assistant to follow this repository's [SKILL.md](./SKILL.
 
 ![Activity archive with monthly collections and followed goals](docs/screenshots/activity-current.png)
 
+All regular, discovery and monthly achievements use only the 11 native hook events shared by Codex and Claude Code. Interrupt and the 22 Claude-only events remain available for statistics but do not unlock achievements, including normalized failure events.
+
 ---
 
 ## 🔌 Codex hooks configuration
 
 Keep **6 animation states + 12 lifecycle events**: states describe the character's action; events explain what triggered it. The generated configuration covers all 12 events.
 
-The generator and example use Chinese `statusMessage` labels and a 3-second timeout for every event. `PostToolUse` runs asynchronously. These labels only affect Codex's progress messages; event data determines office animations and statistics.
+The generator and example use Chinese `statusMessage` labels and a 3-second timeout for every event. All 12 Codex events run synchronously to preserve tool results and lifecycle accounting; unfinished background hooks are cancelled at session end. These labels only affect Codex's progress messages; event data determines office animations and statistics.
 
 | Hook | Animation / meaning |
 |------|---------------------|
@@ -183,10 +193,10 @@ Any agent that can run scripts or send HTTP requests can use the original integr
 
 ### Automatic Status Sync
 
-Add these rules to your agent instructions and run `set_state.py` from the Star Office project root. Alternatively, send `POST /set_state` with `state` and `detail` fields:
+Add these rules to your agent instructions and run `set_state.py` from the STAR OFFICE project root. Alternatively, send `POST /set_state` with `state` and `detail` fields:
 
 ```markdown
-## Star Office Status Sync Rules
+## STAR OFFICE Status Sync Rules
 - When starting a task: run `python3 set_state.py <state> "<description>"` before beginning work
 - When finishing a task: run `python3 set_state.py idle "Standing by"` before replying
 ```

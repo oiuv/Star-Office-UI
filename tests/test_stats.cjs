@@ -445,3 +445,19 @@ test('Monthly empty collection explains how to start without an error',async()=>
   assert.ok(content(f.nodes.get('monthly-archive')).includes('首枚月度徽章'));
   assert.equal(f.nodes.get('error').hidden,true);
 });
+
+
+test('Claude Code controls Star while Codex and Claude children retain their source',async()=>{
+  for(const lang of ['zh','en','ja']) {
+    const f=await fixture([
+      actor('claude-a','claude_code',true,{actor_name:'Claude Code session-a'}),
+      actor('main','api',false),
+      actor('codex-a','codex',true),
+      actor('claude-child','claude_code',true,{actor_name:'Claude Code Agent child',is_subagent:1})
+    ],{actor_id:'claude-a'},{lang});
+    assert.equal(f.badges.length,3);
+    assert.ok(f.badges[0].textContent.startsWith('Star · Claude Code hooks ·'));
+    assert.ok(f.badges.some(b=>b.textContent.startsWith('Codex session-a ·')));
+    assert.ok(f.badges.some(b=>b.textContent.startsWith('Claude Code Agent child ·')));
+  }
+});

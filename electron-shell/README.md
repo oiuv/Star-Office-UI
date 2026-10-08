@@ -1,4 +1,4 @@
-# Star Desktop Pet (Electron Shell)
+# STAR OFFICE · AI Agent 像素办公室（Electron 桌面端）
 
 这个目录是 Electron 版桌面壳，和现有 Tauri 版并行存在，方便逐步迁移。
 

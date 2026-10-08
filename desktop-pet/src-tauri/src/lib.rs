@@ -613,7 +613,7 @@ pub fn run() {
                 "mini",
                 WebviewUrl::App("minimized.html".into()),
             )
-            .title("Star Mini")
+            .title("STAR OFFICE · Mini")
             .inner_size(220.0, 240.0)
             .min_inner_size(180.0, 200.0)
             .resizable(false)

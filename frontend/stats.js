@@ -3,12 +3,19 @@
   const STATES = ['idle','writing','researching','executing','syncing','error'];
   // Group related events for display; this is not a strict event timeline.
   const HOOKS = [
-    'UserPromptSubmit','PreToolUse','PermissionRequest','PostToolUse',
-    'SessionStart','SessionEnd','SubagentStart','SubagentStop',
-    'PreCompact','PostCompact','Stop','Interrupt'
+    'UserPromptSubmit','PreToolUse','PermissionRequest','PostToolUse', // Prompt and tools
+    'SessionStart','SessionEnd','SubagentStart','SubagentStop', // Sessions and subagents
+    'PreCompact','PostCompact','Stop','Interrupt', // Compaction and turn endings
+    'Setup','InstructionsLoaded','ConfigChange','FileChanged', // Initialization and configuration
+    'PostToolBatch','PostToolUseFailure','PermissionDenied','StopFailure', // Execution feedback
+    'TaskCreated','TaskCompleted','TeammateIdle','MessageDisplay', // Tasks and collaboration
+    'CwdChanged','DirectoryAdded','WorktreeCreate','WorktreeRemove', // Workspace
+    'UserPromptExpansion','Notification','Elicitation','ElicitationResult', // Messages and input interactions
+    'PreModelSwitch','PostModelSwitch' // Model switching
   ];
   const TEXT = {
     zh: {
+      pageTitle:"STAR OFFICE · AI Agent 像素办公室",
       achievements:"常规成就",
       achievementNote:"8 条成长线，每条包含基础、里程碑和进阶徽章，共 24 枚。前两档只解锁一次，进阶累计门槛逐级翻倍。全成就只计算这 24 枚，隐藏探索与月度徽章单独收藏。",
       collectionRule:"解锁全部 {count} 枚常规徽章；进阶达到 Lv.1 即可。隐藏探索和月度徽章不参与。",
@@ -25,12 +32,12 @@
       explorationRule_session_closed:"结束过一个会话，给今天的工作画上句号。",
       explorationRule_first_compact:"开始过一次上下文整理，给思路腾点空间。",
       explorationRule_first_permission:"遇到过一次权限确认，停下来等一个点头。",
-      explorationRule_first_interrupt:"主动中断过一次，让工作跟上自己的节奏。",
+      explorationRule_tool_chain:"同一角色、同一会话的一个回合中，成功执行至少 3 次不同的工具调用后结束回合。",
       explorationRule_weekend_worker:"在周六或周日结束过一个回合。",
       explorationRule_night_owl:"在 22:00 至次日 05:00 前结束过一个回合。",
       explorationRule_early_bird:"在 05:00 至 08:00 前提交过一个任务。",
       explorationRule_session_resumed:"通过恢复入口重新开启过一个已有会话。",
-      explorationRule_second_wind:"同一角色、同一会话中，工具失败后成功完成了另一工具调用。",
+      explorationRule_second_wind:"同一角色、同一会话中，权限等待后成功执行工具，或工具失败后成功完成另一工具调用。",
       explorationRule_exploration_master:"发现全部 9 段办公室见闻，集齐这份特别的纪念。",
       explorationTimeNote:"时间类探索按后端本地时区和真实任务事件判定，挂机与心跳不触发。",
       collectionDone:"全部集齐，收藏圆满。继续提升进阶等级吧！",
@@ -44,21 +51,21 @@
       session_10:"办公室常客",
       first_prompt:"新的委托",
       prompt_25:"任务接力",
-      prompt_100:"委托达人",
+      prompt_100:"运筹帷幄",
       turn_25:"稳步交付",
       first_tool:"工具上手",
       tool_started_100:"实践能手",
-      tool_started_1000:"探索行家",
+      tool_started_1000:"开拓先锋",
       tool_100:"工具熟练者",
       compact_10:"思路常新",
       first_delegate:"邀请搭档",
       delegate_5:"组建小队",
-      delegate_10:"协作发起人",
+      delegate_10:"协作指挥官",
       teamwork_5:"配合渐佳",
       session_closed:"好好道别",
       first_compact:"整理行囊",
       first_permission:"等待确认",
-      first_interrupt:"适时暂停",
+      tool_chain:"一气呵成",
       collectionSubtitle:"长久成长，每月留念",
       badgeTierHint:"阶段星标：Lv.2 / 3 / 5 / 7 / 10；等级无上限",
       badgeBasic:"基础",
@@ -115,7 +122,7 @@
       session_50:"资深常驻",
       turn_100:"有始有终",
       first_tool_success:"初试成功",
-      tool_1000:"工具大师",
+      tool_1000:"工具宗师",
       compact_50:"记忆典藏",
       teamwork_10:"默契团队",
       rule_SessionStart:"开始 {target} 个会话",
@@ -129,23 +136,23 @@
       rule_SubagentStart:"启动 {target} 次子 Agent 协作",
       rule_SubagentStop:"收到 {target} 次子 Agent 收尾",
       rule_PermissionRequest:"收到 {target} 次权限确认请求",
-      rule_Interrupt:"记录 {target} 次主动中断",
       back:'← 返回办公室',title:'活动档案',subtitle:'从像素办公室，到你的 AI 活动档案。',
       loading:'正在读取记录…',live:'每 10 秒更新',today:'今日',week:'近 7 天',month:'近 30 天',all:'全部',
       export:'导出最近 200 条',journey:'办公室成长记录',next:'下一等级',states:'角色状态',countTime:'次数 / 观测时长',
-      trend:'每日活动',events:'接收事件',trendNote:'全部视图显示最近 30 天趋势。',hooks:'Codex 生命周期',hookNote:'12 类事件 · 6 种动画状态',
+      trend:'每日活动',events:'接收事件',trendNote:'全部视图显示最近 30 天趋势。',hooks:'AI Agent 生命周期',hookNote:'Codex 12 类 / Claude Code 33 类 · 6 种动画状态',
       details:'运行概览',log:'活动日志',stateFilter:'状态筛选',hookFilter:'事件筛选',allStates:'全部状态',allHooks:'全部事件',
       measurement:'次数按实际接收事件统计，心跳单独标记；多 Agent 时长累加，每次状态最多观测 5 分钟，断联时间不累加。',
       scoreNote:'经验值是活动纪念：回合结束 +20，工具成功 +2，子 Agent 收尾 +10。次数与经验值不代表任务质量或 Token 用量。',
-      empty:'还没有活动。接入 Codex hooks，或推送一次状态，记录就会从这里开始。',noMatch:'所选条件下没有活动。',failed:'读取失败，稍后自动重试。',
+      empty:'还没有活动。接入 Codex / Claude Code hooks，或推送一次状态，记录就会从这里开始。',noMatch:'所选条件下没有活动。',failed:'读取失败，稍后自动重试。',
       turns:'结束回合',tools:'工具执行',active:'工作观测时长',heartbeat:'心跳',transitions:'状态切换',sessions:'会话',permissions:'权限等待',
       interrupts:'中断',compactions:'上下文整理',subagents:'子 Agent 启动',errors:'工具错误',stateUpdates:'主动状态更新',
-      average:'工具平均耗时',measured:'个配对样本',xpPeriod:'本期经验值',late:'迟到事件，未改变角色',online:'在线',offline:'离线',
-      mainCharacter:'主角色',codexDriver:'Codex hooks',stateDriver:'主动调用',lastUpdate:'最近更新',presenceNote:'Star 为办公室主角色，在线按最近 5 分钟收到的状态更新判断。',
+      average:'工具平均耗时',measured:'个配对样本',xpPeriod:'本期经验值',late:'迟到事件，未改变角色',observed:'观察事件，未改变角色',online:'在线',offline:'离线',
+      mainCharacter:'主角色',codexDriver:'Codex hooks',claudeDriver:'Claude Code hooks',stateDriver:'主动调用',lastUpdate:'最近更新',presenceNote:'Star 为办公室主角色，在线按最近 5 分钟收到的状态更新判断。',
       first_turn:'初次收工',teamwork:'协作伙伴',context_keeper:'记忆管理员',
-      stateLabels:['待命','写作','调研','执行','同步','异常'],hookLabels:['提交消息','工具执行前','等待权限','工具结果','会话开始','会话结束','子 Agent 开始','子 Agent 收尾','压缩前','压缩后','回合结束','用户中断']
+      stateLabels:['待命','写作','调研','执行','同步','异常'],hookLabels:["提交消息","工具执行前","等待权限","工具结果","会话开始","会话结束","子 Agent 开始","子 Agent 收尾","压缩前","压缩后","回合结束","用户中断","初始化准备","指令加载","配置变更","监视文件变更","工具批次结束","工具失败","权限拒绝","响应失败","任务创建","任务完成","队友待命","消息显示","工作目录变更","目录加入","工作副本创建","工作副本移除","提示词展开","通知","MCP 请求输入","MCP 输入结果","模型切换前","模型切换后"]
     },
     en: {
+      pageTitle:"STAR OFFICE · AI Agent Pixel Office",
       achievements:"Regular achievements",
       achievementNote:"8 growth tracks, each with a basic badge, a fixed milestone and an advanced badge: 24 in total. The first two unlock once; advanced cumulative targets double. Only these 24 count toward full collection. Hidden and monthly badges are separate.",
       collectionRule:"Unlock all {count} regular badges. Advanced badges need Lv.1. Hidden discoveries and monthly badges are not required.",
@@ -162,12 +169,12 @@
       explorationRule_session_closed:"Ended a session and put a full stop to the work.",
       explorationRule_first_compact:"Started a context compaction to make room for new thoughts.",
       explorationRule_first_permission:"Encountered a permission request and waited for the go-ahead.",
-      explorationRule_first_interrupt:"Interrupted a turn to set your own pace.",
+      explorationRule_tool_chain:"Completed a turn after at least 3 distinct successful tool calls by the same actor in the same session.",
       explorationRule_weekend_worker:"Ended a turn on a Saturday or Sunday.",
       explorationRule_night_owl:"Ended a turn from 22:00 until before 05:00.",
       explorationRule_early_bird:"Submitted a task from 05:00 until before 08:00.",
       explorationRule_session_resumed:"Resumed an existing session.",
-      explorationRule_second_wind:"After a tool failed, the same actor completed another tool successfully in the same session.",
+      explorationRule_second_wind:"After a permission wait or a failed tool, the same actor successfully completed a tool in the same session; failure recovery requires a different call.",
       explorationRule_exploration_master:"Discovered all 9 office moments and earned this special keepsake.",
       explorationTimeNote:"Time discoveries use the backend’s local timezone and real task events. Idle time and heartbeats do not trigger them.",
       collectionDone:"Every badge collected. Keep growing your advanced badges!",
@@ -181,21 +188,21 @@
       session_10:"Office regular",
       first_prompt:"New assignment",
       prompt_25:"Task relay",
-      prompt_100:"Assignment veteran",
+      prompt_100:"Master planner",
       turn_25:"Steady finishes",
       first_tool:"Tool debut",
       tool_started_100:"Skilled practitioner",
-      tool_started_1000:"Seasoned explorer",
+      tool_started_1000:"Trailblazer",
       tool_100:"Tool regular",
       compact_10:"Fresh context",
       first_delegate:"Invite a partner",
       delegate_5:"Build a team",
-      delegate_10:"Team organizer",
+      delegate_10:"Collaboration commander",
       teamwork_5:"Finding our rhythm",
       session_closed:"A proper goodbye",
       first_compact:"Pack your thoughts",
       first_permission:"Awaiting approval",
-      first_interrupt:"Time to pause",
+      tool_chain:"A smooth run",
       collectionSubtitle:"Keep growing. Collect each month.",
       badgeTierHint:"Star milestones: Lv.2 / 3 / 5 / 7 / 10. Levels have no cap.",
       badgeBasic:"Basic",
@@ -252,9 +259,9 @@
       session_50:"Long-time resident",
       turn_100:"See it through",
       first_tool_success:"First success",
-      tool_1000:"Tool master",
+      tool_1000:"Tool grandmaster",
       compact_50:"Memory archive",
-      teamwork_10:"In good company",
+      teamwork_10:"Team in harmony",
       rule_SessionStart:"Start {target} sessions",
       rule_SessionEnd:"End {target} sessions",
       rule_UserPromptSubmit:"Submit {target} task turns",
@@ -266,23 +273,23 @@
       rule_SubagentStart:"Start {target} subagent collaborations",
       rule_SubagentStop:"Receive {target} subagent finishes",
       rule_PermissionRequest:"Receive {target} permission requests",
-      rule_Interrupt:"Record {target} user interruptions",
       back:'← Back to office',title:'Activity archive',subtitle:'Your pixel office, with a record of the work behind it.',
       loading:'Reading activity…',live:'Updates every 10s',today:'Today',week:'7 days',month:'30 days',all:'All time',
       export:'Export latest 200',journey:'OFFICE PROGRESS',next:'Next level',states:'Character states',countTime:'Count / observed time',
-      trend:'Daily activity',events:'Events received',trendNote:'All-time view shows the last 30 days.',hooks:'Codex lifecycle',hookNote:'12 events · 6 animation states',
+      trend:'Daily activity',events:'Events received',trendNote:'All-time view shows the last 30 days.',hooks:'AI Agent lifecycle',hookNote:'Codex: 12 / Claude Code: 33 events · 6 states',
       details:'Run overview',log:'Activity log',stateFilter:'State filter',hookFilter:'Event filter',allStates:'All states',allHooks:'All events',
       measurement:'Counts reflect received events; heartbeats are marked separately. Actor times are summed, capped at 5 minutes per update; disconnected time is excluded.',
       scoreNote:'Activity keepsakes: turn ended +20 XP, successful tool +2, subagent ended +10. Counts and XP do not measure task quality or token usage.',
-      empty:'No activity yet. Connect Codex hooks or send a state update to start your record.',noMatch:'No activity matches these filters.',failed:'Could not load activity. Retrying automatically.',
+      empty:'No activity yet. Connect Codex / Claude Code hooks or send a state update to start your record.',noMatch:'No activity matches these filters.',failed:'Could not load activity. Retrying automatically.',
       turns:'Turns ended',tools:'Tools completed',active:'Observed work',heartbeat:'Heartbeats',transitions:'State changes',sessions:'Sessions',permissions:'Permission requests',
       interrupts:'Interruptions',compactions:'Compactions',subagents:'Subagents started',errors:'Tool errors',stateUpdates:'State updates',
       average:'Average tool time',measured:'paired samples',xpPeriod:'XP this period',late:'Late event; character unchanged',online:'online',offline:'offline',
-      mainCharacter:'Main character',codexDriver:'Codex hooks',stateDriver:'State updates',lastUpdate:'Last update',presenceNote:'Star is the main office character. Presence reflects state updates received within the last 5 minutes.',
+      mainCharacter:'Main character',codexDriver:'Codex hooks',claudeDriver:'Claude Code hooks',observed:'Observation; actor unchanged',stateDriver:'State updates',lastUpdate:'Last update',presenceNote:'Star is the main office character. Presence reflects state updates received within the last 5 minutes.',
       first_turn:'First finish',teamwork:'Team player',context_keeper:'Memory keeper',
-      stateLabels:['Idle','Writing','Research','Executing','Syncing','Error'],hookLabels:['Message submitted','Before tool','Permission wait','Tool result','Session starts','Session ends','Subagent starts','Subagent ends','Before compact','After compact','Turn ends','Interrupted']
+      stateLabels:['Idle','Writing','Research','Executing','Syncing','Error'],hookLabels:["Message submitted","Before tool","Permission wait","Tool result","Session starts","Session ends","Subagent starts","Subagent ends","Before compact","After compact","Turn ends","Interrupted","Initialization","Instructions loaded","Config changed","Watched file changed","Tool batch ends","Tool failure","Permission denied","Response failure","Task created","Task completed","Teammate idle","Message displayed","Working directory changed","Directory added","Worktree created","Worktree removed","Prompt expansion","Notification","MCP input requested","MCP input received","Before model switch","After model switch"]
     },
     ja: {
+      pageTitle:"STAR OFFICE · AI Agent ピクセルオフィス",
       achievements:"通常の実績",
       achievementNote:"8 系統に基本・節目・上級を各 1 個、合計 24 個。基本と節目は一度だけ解除し、上級の累計目標は倍増します。全実績の条件はこの 24 個のみ。隠し実績と月間バッジは別枠です。",
       collectionRule:"通常バッジ {count} 個をすべて解除。上級は Lv.1 で達成。隠し実績と月間バッジは条件に含みません。",
@@ -299,12 +306,12 @@
       explorationRule_session_closed:"セッションを終了し、仕事に区切りをつけた。",
       explorationRule_first_compact:"コンテキスト整理を開始し、新しい思考の場所を作った。",
       explorationRule_first_permission:"権限の確認を受け、承認を待った。",
-      explorationRule_first_interrupt:"自分のペースでターンを中断した。",
+      explorationRule_tool_chain:"同じキャラクター・同じセッションの 1 ターンで、異なるツール呼び出しを 3 回以上正常に完了してからターンを終了した。",
       explorationRule_weekend_worker:"土曜日または日曜日にターンを終了した。",
       explorationRule_night_owl:"22:00 から翌 05:00 未満にターンを終了した。",
       explorationRule_early_bird:"05:00 から 08:00 未満にタスクを提出した。",
       explorationRule_session_resumed:"既存のセッションを再開した。",
-      explorationRule_second_wind:"同じキャラクター・同じセッションで、失敗したツールの後に別のツールを正常に完了した。",
+      explorationRule_second_wind:"同じキャラクター・同じセッションで、権限待ちの後にツールを正常に実行、または失敗の後に別のツール呼び出しを正常に完了した。",
       explorationRule_exploration_master:"9 つのオフィス体験をすべて発見し、特別な記念を獲得。",
       explorationTimeNote:"時間の発見はバックエンドの現地時間と実際のタスクで判定します。放置やハートビートでは解除されません。",
       collectionDone:"すべて収集！上級バッジの成長を続けましょう。",
@@ -318,21 +325,21 @@
       session_10:"オフィスの常連",
       first_prompt:"新しい依頼",
       prompt_25:"タスクリレー",
-      prompt_100:"依頼の達人",
+      prompt_100:"戦略の達人",
       turn_25:"着実な完了",
       first_tool:"ツール入門",
       tool_started_100:"実践上手",
-      tool_started_1000:"探索の達人",
+      tool_started_1000:"開拓の先駆者",
       tool_100:"ツール名人",
       compact_10:"新鮮な思考",
       first_delegate:"仲間を招待",
       delegate_5:"チーム結成",
-      delegate_10:"協力の発起人",
+      delegate_10:"協力の指揮官",
       teamwork_5:"息が合ってきた",
       session_closed:"丁寧なお別れ",
       first_compact:"思考の荷造り",
       first_permission:"確認待ち",
-      first_interrupt:"ひと休み",
+      tool_chain:"一気に完遂",
       collectionSubtitle:"長く育て、毎月の記念に",
       badgeTierHint:"星の段階：Lv.2 / 3 / 5 / 7 / 10。レベルに上限はありません。",
       badgeBasic:"基本",
@@ -389,9 +396,9 @@
       session_50:"ベテランの住人",
       turn_100:"最後までやり抜く",
       first_tool_success:"初めての成功",
-      tool_1000:"ツールの達人",
+      tool_1000:"ツールの巨匠",
       compact_50:"記憶の書庫",
-      teamwork_10:"息の合う仲間",
+      teamwork_10:"息の合うチーム",
       rule_SessionStart:"セッションを {target} 回開始",
       rule_SessionEnd:"セッションを {target} 回終了",
       rule_UserPromptSubmit:"タスクを {target} ターン送信",
@@ -403,21 +410,20 @@
       rule_SubagentStart:"子 Agent の協作を {target} 回開始",
       rule_SubagentStop:"子 Agent の終了を {target} 回受信",
       rule_PermissionRequest:"権限確認を {target} 回受信",
-      rule_Interrupt:"ユーザーの中断を {target} 回記録",
       back:'← オフィスに戻る',title:'活動アーカイブ',subtitle:'ピクセルオフィスから、AI の活動記録へ。',
       loading:'記録を読み込み中…',live:'10 秒ごとに更新',today:'今日',week:'7 日間',month:'30 日間',all:'全期間',
       export:'最新 200 件を出力',journey:'オフィスの成長記録',next:'次のレベル',states:'キャラクター状態',countTime:'回数 / 観測時間',
-      trend:'日別の活動',events:'受信イベント',trendNote:'全期間では直近 30 日の推移を表示。',hooks:'Codex ライフサイクル',hookNote:'12 イベント · 6 アニメーション状態',
+      trend:'日別の活動',events:'受信イベント',trendNote:'全期間では直近 30 日の推移を表示。',hooks:'AI Agent ライフサイクル',hookNote:'Codex 12 / Claude Code 33 イベント · 6 状態',
       details:'実行概要',log:'活動ログ',stateFilter:'状態フィルター',hookFilter:'イベントフィルター',allStates:'すべての状態',allHooks:'すべてのイベント',
       measurement:'回数は受信イベントを集計。ハートビートは別表示。複数 Agent の時間は合計し、更新ごと最大 5 分まで観測します。',
       scoreNote:'活動の記念：ターン終了 +20 XP、ツール成功 +2、子 Agent 終了 +10。品質や Token 使用量を表すものではありません。',
-      empty:'まだ記録がありません。Codex hooks を接続するか、状態を送信してください。',noMatch:'条件に一致する活動はありません。',failed:'読み込みに失敗しました。自動再試行します。',
+      empty:'まだ記録がありません。Codex / Claude Code hooks を接続するか、状態を送信してください。',noMatch:'条件に一致する活動はありません。',failed:'読み込みに失敗しました。自動再試行します。',
       turns:'終了ターン',tools:'ツール完了',active:'作業観測時間',heartbeat:'ハートビート',transitions:'状態変更',sessions:'セッション',permissions:'権限待ち',
       interrupts:'中断',compactions:'コンテキスト整理',subagents:'子 Agent 開始',errors:'ツールエラー',stateUpdates:'状態更新',
-      average:'ツール平均時間',measured:'組のサンプル',xpPeriod:'期間 XP',late:'遅延イベント：状態変更なし',online:'オンライン',offline:'オフライン',
-      mainCharacter:'メインキャラクター',codexDriver:'Codex hooks',stateDriver:'状態更新',lastUpdate:'最終更新',presenceNote:'Star はオフィスのメインキャラクターです。直近 5 分の状態更新をもとにオンラインを表示します。',
+      average:'ツール平均時間',measured:'組のサンプル',xpPeriod:'期間 XP',late:'遅延イベント：状態変更なし',observed:'観測イベント：状態変更なし',online:'オンライン',offline:'オフライン',
+      mainCharacter:'メインキャラクター',codexDriver:'Codex hooks',claudeDriver:'Claude Code hooks',stateDriver:'状態更新',lastUpdate:'最終更新',presenceNote:'Star はオフィスのメインキャラクターです。直近 5 分の状態更新をもとにオンラインを表示します。',
       first_turn:'初めての完了',teamwork:'協力者',context_keeper:'記憶管理者',
-      stateLabels:['待機','執筆','調査','実行','同期','エラー'],hookLabels:['メッセージ送信','ツール実行前','権限待ち','ツール結果','セッション開始','セッション終了','子 Agent 開始','子 Agent 終了','圧縮前','圧縮後','ターン終了','中断']
+      stateLabels:['待機','執筆','調査','実行','同期','エラー'],hookLabels:["メッセージ送信","ツール実行前","権限待ち","ツール結果","セッション開始","セッション終了","子 Agent 開始","子 Agent 終了","圧縮前","圧縮後","ターン終了","中断","初期化","指示読み込み","設定変更","監視ファイル変更","ツールバッチ終了","ツール失敗","権限拒否","応答失敗","タスク作成","タスク完了","チームメイト待機","メッセージ表示","作業ディレクトリ変更","ディレクトリ追加","作業コピー作成","作業コピー削除","プロンプト展開","通知","MCP 入力要求","MCP 入力結果","モデル切替前","モデル切替後"]
     }
   };
   let lang = 'zh';
@@ -451,6 +457,7 @@
   }
   function translate() {
     document.documentElement.lang = lang;
+    document.title = t('pageTitle') + ' · ' + t('title');
     document.querySelectorAll('[data-i18n]').forEach(node => { node.textContent = t(node.dataset.i18n); });
     document.querySelectorAll('[data-lang]').forEach(button => button.setAttribute('aria-pressed',String(button.dataset.lang === lang)));
     options($('state-filter'),STATES,TEXT[lang].stateLabels,t('allStates'));
@@ -460,14 +467,14 @@
     // /status selects the controller of the same Star character shown in the office.
     const mainId = office.actor_id || 'main';
     const primary = actors.find(actor => actor.actor_id === mainId);
-    const codexControlsStar = primary?.source === 'codex' && !primary.is_subagent;
-    const displayed = actors.filter(actor => !(codexControlsStar && actor.actor_id === 'main'));
+    const hooksControlStar = ['codex','claude_code'].includes(primary?.source) && !primary.is_subagent;
+    const displayed = actors.filter(actor => !(hooksControlStar && actor.actor_id === 'main'));
     displayed.sort((a,b) => Number(b.actor_id === mainId) - Number(a.actor_id === mainId)
       || Number(b.online) - Number(a.online) || b.updated_at - a.updated_at);
     $('actors').replaceChildren(...displayed.slice(0,20).map(actor => {
       const isMain = actor.actor_id === mainId;
       const label = [isMain ? 'Star' : actor.actor_name,
-        isMain ? t(actor.source === 'codex' ? 'codexDriver' : 'stateDriver') : '',
+        isMain ? t(actor.source === 'claude_code' ? 'claudeDriver' : actor.source === 'codex' ? 'codexDriver' : 'stateDriver') : '',
         t(actor.online ? 'online' : 'offline')].filter(Boolean).join(' · ');
       const badge = element('span','actor' + (actor.online ? ' online' : ''),label);
       badge.title = [isMain ? t('mainCharacter') : '',actor.actor_name,stateLabel(actor.state),
@@ -674,7 +681,7 @@
     });
     $('hooks').replaceChildren(...HOOKS.map((hook,i) => {
       const card = element('div','hook-card' + (stats.hooks[hook] ? ' seen' : ''));
-      card.append(element('div','hook-name',hook),element('div','hook-count',number(stats.hooks[hook])),element('div','hook-detail',TEXT[lang].hookLabels[i]));
+      card.append(element('div','hook-name',hook),element('div','hook-count',number(stats.hooks[hook])),element('div','hook-detail',TEXT[lang].hookLabels[i] || hook));
       return card;
     }));
     const daily = new Map(stats.daily.map(day => [day.date,day]));
@@ -711,7 +718,7 @@
       const body = element('div','event-detail',event.detail);
       body.append(element('div','event-meta',[
         event.actor_name,stateLabel(event.state),event.source,event.heartbeat ? t('heartbeat') : '',
-        !event.applied ? t('late') : ''
+        event.metadata?.observe_only ? t('observed') : !event.applied ? t('late') : ''
       ].filter(Boolean).join(' · ')));
       row.append(element('time','event-time',time.toLocaleDateString() + '\n' + time.toLocaleTimeString()),element('div','event-hook',event.event_name),body);
       $('event-list').append(row);
