@@ -448,6 +448,11 @@
     return node;
   };
   const number = value => Number(value || 0).toLocaleString();
+  const providerDot = (kind, label) => {
+    const dot = element('i', 'provider-dot ' + kind, '');
+    dot.title = label;
+    return dot;
+  };
   const duration = seconds => seconds < 60 ? Math.round(seconds) + 's' : seconds < 3600 ? Math.round(seconds / 60) + 'm' : (seconds / 3600).toFixed(1) + 'h';
   const stateLabel = state => TEXT[lang].stateLabels[STATES.indexOf(state)] || state;
   function options(select, values, labels, first) {
@@ -682,7 +687,13 @@
     });
     $('hooks').replaceChildren(...HOOKS.map((hook,i) => {
       const card = element('div','hook-card' + (stats.hooks[hook] ? ' seen' : ''));
-      card.append(element('div','hook-name',hook),element('div','hook-count',number(stats.hooks[hook])),element('div','hook-detail',TEXT[lang].hookLabels[i] || hook));
+      const dots = element('span','hook-providers','');
+      // The first twelve follow the Codex schema (Interrupt is Codex-only); the rest is Claude Code.
+      if (i < 12) dots.append(providerDot('codex','Codex'));
+      if (hook !== 'Interrupt') dots.append(providerDot('claude','Claude Code'));
+      const head = element('div','hook-head','');
+      head.append(element('div','hook-name',hook), dots);
+      card.append(head,element('div','hook-count',number(stats.hooks[hook])),element('div','hook-detail',TEXT[lang].hookLabels[i] || hook));
       return card;
     }));
     const daily = new Map(stats.daily.map(day => [day.date,day]));

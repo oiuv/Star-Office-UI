@@ -461,3 +461,21 @@ test('Claude Code controls Star while Codex and Claude children retain their sou
     assert.ok(f.badges.some(b=>b.textContent.startsWith('Claude Code Agent child ·')));
   }
 });
+
+
+test('Hook cards mark provider support with corner dots',async()=>{
+  const f=await fixture([actor('main','api',false)],{actor_id:'main'});
+  const cards=f.nodes.get('hooks').children;
+  assert.equal(cards.length,34);
+  const dots=hook=>{
+    const card=cards.find(c=>c.children[0].children[0].textContent===hook);
+    return card.children[0].children[1].children.map(dot=>dot.className);
+  };
+  assert.deepEqual(dots('PreToolUse'),['provider-dot codex','provider-dot claude']);
+  assert.deepEqual(dots('Interrupt'),['provider-dot codex']);
+  assert.deepEqual(dots('PostToolUse'),['provider-dot codex','provider-dot claude']);
+  assert.deepEqual(dots('Setup'),['provider-dot claude']);
+  assert.deepEqual(dots('MessageDisplay'),['provider-dot claude']);
+  assert.equal(dots('Interrupt')[0] && cards.find(c=>c.children[0].children[0].textContent==='Interrupt').children[0].children[1].children[0].title,'Codex');
+  assert.equal(cards.find(c=>c.children[0].children[0].textContent==='MessageDisplay').children[0].children[1].children[0].title,'Claude Code');
+});

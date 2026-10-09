@@ -263,6 +263,13 @@ progress::-moz-progress-bar { background: var(--office-gold); }
 .hook-name { font: 12px/1.6 'Courier New', monospace; overflow-wrap: anywhere; color: var(--muted); }
 .hook-count { font-size: 24px; color: var(--office-paper); margin: 4px 0; }
 .hook-detail { font-size: 12px; color: var(--muted); }
+.hook-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.hook-providers { display: inline-flex; gap: 3px; flex-shrink: 0; padding-top: 5px; }
+.provider-dot { display: inline-block; width: 7px; height: 7px; border-radius: 1px; }
+.provider-dot.codex { background: var(--office-gold); }
+.provider-dot.claude { background: var(--office-leaf); }
+.hook-legend { display: flex; gap: 14px; margin: 2px 0 10px; font-size: 11px; color: var(--muted); }
+.hook-legend span { display: inline-flex; align-items: center; gap: 5px; }
 .detail-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
 .detail { padding: 2px 0 4px 12px; border-left: 2px solid var(--divider); font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
 .detail strong { display: block; font-size: 24px; font-weight: normal; color: var(--office-paper); margin-top: 4px; }
