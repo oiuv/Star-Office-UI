@@ -3,14 +3,15 @@
   const STATES = ['idle','writing','researching','executing','syncing','error'];
   // Group related events for display; this is not a strict event timeline.
   const HOOKS = [
-    'UserPromptSubmit','PreToolUse','PermissionRequest','PostToolUse', // Prompt and tools
-    'SessionStart','SessionEnd','SubagentStart','SubagentStop', // Sessions and subagents
-    'PreCompact','PostCompact','Stop','Interrupt', // Compaction and turn endings
-    'Setup','InstructionsLoaded','ConfigChange','FileChanged', // Initialization and configuration
+    'UserPromptSubmit','PreToolUse','PermissionRequest','PostToolUse', // Shared with Codex: prompt and tools
+    'SessionStart','SessionEnd','SubagentStart','SubagentStop', // Shared with Codex: sessions and subagents
+    'PreCompact','PostCompact','Stop','Interrupt', // Shared with Codex (Interrupt is Codex-only)
+    'Setup','InstructionsLoaded','ConfigChange', // Initialization and configuration
+    'UserPromptExpansion','MessageDisplay','Notification', // Prompt input and messaging
     'PostToolBatch','PostToolUseFailure','PermissionDenied','StopFailure', // Execution feedback
-    'TaskCreated','TaskCompleted','TeammateIdle','MessageDisplay', // Tasks and collaboration
-    'CwdChanged','DirectoryAdded','WorktreeCreate','WorktreeRemove', // Workspace
-    'UserPromptExpansion','Notification','Elicitation','ElicitationResult', // Messages and input interactions
+    'Elicitation','ElicitationResult', // MCP interactions
+    'TaskCreated','TaskCompleted','TeammateIdle', // Tasks and collaboration
+    'FileChanged','CwdChanged','DirectoryAdded','WorktreeCreate','WorktreeRemove', // Workspace and file watching
     'PreModelSwitch','PostModelSwitch' // Model switching
   ];
   const TEXT = {
@@ -149,7 +150,7 @@
       average:'工具平均耗时',measured:'个配对样本',xpPeriod:'本期经验值',late:'迟到事件，未改变角色',observed:'观察事件，未改变角色',online:'在线',offline:'离线',
       mainCharacter:'主角色',codexDriver:'Codex hooks',claudeDriver:'Claude Code hooks',stateDriver:'主动调用',lastUpdate:'最近更新',presenceNote:'Star 为办公室主角色，在线按最近 5 分钟收到的状态更新判断。',
       first_turn:'初次收工',teamwork:'协作伙伴',context_keeper:'记忆管理员',
-      stateLabels:['待命','写作','调研','执行','同步','异常'],hookLabels:["提交消息","工具执行前","等待权限","工具结果","会话开始","会话结束","子 Agent 开始","子 Agent 收尾","压缩前","压缩后","回合结束","用户中断","初始化准备","指令加载","配置变更","监视文件变更","工具批次结束","工具失败","权限拒绝","响应失败","任务创建","任务完成","队友待命","消息显示","工作目录变更","目录加入","工作副本创建","工作副本移除","提示词展开","通知","MCP 请求输入","MCP 输入结果","模型切换前","模型切换后"]
+      stateLabels:['待命','写作','调研','执行','同步','异常'],hookLabels:["提交消息","工具执行前","等待权限","工具结果","会话开始","会话结束","子 Agent 开始","子 Agent 收尾","压缩前","压缩后","回合结束","用户中断","初始化准备","指令加载","配置变更","提示词展开","消息显示","通知","工具批次结束","工具失败","权限拒绝","响应失败","MCP 请求输入","MCP 输入结果","任务创建","任务完成","队友待命","监视文件变更","工作目录变更","目录加入","工作副本创建","工作副本移除","模型切换前","模型切换后"]
     },
     en: {
       pageTitle:"STAR OFFICE · AI Agent Pixel Office",
@@ -286,7 +287,7 @@
       average:'Average tool time',measured:'paired samples',xpPeriod:'XP this period',late:'Late event; character unchanged',online:'online',offline:'offline',
       mainCharacter:'Main character',codexDriver:'Codex hooks',claudeDriver:'Claude Code hooks',observed:'Observation; actor unchanged',stateDriver:'State updates',lastUpdate:'Last update',presenceNote:'Star is the main office character. Presence reflects state updates received within the last 5 minutes.',
       first_turn:'First finish',teamwork:'Team player',context_keeper:'Memory keeper',
-      stateLabels:['Idle','Writing','Research','Executing','Syncing','Error'],hookLabels:["Message submitted","Before tool","Permission wait","Tool result","Session starts","Session ends","Subagent starts","Subagent ends","Before compact","After compact","Turn ends","Interrupted","Initialization","Instructions loaded","Config changed","Watched file changed","Tool batch ends","Tool failure","Permission denied","Response failure","Task created","Task completed","Teammate idle","Message displayed","Working directory changed","Directory added","Worktree created","Worktree removed","Prompt expansion","Notification","MCP input requested","MCP input received","Before model switch","After model switch"]
+      stateLabels:['Idle','Writing','Research','Executing','Syncing','Error'],hookLabels:["Message submitted","Before tool","Permission wait","Tool result","Session starts","Session ends","Subagent starts","Subagent ends","Before compact","After compact","Turn ends","Interrupted","Initialization","Instructions loaded","Config changed","Prompt expansion","Message displayed","Notification","Tool batch ends","Tool failure","Permission denied","Response failure","MCP input requested","MCP input received","Task created","Task completed","Teammate idle","Watched file changed","Working directory changed","Directory added","Worktree created","Worktree removed","Before model switch","After model switch"]
     },
     ja: {
       pageTitle:"STAR OFFICE · AI Agent ピクセルオフィス",
@@ -423,7 +424,7 @@
       average:'ツール平均時間',measured:'組のサンプル',xpPeriod:'期間 XP',late:'遅延イベント：状態変更なし',observed:'観測イベント：状態変更なし',online:'オンライン',offline:'オフライン',
       mainCharacter:'メインキャラクター',codexDriver:'Codex hooks',claudeDriver:'Claude Code hooks',stateDriver:'状態更新',lastUpdate:'最終更新',presenceNote:'Star はオフィスのメインキャラクターです。直近 5 分の状態更新をもとにオンラインを表示します。',
       first_turn:'初めての完了',teamwork:'協力者',context_keeper:'記憶管理者',
-      stateLabels:['待機','執筆','調査','実行','同期','エラー'],hookLabels:["メッセージ送信","ツール実行前","権限待ち","ツール結果","セッション開始","セッション終了","子 Agent 開始","子 Agent 終了","圧縮前","圧縮後","ターン終了","中断","初期化","指示読み込み","設定変更","監視ファイル変更","ツールバッチ終了","ツール失敗","権限拒否","応答失敗","タスク作成","タスク完了","チームメイト待機","メッセージ表示","作業ディレクトリ変更","ディレクトリ追加","作業コピー作成","作業コピー削除","プロンプト展開","通知","MCP 入力要求","MCP 入力結果","モデル切替前","モデル切替後"]
+      stateLabels:['待機','執筆','調査','実行','同期','エラー'],hookLabels:["メッセージ送信","ツール実行前","権限待ち","ツール結果","セッション開始","セッション終了","子 Agent 開始","子 Agent 終了","圧縮前","圧縮後","ターン終了","中断","初期化","指示読み込み","設定変更","プロンプト展開","メッセージ表示","通知","ツールバッチ終了","ツール失敗","権限拒否","応答失敗","MCP 入力要求","MCP 入力結果","タスク作成","タスク完了","チームメイト待機","監視ファイル変更","作業ディレクトリ変更","ディレクトリ追加","作業コピー作成","作業コピー削除","モデル切替前","モデル切替後"]
     }
   };
   let lang = 'zh';
