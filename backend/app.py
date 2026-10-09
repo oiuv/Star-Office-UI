@@ -25,7 +25,7 @@ from activity_service import apply_hook
 from store_utils import _save_json
 from pathlib import Path
 from security_utils import is_production_mode, is_strong_secret, is_strong_drawer_pass
-from memo_utils import load_recent_memos
+from memo_utils import load_claude_memories, load_recent_memos
 from store_utils import (
     load_agents_state as _store_load_agents_state,
     save_agents_state as _store_save_agents_state,
@@ -1082,6 +1082,16 @@ def get_recent_memo():
     except OSError:
         app.logger.exception("Could not read Codex memory summaries")
         return jsonify({"success": False, "entries": [], "msg": "无法读取 Codex 会话总结"}), 500
+
+
+@app.route("/claude-memories", methods=["GET"])
+def get_claude_memories():
+    """Read recent Claude Code auto-memories across projects."""
+    try:
+        return jsonify({"success": True, "entries": load_claude_memories()})
+    except OSError:
+        app.logger.exception("Could not read Claude memories")
+        return jsonify({"success": False, "entries": [], "msg": "无法读取 Claude 最近记忆"}), 500
 
 
 @app.route("/set_state", methods=["POST"])

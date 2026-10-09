@@ -257,6 +257,32 @@ class AppTests(unittest.TestCase):
         self.assertEqual(response.status_code, 500)
         self.assertNotIn("private-path", response.get_data(as_text=True))
 
+    def test_claude_memories_reads_projects_and_sanitizes(self):
+        memory_dir = Path(self.tmp.name) / "projects" / "C--AI-Alpha" / "memory"
+        memory_dir.mkdir(parents=True)
+        (memory_dir / "note.md").write_text(
+            "---\nname: note\ndescription: 提交规范\nmetadata:\n  type: feedback\n---\n\n不加署名。\n", encoding="utf-8"
+        )
+        with patch.dict(os.environ, {"CLAUDE_CONFIG_DIR": self.tmp.name}):
+            response = self.client.get("/claude-memories")
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json["success"])
+        self.assertEqual(response.json["entries"][0]["project"], "C--AI-Alpha")
+        self.assertEqual(response.json["entries"][0]["title"], "提交规范")
+        self.assertIn("不加署名", response.json["entries"][0]["text"])
+
+    def test_claude_memories_empty_and_unavailable(self):
+        with patch.dict(os.environ, {"CLAUDE_CONFIG_DIR": self.tmp.name}):
+            response = self.client.get("/claude-memories")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json["entries"], [])
+        self.assertTrue(response.json["success"])
+        with patch.object(self.app, "load_claude_memories", side_effect=PermissionError("private-path")):
+            with self.assertLogs(self.app.app.logger, level="ERROR"):
+                response = self.client.get("/claude-memories")
+        self.assertEqual(response.status_code, 500)
+        self.assertNotIn("private-path", response.get_data(as_text=True))
+
     def test_remote_hook_requires_token(self):
         response=self.client.post("/hooks/codex",json=hook("Stop"),environ_overrides={"REMOTE_ADDR":"192.0.2.1"})
         self.assertEqual(response.status_code,403)

@@ -90,7 +90,7 @@ python scripts/codex_hooks_config.py
 - **远程模式**：Codex 进程环境设置 `STAR_OFFICE_URL`，例如 `https://your-office.example`；客户端与后端设置相同 `STAR_OFFICE_HOOK_TOKEN`。未设置 Token 时仅接受直接来自 loopback 的 hook 请求，反向代理部署应始终设置 Token。
 - 默认数据库是 `data/office-events.sqlite3`，支持 `STAR_OFFICE_EVENTS_DB` 指定位置，数据库及 WAL/SHM 文件不会提交到 Git。备份时使用 SQLite 备份机制或停止写入后备份。
 - `STAR_OFFICE_STATE_FILE` 可指定兼容状态文件位置。`STAR_OFFICE_HOOK_DEBUG=1` 仅将失败类别写到 stderr。
-- **hook 活动记录**不保存 prompt、命令正文、完整工具输出、transcript 或 cwd；仅读取工具结果中的失败标记，保留事件名、工具名、会话/回合/子 Agent 标识及少量运行元数据。「最近小记」另行只读 Codex 总结文件。
+- **hook 活动记录**不保存 prompt、命令正文、完整工具输出、transcript 或 cwd；仅读取工具结果中的失败标记，保留事件名、工具名、会话/回合/子 Agent 标识及少量运行元数据。「Codex 会话小记」另行只读 Codex 总结文件。
 - 远程上报超时或失败时跳过该次记录，不重试，也不回退到本地数据库；远程后端需保持在线。
 - 异步 PostToolUse 迟到仍留日志，但不会复活已结束回合；多会话、子 Agent 分别记录。
 - 五分钟未更新的状态回到待命。长工具调用可能暂时视为离线，直到下一次 hook；时长是保守观测值。
@@ -118,7 +118,7 @@ python scripts/claude_hooks_config.py
 - Claude Code 不注册 Codex 的 `Interrupt`。工具失败、会话退出不冒充用户中断；中断只计入统计与日志，不作为成就数据源。仅启用客户端实际支持的事件；旧版本缺少 `PostCompact` 或 `StopFailure` 时应升级或移除对应配置。
 - 采用混合执行：13 类关键事件同步（会话、提示词、工具前后/失败、权限等待、压缩、子 Agent、回复结束/失败），超时 3 秒；19 类日志观察事件异步，不阻塞 Agent。Claude 不对 `async: true` 强制执行 hook 的 `timeout`，`claude -p` 退出时会取消未完成的异步 hooks，因此日志观察事件尽力记录，不能承诺零漏记；关键事件保留同步以确保活动统计与离线投影可靠。
 - 观察器遇错仍输出 `{}` 并返回 0，不批准权限、不要求继续任务。敏感输入裁剪规则与 Codex 相同。
-- 活动档案默认合并两个来源，日志及角色名区分来源；本阶段尚未提供按 provider 筛选。最近小记仍只读取 Codex summaries，不代表 Claude Code 已有会话总结接入。
+- 活动档案默认合并两个来源，日志及角色名区分来源；本阶段尚未提供按 provider 筛选。Codex 会话小记读取的是 Codex 会话总结，Claude 侧暂无会话总结接入；「Claude 最近记忆」面板另行只读各项目 auto-memory 文件，展示前同样脱敏。
 
 ---
 
@@ -128,7 +128,8 @@ python scripts/claude_hooks_config.py
 
 | 入口 | 功能 |
 |------|------|
-| 最近小记 | 读取本机 Codex 最近的会话总结，每次打开刷新 |
+| Codex 会话小记 | 读取本机 Codex 最近的会话总结，每次打开刷新 |
+| Claude 最近记忆 | 汇总各项目的最近 auto-memory 记忆，按更新时间排序，每次打开刷新 |
 | 访客列表 | 查看自动加入的 Codex 子 Agent 和通过密钥接入的外部访客 |
 | 装修房间 | 更换背景、管理素材与图片 API 配置 |
 | 活动档案 | 打开 `/stats`，查看统计、日志、经验与成就 |
@@ -150,15 +151,16 @@ python scripts/claude_hooks_config.py
 1. **Codex hooks 自动接入** —— 12 种生命周期事件驱动动画与记录，支持会话、工具、上下文整理、中断和子 Agent
 2. **活动档案与成长** —— 状态次数、观测时长、事件趋势、工具统计、筛选日志、JSON 导出，以及经验等级、24 枚常规成就、隐藏探索、全成就收藏与月度徽章
 3. **状态可视化** —— 6 种状态（`idle` / `writing` / `researching` / `executing` / `syncing` / `error`）自动映射到办公室不同区域，动画 + 气泡实时展示
-4. **最近小记** —— 读取 Codex 的最近 5 份会话总结，展示更新日期、项目、标题和任务完成情况
-5. **多 Agent 协作** —— Codex 子 Agent 自动加入；外部 Agent 通过 join key 接入
-6. **中英日三语** —— CN / EN / JP 一键切换，主要界面、气泡和加载提示联动；活动记录保留原始文案
-7. **美术资产自定义** —— 侧边栏管理角色 / 场景 / 装饰素材，支持动画素材与帧规格管理
-8. **AI 生图装修** —— 接入 OpenAI 兼容图片 API，默认使用 `gpt-image-2` 给办公室换背景；不接入 API 也能正常使用核心功能
-9. **移动端适配** —— 手机直接打开即可查看，适合外出时快速瞄一眼
-10. **安全加固** —— 侧边栏密码保护、生产环境弱密码拦截、Session Cookie 加固
-11. **灵活公网访问** —— 推荐 Cloudflare Tunnel 一键公网化，也可用自有域名 / 反向代理
-12. **桌面宠物版** —— 可选的 Electron 桌面封装，把办公室变成透明窗口的桌面宠物（见下方说明）
+4. **Codex 会话小记** —— 读取 Codex 的最近 5 份会话总结，展示更新日期、项目、标题和任务完成情况
+5. **Claude 最近记忆** —— 汇总各项目 auto-memory 目录的最近记忆文件，按更新时间排序展示项目、描述与正文摘要
+6. **多 Agent 协作** —— Codex 子 Agent 自动加入；外部 Agent 通过 join key 接入
+7. **中英日三语** —— CN / EN / JP 一键切换，主要界面、气泡和加载提示联动；活动记录保留原始文案
+8. **美术资产自定义** —— 侧边栏管理角色 / 场景 / 装饰素材，支持动画素材与帧规格管理
+9. **AI 生图装修** —— 接入 OpenAI 兼容图片 API，默认使用 `gpt-image-2` 给办公室换背景；不接入 API 也能正常使用核心功能
+10. **移动端适配** —— 手机直接打开即可查看，适合外出时快速瞄一眼
+11. **安全加固** —— 侧边栏密码保护、生产环境弱密码拦截、Session Cookie 加固
+12. **灵活公网访问** —— 推荐 Cloudflare Tunnel 一键公网化，也可用自有域名 / 反向代理
+13. **桌面宠物版** —— 可选的 Electron 桌面封装，把办公室变成透明窗口的桌面宠物（见下方说明）
 
 ---
 
@@ -172,6 +174,7 @@ python scripts/claude_hooks_config.py
 |------|------|
 | `STAR_BACKEND_PORT` | 后端端口，默认 `19000` |
 | `CODEX_HOME` | 后端读取 Codex 总结的主目录，默认 `~/.codex` |
+| `CLAUDE_CONFIG_DIR` | 后端读取 Claude 记忆的配置主目录，默认 `~/.claude` |
 | `STAR_OFFICE_EVENTS_DB` | 活动数据库；本地 hooks 和后端需指向同一文件 |
 | `STAR_OFFICE_STATE_FILE` | 兼容状态文件；本地 hooks 和后端需使用相同配置 |
 | `STAR_OFFICE_URL` | 仅在 Codex 客户端设置；留空为本地记录，填写 URL 为远程上报 |
@@ -212,7 +215,7 @@ smoke 检查页面与读取接口，不推送测试状态或增加活动记录�
 
 ### 公网访问（可选）
 
-生产环境设置 `STAR_OFFICE_ENV=production`、强随机 `FLASK_SECRET_KEY`（至少 24 字符）与 `ASSET_DRAWER_PASS`（至少 8 字符）。装修验证码和 hook Token 只保护各自接口，**不是整个网站的访问密码**；活动档案和最近小记也会展示给能访问看板的人，公开部署请在网关设置访问控制。
+生产环境设置 `STAR_OFFICE_ENV=production`、强随机 `FLASK_SECRET_KEY`（至少 24 字符）与 `ASSET_DRAWER_PASS`（至少 8 字符）。装修验证码和 hook Token 只保护各自接口，**不是整个网站的访问密码**；活动档案和 Codex 会话小记也会展示给能访问看板的人，公开部署请在网关设置访问控制。
 
 已安装 Cloudflare Tunnel 时可使用：
 
@@ -289,9 +292,9 @@ python office-agent-push.py
 
 ---
 
-## 最近小记
+## Codex 会话小记
 
-点击办公室名称 →「最近小记」，查看当前后端账户的最近 5 份 Codex 会话总结，每份最多展示 3 项任务。
+点击办公室名称 →「Codex 会话小记」，查看当前后端账户的最近 5 份 Codex 会话总结，每份最多展示 3 项任务。
 默认读取 `~/.codex/memories/rollout_summaries/*.md`；设置 `CODEX_HOME` 时读取该目录下的 `memories/rollout_summaries/`，路径支持 `~`。
 按总结内的 `updated_at` 排序，显示后端本地日期；这表示总结更新时间，不代表所有任务都在当天完成。每次打开面板会重新读取。
 
@@ -300,6 +303,14 @@ python office-agent-push.py
 无需手写日记，也不调用图片或文本 API。办公室只读现有总结；未生成记录时显示「暂无 Codex 会话总结」。
 远程部署时读取的是服务器上的文件，需要将目标 Codex 目录挂载到后端并设置 `CODEX_HOME`。
 直接运行 `python backend/app.py` 时请在进程环境中设置变量，程序不会自动加载 `.env`。
+
+## Claude 最近记忆
+
+点击办公室名称 →「Claude 最近记忆」，查看各项目 auto-memory 目录中最新的记忆文件。
+默认扫描 `~/.claude/projects/*/memory/*.md`（`CLAUDE_CONFIG_DIR` 同样适用），跳过索引 `MEMORY.md`。
+每条展示所属项目目录名、更新日期、frontmatter 里的 `description` 和正文摘要（截断 200 字，套用相同脱敏规则）；缺少 frontmatter 时以文件名代替描述。
+按文件修改时间倒序，最多 8 条。项目目录名（如 `C--AI-Star-Office-UI`）是 Claude Code 对工作目录的规范化命名。
+记忆由各会话在工作中自动沉淀；本面板同样只读，删除或修改请在对应项目会话中进行。
 
 ## 📊 活动档案与成长
 
@@ -437,6 +448,7 @@ python office-agent-push.py
 | `POST /agent-push` | 访客推送状态 |
 | `POST /leave-agent` | 访客离开 |
 | `GET /recent-memo` | 获取最近的 Codex 会话总结（兼容旧 `/yesterday-memo` 路径） |
+| `GET /claude-memories` | 获取各项目最近的 Claude auto-memory 记忆列表 |
 | `GET /config/ai` | 获取 OpenAI 图片 API 配置（Key 脱敏） |
 | `POST /config/ai` | 设置 OpenAI 图片 API 配置 |
 | `GET /assets/generate-rpg-background/poll` | 轮询生图进度 |
@@ -496,7 +508,8 @@ Star-Office-UI/
 │   ├── index.html         # 浏览器全屏办公室
 │   ├── electron-standalone.html # 桌面布局
 │   ├── office-shell.js    # 门牌菜单与弹窗
-│   ├── recent-memo.js     # 最近小记
+│   ├── recent-memo.js     # Codex 会话小记
+│   ├── claude-memories.js # Claude 最近记忆
 │   ├── office-agent-push.py # 分发给访客的稳定身份脚本
 │   ├── join.html
 │   ├── invite.html

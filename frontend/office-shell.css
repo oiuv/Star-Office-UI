@@ -44,7 +44,7 @@ body {
 #office-dock {
     position: fixed; inset: auto auto calc(var(--office-menu-bottom) + 60px) 50%;
     transform: translateX(-50%); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px;
-    width: min(340px, calc(100vw - 28px)); max-height: calc(100dvh - var(--office-menu-bottom) - 76px);
+    width: min(380px, calc(100vw - 28px)); max-height: calc(100dvh - var(--office-menu-bottom) - 76px);
     margin: 0; padding: 8px; overflow: auto; overscroll-behavior: contain;
     border: 2px solid var(--office-edge); border-radius: 4px;
     background: #29231bfa; box-shadow: 0 4px 0 #0e0c09, 0 8px 28px #0006, inset 0 1px 0 #b79c6950;
@@ -55,7 +55,7 @@ body {
     display: flex; align-items: center; justify-content: flex-start; gap: 10px;
     min-height: 48px; padding: 10px 12px; border: 1px solid transparent;
     border-radius: 2px; background: transparent; color: var(--office-paper);
-    font: 13px 'ArkPixel', monospace; white-space: nowrap;
+    font: 13px/1.45 'ArkPixel', monospace;
     text-decoration: none; cursor: pointer; transition: background .15s, color .15s;
 }
 #office-dock svg { width: 20px; height: 20px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: square; stroke-linejoin: miter; }
@@ -65,13 +65,12 @@ body {
 }
 #office-dock #btn-open-drawer { grid-column: auto; color: var(--office-gold); }
 #office-dock #office-stats-link { color: #bdd1ab; }
-#office-dock #office-more-button { grid-column: 1 / -1; border-top-color: #76604270; margin-top: 2px; }
 #office-menu-toggle:focus-visible, #office-dock :focus-visible, .office-panel :focus-visible, #asset-drawer :focus-visible {
     outline: 2px solid var(--office-gold); outline-offset: 3px;
 }
 /* Native popovers provide light dismiss, Escape and focus return. */
 .office-panel[popover]:not(:popover-open) { display: none !important; }
-#memo-panel, #guest-agent-panel, #control-bar {
+#memo-panel, #claude-memories-panel, #guest-agent-panel, #control-bar {
     position: fixed; inset: 50% auto auto 50%;
     transform: translate(-50%, -50%);
     width: min(420px, calc(100vw - 24px)); height: auto; min-height: 0;
@@ -84,10 +83,11 @@ body {
 .office-panel:popover-open { display: flex; }
 .office-panel::backdrop { background: transparent; }
 #memo-panel::before, #memo-panel::after,
+#claude-memories-panel::before, #claude-memories-panel::after,
 #guest-agent-panel::before, #guest-agent-panel::after,
 #control-bar::before, #control-bar::after { content: none; }
 .office-panel-heading { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-shrink: 0; }
-#memo-title, #guest-agent-panel-title, #control-bar-title {
+#memo-title, #claude-memories-title, #guest-agent-panel-title, #control-bar-title {
     position: static; color: inherit; text-align: left; padding: 0; margin: 0;
     font-size: 16px; letter-spacing: 1px; font-weight: normal;
 }
@@ -97,19 +97,19 @@ body {
     color: inherit; background: transparent; font: 20px monospace; cursor: pointer;
 }
 /* A reading surface can use more space than the compact utility panels. */
-#memo-panel {
+#memo-panel, #claude-memories-panel {
     width: min(960px, calc(100vw - 48px));
     max-height: min(820px, calc(100vh - 96px));
     max-height: min(820px, calc(100dvh - 96px));
     overflow: hidden; background: var(--office-paper); color: #463820;
 }
-#memo-date { position: static; flex-shrink: 0; color: #796649; font: 12px 'Courier New', monospace; }
-#memo-content {
+#memo-date, #claude-memories-date { position: static; flex-shrink: 0; color: #796649; font: 12px 'Courier New', monospace; }
+#memo-content, #claude-memories-content {
     position: static; padding: 14px 0 0; min-height: 0; max-height: none; flex: 1 1 auto;
     overflow: auto; overscroll-behavior: contain; white-space: pre-wrap; overflow-wrap: anywhere;
     border-top: 1px solid #b9a47d; color: #463820; font: 14px/1.9 system-ui, sans-serif;
 }
-#memo-placeholder { padding: 22px 0; color: #796649; text-align: center; }
+#memo-placeholder, #claude-memories-placeholder { padding: 22px 0; color: #796649; text-align: center; }
 #guest-agent-list { min-height: 70px; max-height: 48vh; overflow: auto; overscroll-behavior: contain; }
 #guest-agent-panel .guest-agent-item { border-color: #76604260; }
 #control-buttons { grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 0; gap: 6px; }
@@ -130,7 +130,7 @@ body {
 #asset-drawer-backdrop { background: #17151140; }
 body.drawer-open { touch-action: auto; }
 @media (max-width: 600px) {
-    #memo-panel, #guest-agent-panel, #control-bar { width: calc(100vw - 24px); padding: 16px; }
+    #memo-panel, #claude-memories-panel, #guest-agent-panel, #control-bar { width: calc(100vw - 24px); padding: 16px; }
     #status-text { font-size: 11px; }
 }
 @media (max-width: 360px) {
@@ -138,7 +138,7 @@ body.drawer-open { touch-action: auto; }
     #office-menu-toggle { padding-inline: 14px; gap: 12px; font-size: 14px; }
 }
 @media (max-height: 480px) {
-    #memo-panel, #guest-agent-panel, #control-bar { max-height: calc(100dvh - 100px); padding: 12px; }
+    #memo-panel, #claude-memories-panel, #guest-agent-panel, #control-bar { max-height: calc(100dvh - 100px); padding: 12px; }
     #memo-content, #guest-agent-list { max-height: none; }
 }
 @media (prefers-reduced-motion: reduce) {

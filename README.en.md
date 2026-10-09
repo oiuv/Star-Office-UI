@@ -16,7 +16,7 @@ This version is based on [ringhyacinth/Star-Office-UI](https://github.com/ringhy
 
 ---
 
-> The browser office fills the viewport. Click the bottom office name for Recent Notes, Visitors, Room Design, Activity, and settings. Codex subagents join automatically without keys; after stopping they become offline and disappear after five minutes without events. Direct Python startup does not load `.env`; inject variables through your shell or service manager. Guest distribution uses `frontend/office-agent-push.py` (requires `requests`); the root script creates a fresh random test visitor on each launch. Recent Notes read the backend account's Codex summaries, not the visiting browser's files. See the [Chinese guide](./README.md) for the full current configuration and regression commands.
+> The browser office fills the viewport. Click the bottom office name for Codex Session Notes, Visitors, Room Design, Activity, and settings. Codex subagents join automatically without keys; after stopping they become offline and disappear after five minutes without events. Direct Python startup does not load `.env`; inject variables through your shell or service manager. Guest distribution uses `frontend/office-agent-push.py` (requires `requests`); the root script creates a fresh random test visitor on each launch. Codex Session Notes read the backend account's Codex summaries, not the visiting browser's files. See the [Chinese guide](./README.md) for the full current configuration and regression commands.
 
 ## Claude Code hooks
 
@@ -24,7 +24,7 @@ The default configuration keeps 13 lifecycle events synchronous and runs 19 obse
 
 Run `python scripts/claude_hooks_config.py` and merge the printed `hooks` into project `.claude/settings.json` (or `.claude/settings.local.json`) or user `~/.claude/settings.json`. Preserve existing settings and hook arrays; install the office observer at only one level. Check `/hooks`, submit a task, then open `/stats`.
 
-Claude command hooks use executable `command` plus an `args` list to avoid shell quoting differences. The observer uses the current Python interpreter, supports local SQLite recording and remote `/hooks/claude_code` with the same URL/token environment variables as Codex. Provider identities and session termination are isolated. Tool failures are recorded without success XP; response failures do not earn completion badges. Missing events on older clients require upgrading or removing those entries. Recent Notes still read Codex summaries only. See the [Chinese guide](./README.md) for mappings, older-client limits and verification details.
+Claude command hooks use executable `command` plus an `args` list to avoid shell quoting differences. The observer uses the current Python interpreter, supports local SQLite recording and remote `/hooks/claude_code` with the same URL/token environment variables as Codex. Provider identities and session termination are isolated. Tool failures are recorded without success XP; response failures do not earn completion badges. Missing events on older clients require upgrading or removing those entries. Codex Session Notes still read Codex summaries only; the Claude Memories panel reads per-project auto-memory files read-only. See the [Chinese guide](./README.md) for mappings, older-client limits and verification details.
 
 ## ✨ Quick Start: Codex hooks (recommended)
 
@@ -120,15 +120,16 @@ Push states manually or from scripts for personal logs, remote collaboration, or
 1. **Automatic Codex hooks** — 12 lifecycle events drive animations and records, including sessions, tools, compaction, interrupts, and subagents
 2. **Activity and progression** — State counts and observed time, trends, tool statistics, filterable logs, JSON export, XP, levels, 24 regular achievements, hidden discoveries, full collection, and monthly badges
 3. **Status Visualization** — 6 states (`idle` / `writing` / `researching` / `executing` / `syncing` / `error`) mapped to different office areas with animated sprites and speech bubbles
-4. **Recent Notes** — Reads the latest five Codex summaries from `$CODEX_HOME/memories/rollout_summaries/` (default `~/.codex/`). Shows summary update dates, projects, and up to three tasks per entry; no API calls or manual diary required.
-5. **Multi-Agent Collaboration** — Invite other agents to join your office via join keys and see everyone's status in real time
-6. **Trilingual UI** — Switch between Chinese, English, and Japanese with one click; all UI text, bubbles, and loading messages update instantly
-7. **Custom Art Assets** — Manage characters, scenes, and decorations through the sidebar; dynamic frame sync prevents flickering
-8. **AI-Powered Room Design** — Connect an OpenAI-compatible Image API (default model: `gpt-image-2`) to generate new office backgrounds; core features work fine without an API
-9. **Mobile-Friendly** — Open on your phone for a quick status check on the go
-10. **Security Hardening** — Sidebar password protection, weak-password blocking in production, hardened session cookies
-11. **Flexible Public Access** — Use Cloudflare Tunnel for instant public access, or bring your own domain / reverse proxy
-12. **Desktop Pet Mode** — Optional Electron desktop wrapper that turns the office into a transparent desktop widget (see below)
+4. **Codex Session Notes** — Reads the latest five Codex summaries from `$CODEX_HOME/memories/rollout_summaries/` (default `~/.codex/`). Shows summary update dates, projects, and up to three tasks per entry; no API calls or manual diary required.
+5. **Claude Recent Memories** — Collects the latest auto-memory files from every project's `~/.claude/projects/*/memory/` directory, ordered by update time with sanitized snippets
+6. **Multi-Agent Collaboration** — Invite other agents to join your office via join keys and see everyone's status in real time
+7. **Trilingual UI** — Switch between Chinese, English, and Japanese with one click; all UI text, bubbles, and loading messages update instantly
+8. **Custom Art Assets** — Manage characters, scenes, and decorations through the sidebar; dynamic frame sync prevents flickering
+9. **AI-Powered Room Design** — Connect an OpenAI-compatible Image API (default model: `gpt-image-2`) to generate new office backgrounds; core features work fine without an API
+10. **Mobile-Friendly** — Open on your phone for a quick status check on the go
+11. **Security Hardening** — Sidebar password protection, weak-password blocking in production, hardened session cookies
+12. **Flexible Public Access** — Use Cloudflare Tunnel for instant public access, or bring your own domain / reverse proxy
+13. **Desktop Pet Mode** — Optional Electron desktop wrapper that turns the office into a transparent desktop widget (see below)
 
 ---
 
@@ -289,6 +290,7 @@ The service must implement `/images/edits` or `/images/generations`; a chat-only
 | `POST /agent-push` | Guest pushes status |
 | `POST /leave-agent` | Guest leaves |
 | `GET /recent-memo` | Get recent Codex summaries (`/yesterday-memo` remains an alias) |
+| `GET /claude-memories` | Get recent Claude auto-memory entries across projects |
 | `GET /config/ai` | Get OpenAI Image API settings (key masked) |
 | `POST /config/ai` | Save OpenAI Image API settings |
 | `GET /assets/generate-rpg-background/poll` | Poll image generation progress |

@@ -780,7 +780,8 @@
         @media (max-width: 900px), (pointer: coarse) {
             #control-bar-title,
             #guest-agent-panel-title,
-            #memo-title {
+            #memo-title,
+            #claude-memories-title {
                 font-size: 14px;
             }
 
@@ -877,6 +878,7 @@
     <link rel="stylesheet" href="/static/office-shell.css?v={{VERSION_TIMESTAMP}}">
     <link rel="stylesheet" href="/static/guest-feedback.css?v={{VERSION_TIMESTAMP}}">
     <link rel="stylesheet" href="/static/recent-memo.css?v={{VERSION_TIMESTAMP}}">
+    <link rel="stylesheet" href="/static/claude-memories.css?v={{VERSION_TIMESTAMP}}">
 </head>
 <body>
     <!-- 加载遮罩 -->
@@ -903,7 +905,11 @@
     <nav id="office-dock" popover="auto" aria-label="办公室工具" data-office-label="tools">
         <button id="office-memo-button" popovertarget="memo-panel" aria-expanded="false">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5"/></svg>
-            <span data-office-text="memo">最近小记</span>
+            <span data-office-text="memo">Codex 会话小记</span>
+        </button>
+        <button id="office-claude-memories-button" popovertarget="claude-memories-panel" aria-expanded="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+            <span data-office-text="claudeMemories">Claude 最近记忆</span>
         </button>
         <button id="office-guests-button" popovertarget="guest-agent-panel" aria-expanded="false">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20v-3a6 6 0 0 1 12 0v3M16 5a3 3 0 0 1 0 6M18 14a4 4 0 0 1 3 4v2"/></svg>
@@ -925,11 +931,20 @@
 
     <section id="memo-panel" class="office-panel" popover="auto" aria-labelledby="memo-title">
         <div class="office-panel-heading">
-            <h2 id="memo-title">最近小记</h2>
+            <h2 id="memo-title">Codex 会话小记</h2>
             <button class="office-panel-close" popovertarget="memo-panel" popovertargetaction="hide" aria-label="关闭" data-office-label="close">×</button>
         </div>
         <div id="memo-date"></div>
         <div id="memo-content"><div id="memo-placeholder">加载中...</div></div>
+    </section>
+
+    <section id="claude-memories-panel" class="office-panel" popover="auto" aria-labelledby="claude-memories-title">
+        <div class="office-panel-heading">
+            <h2 id="claude-memories-title">Claude 最近记忆</h2>
+            <button class="office-panel-close" popovertarget="claude-memories-panel" popovertargetaction="hide" aria-label="关闭" data-office-label="close">×</button>
+        </div>
+        <div id="claude-memories-date"></div>
+        <div id="claude-memories-content"><div id="claude-memories-placeholder">加载中...</div></div>
     </section>
 
     <section id="guest-agent-panel" class="office-panel" popover="auto" aria-labelledby="guest-agent-panel-title">
@@ -1076,6 +1091,7 @@
     </div>
     <script src="/static/office-shell.js?v={{VERSION_TIMESTAMP}}"></script>
     <script src="/static/recent-memo.js?v={{VERSION_TIMESTAMP}}"></script>
+    <script src="/static/claude-memories.js?v={{VERSION_TIMESTAMP}}"></script>
     <script src="/static/guest-feedback.js?v={{VERSION_TIMESTAMP}}"></script>
     <script src="/static/image-settings.js?v={{VERSION_TIMESTAMP}}"></script>
     <script src="/static/speech-bubbles.js?v={{VERSION_TIMESTAMP}}&amp;cat=1"></script>
@@ -1109,7 +1125,7 @@
                 assetHintNotInScene: '当前场景未检测到此对象，仍可替换文件（刷新后生效）',
                 assetHintDefault: '通用素材：建议保持原图尺寸、透明通道与视觉重心一致，避免错位或失真',
                 showCoords: '显示坐标', hideCoords: '隐藏坐标', moveView: '移动视野', lockView: '锁定视野',
-                memoTitle: '最 近 小 记', guestTitle: '访 客 列 表', officeTitle: 'Star 小猫的办公室', pageTitle: 'STAR OFFICE · AI Agent 像素办公室',
+                memoTitle: 'Codex 会话小记', claudeMemoriesTitle: 'Claude 最近记忆', guestTitle: '访 客 列 表', officeTitle: 'Star 小猫的办公室', pageTitle: 'STAR OFFICE · AI Agent 像素办公室',
                 loadingOffice: '正在加载 STAR OFFICE...'
             },
             en: {
@@ -1137,7 +1153,7 @@
                 assetHintNotInScene: 'This object is not detected in current scene; you can still replace file (effective after refresh)',
                 assetHintDefault: 'Generic asset: keep source size, alpha channel, and visual anchor to avoid drift/distortion',
                 showCoords: 'Show Coords', hideCoords: 'Hide Coords', moveView: 'Pan View', lockView: 'Lock View',
-                memoTitle: 'RECENT NOTES', guestTitle: 'VISITOR LIST', officeTitle: 'Star Cat Office', pageTitle: 'STAR OFFICE · AI Agent Pixel Office',
+                memoTitle: 'CODEX SESSION NOTES', claudeMemoriesTitle: 'CLAUDE RECENT MEMORIES', guestTitle: 'VISITOR LIST', officeTitle: 'Star Cat Office', pageTitle: 'STAR OFFICE · AI Agent Pixel Office',
                 loadingOffice: 'Loading STAR OFFICE...'
             },
             ja: {
@@ -1165,7 +1181,7 @@
                 assetHintNotInScene: '現在のシーンでこのオブジェクトは未検出です。ファイル差し替えは可能（更新後に反映）',
                 assetHintDefault: '汎用素材：元サイズ・透過・視覚アンカーを維持し、ズレや崩れを防いでください',
                 showCoords: '座標表示', hideCoords: '座標非表示', moveView: '視点移動', lockView: '視点固定',
-                memoTitle: '最近のメモ', guestTitle: '訪問者リスト', officeTitle: 'Star 猫のオフィス', pageTitle: 'STAR OFFICE · AI Agent ピクセルオフィス',
+                memoTitle: 'Codex セッションメモ', claudeMemoriesTitle: 'Claude 最近のメモリ', guestTitle: '訪問者リスト', officeTitle: 'Star 猫のオフィス', pageTitle: 'STAR OFFICE · AI Agent ピクセルオフィス',
                 loadingOffice: 'STAR OFFICE を読み込み中...'
             }
         };
@@ -1244,6 +1260,9 @@
             window.RecentMemo.translate(uiLang);
             const memoTitle = document.getElementById('memo-title');
             if (memoTitle) memoTitle.textContent = t('memoTitle');
+            window.ClaudeMemories.translate(uiLang);
+            const claudeMemoriesTitle = document.getElementById('claude-memories-title');
+            if (claudeMemoriesTitle) claudeMemoriesTitle.textContent = t('claudeMemoriesTitle');
             const guestTitle = document.getElementById('guest-agent-panel-title');
             if (guestTitle) guestTitle.textContent = t('guestTitle');
             const plaqueTitle = (typeof window.officeNameFromServer !== 'undefined' && window.officeNameFromServer) || t('officeTitle');
@@ -1585,7 +1604,7 @@
                     'plants-spritesheet': '随机绿植',
                     'flowers-bloom-v2': '随机花朵',
                     'office_bg_small': '办公室背景',
-                    'memo-bg': '最近小记底图',
+                    'memo-bg': 'Codex 会话小记底图',
                     'desk-v3': '办公桌',
                     'desk': '办公桌（旧）',
                     'guest_anim_1': '访客动画 1',

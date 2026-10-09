@@ -2,9 +2,9 @@
 (() => {
     'use strict';
     const words = {
-        zh: { memo: '最近小记', guests: '访客列表', decor: '装修房间', stats: '活动档案', more: '更多设置', close: '关闭', language: '语言', view: '房间视野', state: '手动状态', tools: '办公室工具', menuHint: '点击办公室名称展开菜单', openMenu: '展开办公室菜单', closeMenu: '收起办公室菜单' },
-        en: { memo: 'Recent notes', guests: 'Visitors', decor: 'Decorate', stats: 'Activity', more: 'More settings', close: 'Close', language: 'Language', view: 'Room view', state: 'Manual status', tools: 'Office tools', menuHint: 'Click the office name to open the menu', openMenu: 'Open office menu', closeMenu: 'Close office menu' },
-        ja: { memo: '最近のメモ', guests: '訪問者', decor: '模様替え', stats: '活動記録', more: 'その他の設定', close: '閉じる', language: '言語', view: '部屋の表示', state: '手動ステータス', tools: 'オフィスツール', menuHint: 'オフィス名を押すとメニューが開きます', openMenu: 'メニューを開く', closeMenu: 'メニューを閉じる' }
+        zh: { memo: 'Codex 会话小记', claudeMemories: 'Claude 最近记忆', guests: '访客列表', decor: '装修房间', stats: '活动档案', more: '更多设置', close: '关闭', language: '语言', view: '房间视野', state: '手动状态', tools: '办公室工具', menuHint: '点击办公室名称展开菜单', openMenu: '展开办公室菜单', closeMenu: '收起办公室菜单' },
+        en: { memo: 'Codex session notes', claudeMemories: 'Claude recent memories', guests: 'Visitors', decor: 'Decorate', stats: 'Activity', more: 'More settings', close: 'Close', language: 'Language', view: 'Room view', state: 'Manual status', tools: 'Office tools', menuHint: 'Click the office name to open the menu', openMenu: 'Open office menu', closeMenu: 'Close office menu' },
+        ja: { memo: 'Codex セッションメモ', claudeMemories: 'Claude 最近のメモリ', guests: '訪問者', decor: '模様替え', stats: '活動記録', more: 'その他の設定', close: '閉じる', language: '言語', view: '部屋の表示', state: '手動ステータス', tools: 'オフィスツール', menuHint: 'オフィス名を押すとメニューが開きます', openMenu: 'メニューを開く', closeMenu: 'メニューを閉じる' }
     };
     const panels = [...document.querySelectorAll('.office-panel[popover]')];
     const drawer = document.getElementById('asset-drawer');

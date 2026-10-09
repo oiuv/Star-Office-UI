@@ -115,7 +115,8 @@
             min-height: 0 !important;
             padding: 0 !important;
         }
-        body.desktop-shell #memo-panel {
+        body.desktop-shell #memo-panel,
+        body.desktop-shell #claude-memories-panel {
             flex: 1 1 0 !important;
             width: auto !important;
             height: 132px !important;
@@ -149,7 +150,8 @@
         }
         body.desktop-shell #control-bar-title,
         body.desktop-shell #guest-agent-panel-title,
-        body.desktop-shell #memo-title {
+        body.desktop-shell #memo-title,
+        body.desktop-shell #claude-memories-title {
             font-size: 12px !important;
         }
         body.desktop-shell #guest-agent-list {
@@ -166,22 +168,26 @@
             font-size: 10px !important;
             padding: 4px 6px !important;
         }
-        body.desktop-shell #memo-date {
+        body.desktop-shell #memo-date,
+        body.desktop-shell #claude-memories-date {
             font-size: 9px !important;
             left: -10px !important;
         }
-        body.desktop-shell #memo-content {
+        body.desktop-shell #memo-content,
+        body.desktop-shell #claude-memories-content {
             font-size: 10px !important;
             line-height: 1.55 !important;
             left: 12px !important;
         }
         body.desktop-shell #memo-panel.collapsed,
+        body.desktop-shell #claude-memories-panel.collapsed,
         body.desktop-shell #control-bar.collapsed,
         body.desktop-shell #guest-agent-panel.collapsed {
             height: 62px !important;
             min-height: 62px !important;
         }
         body.desktop-shell #memo-panel:not(.collapsed),
+        body.desktop-shell #claude-memories-panel:not(.collapsed),
         body.desktop-shell #control-bar:not(.collapsed),
         body.desktop-shell #guest-agent-panel:not(.collapsed) {
             height: 220px !important;
@@ -1196,7 +1202,8 @@
             background: #6a2828;
         }
         /* Memo 区域 - 4:3 小正方形 */
-        #memo-panel {
+        #memo-panel,
+        #claude-memories-panel {
             position: relative;
             width: 460px;
             height: 300px;
@@ -1211,7 +1218,8 @@
             flex-direction: column;
             overflow: hidden;
         }
-        #memo-panel::before {
+        #memo-panel::before,
+        #claude-memories-panel::before {
             content: '';
             position: absolute;
             inset: 0;
@@ -1233,7 +1241,8 @@
                 9px calc(100% - 10px), calc(50% + 5px) calc(100% - 10px),
                 8px calc(50% + 5px), calc(100% - 10px) calc(50% + 5px);
         }
-        #memo-panel::after {
+        #memo-panel::after,
+        #claude-memories-panel::after {
             content: '';
             position: absolute;
             inset: 0;
@@ -1259,7 +1268,8 @@
             background-image: none !important;
             background-color: #111827;
         }
-        #memo-title {
+        #memo-title,
+        #claude-memories-title {
             color: #1b192e;
             font-size: 16px;
             font-weight: bold;
@@ -1270,7 +1280,8 @@
             position: relative;
             top: 15px;
         }
-        #memo-date {
+        #memo-date,
+        #claude-memories-date {
             color: #888;
             font-size: 10px;
             margin-bottom: 8px;
@@ -1280,7 +1291,8 @@
             left: -40px; /* move date left by 40px */
             top: -10px;
         }
-        #memo-content {
+        #memo-content,
+        #claude-memories-content {
             color: #3b3b32;
             font-size: 12px;
             line-height: 1.8;
@@ -1293,17 +1305,21 @@
             left: 100px; /* move content right by 100px */
             top: -10px;
         }
-        #memo-content::-webkit-scrollbar {
+        #memo-content::-webkit-scrollbar,
+        #claude-memories-content::-webkit-scrollbar {
             width: 6px;
         }
-        #memo-content::-webkit-scrollbar-track {
+        #memo-content::-webkit-scrollbar-track,
+        #claude-memories-content::-webkit-scrollbar-track {
             background: #1a1a2e;
         }
-        #memo-content::-webkit-scrollbar-thumb {
+        #memo-content::-webkit-scrollbar-thumb,
+        #claude-memories-content::-webkit-scrollbar-thumb {
             background: #444;
             border-radius: 3px;
         }
-        #memo-placeholder {
+        #memo-placeholder,
+        #claude-memories-placeholder {
             color: #666;
             font-style: italic;
             text-align: center;
@@ -1361,6 +1377,7 @@
             transform: translateY(0);
         }
         body.desktop-shell #memo-title,
+        body.desktop-shell #claude-memories-title,
         body.desktop-shell #control-bar-title,
         body.desktop-shell #guest-agent-panel-title {
             display: flex !important;
@@ -1395,6 +1412,8 @@
         }
         body.desktop-shell #memo-panel.collapsed::before,
         body.desktop-shell #memo-panel.collapsed::after,
+        body.desktop-shell #claude-memories-panel.collapsed::before,
+        body.desktop-shell #claude-memories-panel.collapsed::after,
         body.desktop-shell #control-bar.collapsed::before,
         body.desktop-shell #control-bar.collapsed::after,
         body.desktop-shell #guest-agent-panel.collapsed::before,
@@ -1403,13 +1422,16 @@
         }
         /* memo 展开时只保留底图，不叠加线条装饰 */
         body.desktop-shell #memo-panel:not(.collapsed)::before,
-        body.desktop-shell #memo-panel:not(.collapsed)::after {
+        body.desktop-shell #memo-panel:not(.collapsed)::after,
+        body.desktop-shell #claude-memories-panel:not(.collapsed)::before,
+        body.desktop-shell #claude-memories-panel:not(.collapsed)::after {
             display: none !important;
         }
         body.desktop-shell .panel-collapsible:not(.collapsed) {
             padding: 6px 8px 8px !important;
         }
-        body.desktop-shell #memo-panel:not(.collapsed) {
+        body.desktop-shell #memo-panel:not(.collapsed),
+        body.desktop-shell #claude-memories-panel:not(.collapsed) {
             background-image: url('/static/memo-bg.webp?v={{VERSION_TIMESTAMP}}') !important;
             background-size: contain !important;
             /* 下移背景图，让主体落在折叠/展开标题条下方 */
@@ -1507,6 +1529,7 @@
             }
 
             #memo-panel,
+            #claude-memories-panel,
             #control-bar,
             #guest-agent-panel {
                 width: 100%;
@@ -1514,16 +1537,18 @@
                 min-height: 180px;
             }
 
-            #memo-panel { min-height: 220px; }
+            #memo-panel, #claude-memories-panel { min-height: 220px; }
             #control-bar { min-height: 210px; }
             #guest-agent-panel { min-height: 220px; }
 
-            #memo-date {
+            #memo-date,
+            #claude-memories-date {
                 left: 0;
                 text-align: left;
                 margin-bottom: 6px;
             }
-            #memo-content {
+            #memo-content,
+            #claude-memories-content {
                 left: 0;
                 font-size: 13px;
                 line-height: 1.7;
@@ -1531,7 +1556,8 @@
 
             #control-bar-title,
             #guest-agent-panel-title,
-            #memo-title {
+            #memo-title,
+            #claude-memories-title {
                 font-size: 14px;
             }
 
@@ -1619,6 +1645,7 @@
     </style>
     <link rel="stylesheet" href="/static/guest-feedback.css?v={{VERSION_TIMESTAMP}}">
     <link rel="stylesheet" href="/static/recent-memo.css?v={{VERSION_TIMESTAMP}}">
+    <link rel="stylesheet" href="/static/claude-memories.css?v={{VERSION_TIMESTAMP}}">
 </head>
 <body>
     <div id="window-controls">
@@ -1649,11 +1676,22 @@
     <div id="bottom-panels">
         <!-- Memo 面板 -->
         <div id="memo-panel">
-            <div id="memo-title">最 近 小 记</div>
+            <div id="memo-title">Codex 会话小记</div>
             <div id="memo-date"></div>
             <div class="memo-decoration">─ ─ ─ ─ ─</div>
             <div id="memo-content">
                 <div id="memo-placeholder">加载中...</div>
+            </div>
+            <div class="memo-decoration">─ ─ ─ ─ ─</div>
+        </div>
+
+        <!-- Claude 最近记忆面板 -->
+        <div id="claude-memories-panel">
+            <div id="claude-memories-title">Claude 最近记忆</div>
+            <div id="claude-memories-date"></div>
+            <div class="memo-decoration">─ ─ ─ ─ ─</div>
+            <div id="claude-memories-content">
+                <div id="claude-memories-placeholder">加载中...</div>
             </div>
             <div class="memo-decoration">─ ─ ─ ─ ─</div>
         </div>
@@ -1801,6 +1839,7 @@
 
     <a id="office-stats-link" href="/stats" target="_blank" rel="noopener noreferrer" style="position:fixed;right:12px;top:calc(env(safe-area-inset-top, 0px) + 52px);z-index:1000002;padding:8px 10px;background:#283b35;color:#c3efcd;border:2px solid #446d54;border-radius:5px;text-decoration:none;font:13px monospace;">📊 活动档案</a>
     <script src="/static/recent-memo.js?v={{VERSION_TIMESTAMP}}"></script>
+    <script src="/static/claude-memories.js?v={{VERSION_TIMESTAMP}}"></script>
     <script src="/static/guest-feedback.js?v={{VERSION_TIMESTAMP}}"></script>
     <script src="/static/image-settings.js?v={{VERSION_TIMESTAMP}}"></script>
     <script src="/static/speech-bubbles.js?v={{VERSION_TIMESTAMP}}&amp;cat=1"></script>
@@ -1836,7 +1875,7 @@
                 assetHintNotInScene: '当前场景未检测到此对象，仍可替换文件（刷新后生效）',
                 assetHintDefault: '通用素材：建议保持原图尺寸、透明通道与视觉重心一致，避免错位或失真',
                 showCoords: '显示坐标', hideCoords: '隐藏坐标', moveView: '移动视野', lockView: '锁定视野',
-                memoTitle: '最 近 小 记', guestTitle: '访 客 列 表', officeTitle: 'Star 小猫的办公室', pageTitle: 'STAR OFFICE · AI Agent 像素办公室',
+                memoTitle: 'Codex 会话小记', claudeMemoriesTitle: 'Claude 最近记忆', guestTitle: '访 客 列 表', officeTitle: 'Star 小猫的办公室', pageTitle: 'STAR OFFICE · AI Agent 像素办公室',
                 loadingOffice: '正在加载 STAR OFFICE...',
                 panelExpand: '展开', panelCollapse: '收起',
                 hiddenTag: '已隐藏', assetListLoaded: '已加载资产', sceneCaptured: '场景抓取', assetListLoadFailed: '资产加载失败，请点“刷新”重试',
@@ -1870,7 +1909,7 @@
                 assetHintNotInScene: 'This object is not detected in current scene; you can still replace file (effective after refresh)',
                 assetHintDefault: 'Generic asset: keep source size, alpha channel, and visual anchor to avoid drift/distortion',
                 showCoords: 'Show Coords', hideCoords: 'Hide Coords', moveView: 'Pan View', lockView: 'Lock View',
-                memoTitle: 'RECENT NOTES', guestTitle: 'VISITOR LIST', officeTitle: 'Star Cat Office', pageTitle: 'STAR OFFICE · AI Agent Pixel Office',
+                memoTitle: 'CODEX SESSION NOTES', claudeMemoriesTitle: 'CLAUDE RECENT MEMORIES', guestTitle: 'VISITOR LIST', officeTitle: 'Star Cat Office', pageTitle: 'STAR OFFICE · AI Agent Pixel Office',
                 loadingOffice: 'Loading STAR OFFICE...',
                 panelExpand: 'Expand', panelCollapse: 'Collapse',
                 hiddenTag: 'Hidden', assetListLoaded: 'Assets loaded', sceneCaptured: 'Scene captured', assetListLoadFailed: 'Failed to load assets. Click Refresh and retry',
@@ -1904,7 +1943,7 @@
                 assetHintNotInScene: '現在のシーンでこのオブジェクトは未検出です。ファイル差し替えは可能（更新後に反映）',
                 assetHintDefault: '汎用素材：元サイズ・透過・視覚アンカーを維持し、ズレや崩れを防いでください',
                 showCoords: '座標表示', hideCoords: '座標非表示', moveView: '視点移動', lockView: '視点固定',
-                memoTitle: '最近のメモ', guestTitle: '訪問者リスト', officeTitle: 'Star 猫のオフィス', pageTitle: 'STAR OFFICE · AI Agent ピクセルオフィス',
+                memoTitle: 'Codex セッションメモ', claudeMemoriesTitle: 'Claude 最近のメモリ', guestTitle: '訪問者リスト', officeTitle: 'Star 猫のオフィス', pageTitle: 'STAR OFFICE · AI Agent ピクセルオフィス',
                 loadingOffice: 'STAR OFFICE を読み込み中...',
                 panelExpand: '展開', panelCollapse: '折りたたむ',
                 hiddenTag: '非表示', assetListLoaded: 'アセット読み込み', sceneCaptured: 'シーン取得', assetListLoadFailed: 'アセット読み込み失敗。更新して再試行してください',
@@ -2081,6 +2120,12 @@
             if (memoTitle) {
                 memoTitle.textContent = t('memoTitle');
                 memoTitle.dataset.baseTitle = t('memoTitle');
+            }
+            window.ClaudeMemories.translate(uiLang);
+            const claudeMemoriesTitle = document.getElementById('claude-memories-title');
+            if (claudeMemoriesTitle) {
+                claudeMemoriesTitle.textContent = t('claudeMemoriesTitle');
+                claudeMemoriesTitle.dataset.baseTitle = t('claudeMemoriesTitle');
             }
             const controlTitle = document.getElementById('control-bar-title');
             if (controlTitle) controlTitle.dataset.baseTitle = t('controlTitle');
@@ -2307,6 +2352,7 @@
         function refreshCollapsiblePanelTitles() {
             const defs = [
                 { panelId: 'memo-panel', titleId: 'memo-title' },
+                { panelId: 'claude-memories-panel', titleId: 'claude-memories-title' },
                 { panelId: 'control-bar', titleId: 'control-bar-title' },
                 { panelId: 'guest-agent-panel', titleId: 'guest-agent-panel-title' }
             ];
@@ -2324,6 +2370,7 @@
         function initCollapsiblePanels() {
             const defs = [
                 { panelId: 'memo-panel', titleId: 'memo-title' },
+                { panelId: 'claude-memories-panel', titleId: 'claude-memories-title' },
                 { panelId: 'control-bar', titleId: 'control-bar-title' },
                 { panelId: 'guest-agent-panel', titleId: 'guest-agent-panel-title' }
             ];
@@ -2659,7 +2706,7 @@
                     'plants-spritesheet': '随机绿植',
                     'flowers-bloom-v2': '随机花朵',
                     'office_bg_small': '办公室背景',
-                    'memo-bg': '最近小记底图',
+                    'memo-bg': 'Codex 会话小记底图',
                     'desk-v3': '办公桌',
                     'desk': '办公桌（旧）',
                     'guest_anim_1': '访客动画 1',

@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
-from memo_utils import load_recent_memos, MAX_SUMMARY_BYTES
+from memo_utils import load_claude_memories, load_recent_memos, CLAUDE_MEMORIES_LIMIT, MAX_SUMMARY_BYTES
 
 
 class RecentMemoTests(unittest.TestCase):
@@ -100,6 +100,77 @@ class RecentMemoTests(unittest.TestCase):
             return real_open(path, *args, **kwargs)
         with patch.object(Path, "open", open_file):
             self.assertEqual(len(load_recent_memos()), 1)
+
+
+class ClaudeMemoriesTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.home = Path(self.tmp.name)
+        self.projects = self.home / "projects"
+        self.env = patch.dict(os.environ, {"CLAUDE_CONFIG_DIR": str(self.home)})
+        self.env.start()
+
+    def tearDown(self):
+        self.env.stop()
+        self.tmp.cleanup()
+
+    def memory(self, project, name, description="一条记忆", body="记忆正文。", mtime=None):
+        directory = self.projects / project / "memory"
+        directory.mkdir(parents=True, exist_ok=True)
+        path = directory / f"{name}.md"
+        path.write_text(
+            f"---\nname: {name}\ndescription: {description}\nmetadata:\n  type: project\n---\n\n{body}\n",
+            encoding="utf-8",
+        )
+        if mtime:
+            os.utime(path, (mtime, mtime))
+        return path
+
+    def test_entries_ordered_by_mtime_across_projects(self):
+        self.memory("C--AI-Alpha", "old-note", "旧记忆", mtime=1_700_000_000)
+        self.memory("C--AI-Beta", "new-note", "新记忆", mtime=1_800_000_000)
+        entries = load_claude_memories()
+        self.assertEqual([entry["title"] for entry in entries], ["新记忆", "旧记忆"])
+        self.assertEqual(entries[0]["project"], "C--AI-Beta")
+        self.assertTrue(entries[0]["updated_at"].endswith("+00:00"))
+        self.assertTrue(entries[0]["date"])
+        self.assertIn("记忆正文", entries[0]["text"])
+
+    def test_index_skipped_and_entries_sanitized(self):
+        self.memory("C--AI-Alpha", "secret", "联系 alice@example.com 优先", "查看 C:/private/report.txt。")
+        (self.projects / "C--AI-Alpha" / "memory" / "MEMORY.md").write_text("# Memory Index\n", encoding="utf-8")
+        entries = load_claude_memories()
+        self.assertEqual(len(entries), 1)
+        self.assertIn("[邮箱]", entries[0]["title"])
+        self.assertIn("[路径]", entries[0]["text"])
+
+    def test_no_frontmatter_falls_back_to_stem(self):
+        directory = self.projects / "C--AI-Alpha" / "memory"
+        directory.mkdir(parents=True)
+        (directory / "plain.md").write_text("没有 frontmatter 的记忆\n", encoding="utf-8")
+        entries = load_claude_memories()
+        self.assertEqual(entries[0]["title"], "plain")
+        self.assertIn("没有 frontmatter", entries[0]["text"])
+
+    def test_missing_projects_directory_and_limit(self):
+        self.assertEqual(load_claude_memories(), [])
+        for index in range(10):
+            self.memory("C--AI-Alpha", f"note-{index}", f"记忆 {index}", mtime=1_700_000_000 + index)
+        entries = load_claude_memories()
+        self.assertEqual(len(entries), CLAUDE_MEMORIES_LIMIT)
+        self.assertEqual(entries[0]["title"], "记忆 9")
+
+    def test_symlink_and_invalid_files_are_skipped(self):
+        real = self.home / "real.md"
+        real.write_text("x", encoding="utf-8")
+        directory = self.projects / "C--AI-Alpha" / "memory"
+        directory.mkdir(parents=True)
+        try:
+            (directory / "linked.md").symlink_to(real)
+        except OSError:
+            self.skipTest("symlink creation is not permitted on this host")
+        (directory / "invalid.md").write_bytes(b"\xff\xfe")
+        self.assertEqual(load_claude_memories(), [])
 
 
 if __name__ == "__main__":

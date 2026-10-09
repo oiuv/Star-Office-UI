@@ -7,6 +7,8 @@ from pathlib import Path
 import re
 
 MAX_SUMMARY_BYTES = 512 * 1024
+CLAUDE_MEMORY_FILE_BYTES = 128 * 1024
+CLAUDE_MEMORIES_LIMIT = 8
 
 
 def sanitize_content(text: str) -> str:
@@ -81,6 +83,57 @@ def _parse_summary(content: str) -> dict | None:
         "title": title,
         "tasks": tasks[:3],
     }
+
+
+def _memory_title(content: str) -> tuple[str, str]:
+    """Split a memory file into its frontmatter description and body text."""
+    text = content
+    title = ""
+    lines = content.splitlines()
+    if lines and lines[0].strip() == "---":
+        for index in range(1, min(len(lines), 30)):
+            if lines[index].strip() == "---":
+                text = "\n".join(lines[index + 1:])
+                for raw in lines[1:index]:
+                    match = re.match(r"^description:\s*(.+?)\s*$", raw.strip())
+                    if match:
+                        title = match.group(1).strip().strip("'\"")
+                break
+    return title, text
+
+
+def load_claude_memories(limit: int = CLAUDE_MEMORIES_LIMIT) -> list[dict]:
+    """Read recent auto-memory files across Claude Code projects, ordered by file mtime."""
+    config_dir = Path(os.environ.get("CLAUDE_CONFIG_DIR", "").strip() or Path.home() / ".claude").expanduser()
+    projects = config_dir / "projects"
+    if not projects.is_dir():
+        return []
+    entries = []
+    for directory in sorted(projects.iterdir()):
+        memory_dir = directory / "memory"
+        if not directory.is_dir() or not memory_dir.is_dir():
+            continue
+        for path in memory_dir.glob("*.md"):
+            if path.name == "MEMORY.md" or path.is_symlink() or not path.is_file():
+                continue
+            try:
+                with path.open("rb") as stream:
+                    raw = stream.read(CLAUDE_MEMORY_FILE_BYTES + 1)
+                if len(raw) > CLAUDE_MEMORY_FILE_BYTES:
+                    continue
+                title, text = _memory_title(raw.decode("utf-8-sig"))
+                updated = datetime.fromtimestamp(path.stat().st_mtime, timezone.utc)
+            except (OSError, UnicodeError):
+                continue
+            entries.append({
+                "updated_at": updated.isoformat(),
+                "date": updated.astimezone().date().isoformat(),
+                "project": directory.name,
+                "title": _display_text(title or path.stem, 80),
+                "text": _display_text(text, 200),
+            })
+    entries.sort(key=lambda item: item["updated_at"], reverse=True)
+    return entries[:limit]
 
 
 def load_recent_memos(limit: int = 5) -> list[dict]:
