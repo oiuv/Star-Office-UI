@@ -26,6 +26,8 @@ from store_utils import _save_json
 from pathlib import Path
 from security_utils import is_production_mode, is_strong_secret, is_strong_drawer_pass
 from memo_utils import load_claude_memories, load_recent_memos
+from agent_board import board_summary, register_board_routes
+from thread_archive import register_thread_routes
 from store_utils import (
     load_agents_state as _store_load_agents_state,
     save_agents_state as _store_save_agents_state,
@@ -1064,15 +1066,19 @@ def health():
     })
 
 
+register_board_routes(app)
+register_thread_routes(app)
+
+
 @app.route("/recent-memo", methods=["GET"])
 @app.route("/yesterday-memo", methods=["GET"])
 def get_recent_memo():
-    """Read recent Codex summaries; retain the old route and text fields for clients."""
+    """Read all complete Codex summaries; retain the route alias and combined text field."""
     try:
         entries = load_recent_memos()
         memo = "\n\n".join(
             f"{entry['date']} · {entry['project']}\n{entry['title']}\n"
-            + "\n".join(f"· {task['title']}" for task in entry["tasks"])
+            + entry["text"]
             for entry in entries
         )
         return jsonify({
@@ -1086,12 +1092,12 @@ def get_recent_memo():
 
 @app.route("/claude-memories", methods=["GET"])
 def get_claude_memories():
-    """Read recent Claude Code auto-memories across projects."""
+    """Read complete Claude Code auto-memories across all projects."""
     try:
         return jsonify({"success": True, "entries": load_claude_memories()})
     except OSError:
         app.logger.exception("Could not read Claude memories")
-        return jsonify({"success": False, "entries": [], "msg": "无法读取 Claude 最近记忆"}), 500
+        return jsonify({"success": False, "entries": [], "msg": "无法读取 Claude 记忆"}), 500
 
 
 @app.route("/set_state", methods=["POST"])
@@ -1160,7 +1166,7 @@ def stats_page():
 def activity_stats():
     try:
         since, until = period_bounds(request.args.get("period", "today"))
-        return jsonify({"ok": True, **event_store.stats(since, until)})
+        return jsonify({"ok": True, **event_store.stats(since, until), "agent_board": board_summary()})
     except ValueError as error:
         return jsonify({"ok": False, "msg": str(error)}), 400
 

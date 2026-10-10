@@ -120,8 +120,8 @@ Push states manually or from scripts for personal logs, remote collaboration, or
 1. **Automatic Codex hooks** — 12 lifecycle events drive animations and records, including sessions, tools, compaction, interrupts, and subagents
 2. **Activity and progression** — State counts and observed time, trends, tool statistics, filterable logs, JSON export, XP, levels, 24 regular achievements, hidden discoveries, full collection, and monthly badges
 3. **Status Visualization** — 6 states (`idle` / `writing` / `researching` / `executing` / `syncing` / `error`) mapped to different office areas with animated sprites and speech bubbles
-4. **Codex Session Notes** — Reads the latest five Codex summaries from `$CODEX_HOME/memories/rollout_summaries/` (default `~/.codex/`). Shows summary update dates, projects, and up to three tasks per entry; no API calls or manual diary required.
-5. **Claude Recent Memories** — Collects the latest auto-memory files from every project's `~/.claude/projects/*/memory/` directory, ordered by update time with sanitized snippets
+4. **Codex Session Notes** — Reads all readable Codex summaries from `$CODEX_HOME/memories/rollout_summaries/` (default `~/.codex/`). Open the office menu → Codex → Codex Session Notes. Shows complete titles, tasks, and Markdown bodies using the same formatting as the Agent board and Claude memories, with code copying, keyboard scrolling, note counts, update dates, projects, and task outcome counts. Existing redaction still applies; no API calls or manual diary required.
+5. **Claude Memories** — Open **Claude Code → Claude memories** to view all readable auto-memory files across projects, ordered by update time. Shows complete Markdown bodies with headings, lists, quotes, tables and copyable code blocks, plus a total count. Titles and bodies retain sensitive-data masking; `MEMORY.md` indexes are excluded. Uses `~/.claude/projects/*/memory/` or `CLAUDE_CONFIG_DIR`.
 6. **Multi-Agent Collaboration** — Invite other agents to join your office via join keys and see everyone's status in real time
 7. **Trilingual UI** — Switch between Chinese, English, and Japanese with one click; all UI text, bubbles, and loading messages update instantly
 8. **Custom Art Assets** — Manage characters, scenes, and decorations through the sidebar; dynamic frame sync prevents flickering
@@ -244,6 +244,24 @@ Guests can also use `frontend/join-office-skill.md` as a Skill — their agent w
 
 ---
 
+## Codex sessions
+
+Open **Codex → Codex sessions** from the office menu, or use the desktop button. A paginated list reads `threads` from local `state_5.sqlite`: title, project, model, `thread_source`, `tokens_used` and recent activity. Expand a row for startup `source`, provider, reasoning effort, timestamps, Git branch/commit, Codex version and Agent names, paths and parent/child relationships. Parent sessions can be opened through a search.
+
+All sources are included by default. Filter by source, model, project or archive status; search titles, previews, agents and session IDs; sort by recent activity, creation or token usage. Pages contain 20 sessions. Totals show sessions, tokens, models and projects, alongside matching session/token totals. Tokens are displayed as recorded. Refresh runs every 15 seconds while open and visible, preserving scroll and expanded rows.
+
+The database directory uses the same settings as the message board below. Access is read-only, including live WAL data. Full conversation history is not loaded; previews are limited to 3000 characters. The popup shares the width of the board and memory panels.
+
+## Agent message board
+
+Open **Codex → Agent message board** from the office menu, or use the desktop button. Browse Codex sessions and channels, read topics with their replies, filter by author, and search post/reply text. Matching replies lead to the full discussion. Original posts and numbered replies appear in separate cards, with a shortcut from the original post to the replies. Topics and replies use 20-item pages; the session selector shows the latest 100 boards.
+
+The backend reads `~/.codex/agent_message_board_1.sqlite` without changing it. Optional `state_5.sqlite` metadata supplies session titles and project names. Directory precedence: `STAR_OFFICE_CODEX_SQLITE_HOME` → `sqlite_home` in Codex `config.toml` → `CODEX_SQLITE_HOME` → `CODEX_HOME` (default `~/.codex`). These values identify directories, not database filenames.
+
+Posts render Markdown headings, lists, tables, quotes, emphasis and copyable code blocks. Raw HTML is displayed as text; images appear as links. The panel applies the same common sensitive-data redaction as session notes. It refreshes every 5 seconds while open and visible, preserves reading position, and indicates new posts. Activity statistics show all-history board counts separately from date-filtered events; they award no extra XP.
+
+Use a Codex version with `multi_agent_v2` and `agent_message_board` enabled. Missing or unavailable boards do not interrupt animations or hooks. This integration never posts, changes subscriptions, or calls AI APIs. It reads the backend machine's persistent local board; remote deployment requires access to the database directory, including live WAL files. Lifecycle hooks alone do not transfer post bodies. Remote-service and in-memory boards are not yet supported.
+
 ## 📊 Activity archive and progression
 
 Open the [activity archive](http://127.0.0.1:19000/stats) or click the office's activity link. View today, 7 days, 30 days, or all records, including state counts and observed time, Codex's 12 and Claude Code's 33 hook counts, sessions, completed turns, tools, daily trends, and filtered logs. Export the latest 200 matching events as JSON.
@@ -283,6 +301,8 @@ The service must implement `/images/edits` or `/images/generations`; a chat-only
 |----------|-------------|
 | `POST /hooks/codex` | Receive Codex events; Bearer token for remote use |
 | `GET /api/stats?period=today` | Activity statistics; `today` / `7d` / `30d` / `all` |
+| `GET /api/codex-threads` | Read-only sessions; query, source (thread_source), model, project, archived (0/1), sort (recent/created/tokens), offset |
+| `GET /api/agent-board` | Read-only Codex board; session/channel/author, query, offset and reply_offset |
 | `GET /api/events?period=7d&limit=50` | Event log; limit 1–200, optional `state` / `hook` filters |
 | `GET /health` | Health check |
 | `GET /status` | Get main agent status |
@@ -291,8 +311,8 @@ The service must implement `/images/edits` or `/images/generations`; a chat-only
 | `POST /join-agent` | Guest joins the office |
 | `POST /agent-push` | Guest pushes status |
 | `POST /leave-agent` | Guest leaves |
-| `GET /recent-memo` | Get recent Codex summaries (`/yesterday-memo` remains an alias) |
-| `GET /claude-memories` | Get recent Claude auto-memory entries across projects |
+| `GET /recent-memo` | Get all readable Codex summaries with complete bodies (`/yesterday-memo` remains an alias) |
+| `GET /claude-memories` | Get all Claude auto-memory entries with complete bodies across projects |
 | `GET /config/ai` | Get OpenAI Image API settings (key masked) |
 | `POST /config/ai` | Save OpenAI Image API settings |
 | `GET /assets/generate-rpg-background/poll` | Poll image generation progress |

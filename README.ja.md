@@ -120,8 +120,8 @@ Agent と子 Agent を一つのオフィスで確認し、活動記録からツ�
 1. **Codex hooks 自動接続** —— 12 種類のイベントでアニメーションと記録を更新。セッション、ツール、圧縮、中断、子 Agent に対応
 2. **活動記録と成長** —— 状態回数と観測時間、推移、ツール統計、ログ絞り込み、JSON 出力、経験値、レベル、通常実績 24 個、隠し実績、全実績コレクション、月間バッジ
 3. **ステータス可視化** —— 6 種類の状態（`idle` / `writing` / `researching` / `executing` / `syncing` / `error`）がオフィスの各エリアに自動マッピングされ、アニメーションと吹き出しでリアルタイム表示
-4. **Codex セッションメモ** —— `$CODEX_HOME/memories/rollout_summaries/`（既定の Codex ホームは `~/.codex/`）から最新 5 件の会話要約を取得。更新日、プロジェクト、最大 3 件のタスクを表示。手動の日記や API 呼び出しは不要です。
-5. **Claude 最近のメモリ** —— 各プロジェクトの `~/.claude/projects/*/memory/` から最新の auto-memory を収集し、更新順に脱色済みスニペットとともに表示
+4. **Codex セッションメモ** —— `$CODEX_HOME/memories/rollout_summaries/`（既定の Codex ホームは `~/.codex/`）から読み取り可能な全件の会話要約を取得。オフィスメニュー → Codex → Codex セッションメモで開きます。タイトル・タスク・本文を省略せず、掲示板・Claude メモリと共通の Markdown で表示。コードのコピー、キーボードスクロール、件数、更新日、プロジェクト、タスク結果の集計に対応し、既存の機密情報マスキングも維持します。手動の日記や API 呼び出しは不要です。
+5. **Claude メモリ** —— **Claude Code → Claude メモリ** から全プロジェクトの読み取り可能な auto-memory を更新順で表示。件数と完全な Markdown 本文を確認でき、見出し・リスト・引用・表・コピー可能なコードブロックに対応します。説明と本文は省略せず、機密情報のマスキングを維持します。`MEMORY.md` 索引は除外し、`~/.claude/projects/*/memory/` または `CLAUDE_CONFIG_DIR` を参照します。
 6. **マルチ Agent 協調** —— join key で他の Agent をオフィスに招待し、全員のステータスをリアルタイム確認
 7. **中英日 3 言語対応** —— CN / EN / JP をワンクリック切替、UI テキスト・吹き出し・ローディング表示すべてが連動
 8. **アート資産カスタマイズ** —— サイドバーからキャラクター / 背景 / 装飾素材を管理、動的フレーム同期でちらつき防止
@@ -244,6 +244,24 @@ python3 office-agent-push.py
 
 ---
 
+## Codex セッション履歴
+
+オフィスメニューの **Codex → Codex セッション履歴**、またはデスクトップの同名ボタンを開きます。ローカル `state_5.sqlite` の `threads` を一覧で表示し、タイトル、プロジェクト、モデル、`thread_source`、`tokens_used`、最近の活動を確認できます。行を展開すると起動元 `source`、プロバイダー、推論強度、日時、Git ブランチ・コミット、Codex バージョン、Agent の名前・パス・親子関係を表示します。親セッションの検索にも移動できます。
+
+初期表示は全ソースです。種別・モデル・プロジェクト・アーカイブで絞り込み、タイトル・概要・Agent・ID を検索し、最近の活動・作成日時・Token 使用量で並び替えます。1 ページ 20 件。セッション数・合計 Token・モデル数・プロジェクト数と、検索結果の件数・Token を集計します。Token は記録値をそのまま表示します。開いていてページが表示されている間は 15 秒ごとに更新し、スクロール位置と展開状態を保持します。
+
+DB ディレクトリは以下の掲示板設定と共通です。読み取り専用で稼働中の WAL に対応します。完全な会話履歴は読み込まず、概要は最大 3000 文字です。掲示板・メモリ画面と同じ幅で表示します。
+
+## Agent 掲示板
+
+オフィスメニューの **Codex → Agent 掲示板**、またはデスクトップの同名ボタンから開きます。Codex のセッションとチャンネルを選び、トピックと返信を閲覧できます。投稿者の絞り込みと本文検索は返信も対象にし、該当する議論全体を表示します。トピックと番号付きの返信を別カードで表示し、トピック上部から返信欄へ移動できます。トピックと返信は各 20 件ずつ、セッションは直近 100 件を表示します。
+
+`~/.codex/agent_message_board_1.sqlite` を読み取り専用で参照し、同じディレクトリの `state_5.sqlite` からセッション名とプロジェクト名を補います。ディレクトリの優先順位：`STAR_OFFICE_CODEX_SQLITE_HOME` → Codex `config.toml` の `sqlite_home` → `CODEX_SQLITE_HOME` → `CODEX_HOME`（既定 `~/.codex`）。ファイル名ではなくディレクトリを指定してください。
+
+Markdown の見出し・リスト・表・引用・強調・コードブロックを整形し、コードをコピーできます。HTML は文字として、画像はリンクとして表示します。会話メモと同じ機密情報のマスキングを行います。開いている間は 5 秒ごとに更新し、読んでいる位置を保持して新規投稿を知らせます。活動記録の掲示板統計は全履歴が対象で、日付の絞り込みには連動せず、追加 XP も付与しません。
+
+`multi_agent_v2` と `agent_message_board` に対応し、有効化した Codex が必要です。未作成・読み取りエラーでもアニメーションや hooks は継続します。投稿・購読変更・AI API 呼び出しは行いません。バックエンドが動くマシンのローカル DB が対象です。リモート配置では WAL を含む DB ディレクトリへのアクセスが必要で、hooks だけでは本文を転送できません。リモートサービスとメモリ内掲示板は未対応です。
+
 ## 📊 活動記録と成長
 
 [活動記録](http://127.0.0.1:19000/stats)で今日、7 日、30 日、全期間を選べます。状態の回数と観測時間、Codex 12 種類 / Claude Code 33 種類の hooks、セッション、完了ターン、ツール、日別推移、絞り込みログを確認し、最新 200 件を JSON 出力できます。
@@ -283,6 +301,8 @@ python3 office-agent-push.py
 |--------------|------|
 | `POST /hooks/codex` | Codex イベント受信、リモートでは Bearer Token |
 | `GET /api/stats?period=today` | 活動統計、`today` / `7d` / `30d` / `all` |
+| `GET /api/codex-threads` | セッション読み取り：query、source (thread_source)、model、project、archived (0/1)、sort (recent/created/tokens)、offset |
+| `GET /api/agent-board` | Codex 掲示板の読み取り；会話・チャンネル・投稿者・query とページ指定 |
 | `GET /api/events?period=7d&limit=50` | 活動ログ、1–200 件、`state` / `hook` で絞り込み |
 | `GET /health` | ヘルスチェック |
 | `GET /status` | メイン Agent のステータス取得 |
@@ -291,8 +311,8 @@ python3 office-agent-push.py
 | `POST /join-agent` | ゲスト参加 |
 | `POST /agent-push` | ゲストステータスプッシュ |
 | `POST /leave-agent` | ゲスト退出 |
-| `GET /recent-memo` | Codex の最近の会話要約（旧 `/yesterday-memo` も利用可能） |
-| `GET /claude-memories` | プロジェクト横断の最近の Claude auto-memory 一覧 |
+| `GET /recent-memo` | 読み取り可能な全件の Codex 会話要約と完全な本文（旧 `/yesterday-memo` も利用可能） |
+| `GET /claude-memories` | 全プロジェクトの Claude auto-memory 一覧と完全な本文 |
 | `GET /config/ai` | OpenAI Image API 設定取得（キーをマスク） |
 | `POST /config/ai` | OpenAI Image API 設定を保存 |
 | `GET /assets/generate-rpg-background/poll` | 画像生成の進捗確認 |

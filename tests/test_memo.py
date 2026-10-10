@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
-from memo_utils import load_claude_memories, load_recent_memos, CLAUDE_MEMORIES_LIMIT, MAX_SUMMARY_BYTES
+from memo_utils import load_claude_memories, load_recent_memos
 
 
 class RecentMemoTests(unittest.TestCase):
@@ -53,19 +53,18 @@ class RecentMemoTests(unittest.TestCase):
         os.utime(new, (1000000000, 1000000000))
         self.assertEqual(load_recent_memos()[0]["updated_at"], "2026-10-04T10:00:00+00:00")
 
-    def test_limit_and_three_tasks_per_summary(self):
+    def test_all_summaries_and_all_tasks_are_returned(self):
         for day in range(1, 8):
             self.summary(f"{day}.md", f"2026-10-{day:02d}T10:00:00Z", "\n".join(f"## Task {i}: 工作 {i}\nOutcome: unknown" for i in range(1, 6)))
         entries = load_recent_memos()
-        self.assertEqual(len(entries), 5)
-        self.assertEqual(len(entries[0]["tasks"]), 3)
+        self.assertEqual(len(entries), 7)
+        self.assertEqual(len(entries[0]["tasks"]), 5)
         self.assertEqual(entries[0]["updated_at"], "2026-10-07T10:00:00+00:00")
 
     def test_missing_empty_and_invalid_files(self):
         self.assertEqual(load_recent_memos(), [])
         self.summary("invalid-date.md", "not-a-date")
         (self.directory / "invalid-utf8.md").write_bytes(b"\xff\xfe")
-        (self.directory / "oversize.md").write_bytes(b"x" * (MAX_SUMMARY_BYTES + 1))
         (self.directory / "no-heading.md").write_text("updated_at: 2026-10-04T10:00:00Z\n", encoding="utf-8")
         self.assertEqual(load_recent_memos(), [])
         with patch.dict(os.environ, {"CODEX_HOME": str(self.home / "missing")}):
@@ -88,7 +87,27 @@ class RecentMemoTests(unittest.TestCase):
         self.assertEqual(len(entry["tasks"]), 1)
         self.assertIn("[邮箱]", entry["tasks"][0]["title"])
         self.assertIn("[路径]", entry["tasks"][0]["title"])
-        self.assertNotIn("fake task", str(entry))
+        self.assertNotIn("fake task", str(entry["tasks"]))
+        self.assertIn("## Task 99: fake task", entry["text"])
+
+    def test_full_summary_markdown_titles_tasks_and_final_paragraph(self):
+        title = "完整会话标题" * 60
+        task_title = "完整任务标题" * 60
+        body = "## Task 1: " + task_title + "\nOutcome: success\n\n**完整正文**\n\n- 项目一\n- 项目二\n\n" + ("内容" * 300) + "\n\n最后一段。"
+        path = self.summary(body=body)
+        text = path.read_text(encoding="utf-8-sig").replace("# 办公室菜单更新", "# " + title)
+        path.write_text(text, encoding="utf-8-sig")
+        entry = load_recent_memos()[0]
+        self.assertEqual(entry["title"], title)
+        self.assertEqual(entry["tasks"][0]["title"], task_title)
+        self.assertEqual(entry["text"], body)
+        self.assertNotIn("rollout_path:", entry["text"])
+        self.assertNotIn("thread_id:", entry["text"])
+
+    def test_large_valid_summary_is_not_skipped(self):
+        body = "正文" * 300000 + "\n最后"
+        self.summary(body=body)
+        self.assertEqual(load_recent_memos()[0]["text"], body)
 
     def test_unreadable_file_does_not_hide_other_summaries(self):
         blocked = self.summary("blocked.md")
@@ -152,13 +171,28 @@ class ClaudeMemoriesTests(unittest.TestCase):
         self.assertEqual(entries[0]["title"], "plain")
         self.assertIn("没有 frontmatter", entries[0]["text"])
 
-    def test_missing_projects_directory_and_limit(self):
+    def test_missing_projects_directory_and_all_entries(self):
         self.assertEqual(load_claude_memories(), [])
         for index in range(10):
             self.memory("C--AI-Alpha", f"note-{index}", f"记忆 {index}", mtime=1_700_000_000 + index)
         entries = load_claude_memories()
-        self.assertEqual(len(entries), CLAUDE_MEMORIES_LIMIT)
+        self.assertEqual(len(entries), 10)
         self.assertEqual(entries[0]["title"], "记忆 9")
+        self.assertEqual(entries[-1]["title"], "记忆 0")
+
+    def test_full_markdown_body_and_title_are_not_truncated(self):
+        body = "# 标题\n\n**重点**\n\n- 第一项\n- 第二项\n\n" + ("正文" * 160) + "\n\n最后一段。"
+        title = "完整描述" * 30
+        self.memory("C--AI-Alpha", "full", title, body)
+        entry = load_claude_memories()[0]
+        self.assertEqual(entry["title"], title)
+        self.assertEqual(entry["text"], body)
+        self.assertNotIn("description:", entry["text"])
+
+    def test_large_readable_memory_is_included_in_full(self):
+        body = "内容" * 70000 + "\n终点"
+        self.memory("C--AI-Alpha", "large", "完整大记录", body)
+        self.assertEqual(load_claude_memories()[0]["text"], body)
 
     def test_symlink_and_invalid_files_are_skipped(self):
         real = self.home / "real.md"

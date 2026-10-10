@@ -1,7 +1,7 @@
-/* Keep the existing paper panel; summaries remain plain text. */
+/* Full session summaries on the shared paper reading surface. */
 #memo-content { white-space: normal; min-width: 0; }
-#memo-content .recent-memo-entry { padding: 0 0 18px; margin: 0 0 18px; border-bottom: 1px solid #b9a47d80; }
-#memo-content .recent-memo-entry:last-child { padding-bottom: 0; margin-bottom: 0; border-bottom: 0; }
+#memo-content .recent-memo-entry { padding: 16px; margin: 0 0 16px; border: 1px solid #b9a47d80; border-radius: 3px; background: #f7edd980; min-width: 0; }
+#memo-content .recent-memo-entry:last-child { margin-bottom: 0; }
 #memo-content .recent-memo-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-bottom: 7px; font: 11px/1.6 system-ui, sans-serif; color: #796649; }
 #memo-content .recent-memo-project { font-weight: 650; overflow-wrap: anywhere; }
 #memo-content .recent-memo-time { white-space: nowrap; }
@@ -13,7 +13,7 @@
 @media (min-width: 900px) and (min-height: 481px) {
     #memo-panel[popover] { padding: 24px 28px; }
     #memo-panel[popover] .recent-memo-title { font-size: 16px; }
-    #memo-panel[popover] .recent-memo-tasks { font-size: 14px; }
+    #memo-panel[popover] .recent-memo-tasks, #memo-panel[popover] .recent-memo-text { font-size: 14px; }
 }
 /* The compact desktop panel needs a flat reading area for multi-entry summaries. */
 body.desktop-shell #memo-panel:not(.collapsed) {
@@ -27,4 +27,18 @@ body.desktop-shell #memo-panel #memo-date {
 body.desktop-shell #memo-panel #memo-content {
     position: static !important; min-height: 0; flex: 1 1 0;
     padding: 6px 2px 0 0; border-top: 1px solid #b9a47d80; color: #463820;
+}
+
+#memo-content .recent-memo-text { margin: 10px 0 0; white-space: normal; min-width: 0; font: 13px/1.8 system-ui, sans-serif; overflow-wrap: anywhere; }
+#memo-content .recent-memo-outcomes { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; margin: 8px 0 12px; font: 11px/1.6 system-ui, sans-serif; }
+#memo-content .recent-memo-outcomes .recent-memo-outcome { margin-left: 0; }
+#memo-content .recent-memo-results { color: #796649; margin-right: 4px; }
+#memo-content .recent-memo-outcome[data-outcome="success"] { color: #36513b; background: #dce4d1; border-color: #94a681; }
+#memo-content .recent-memo-outcome[data-outcome="partial"] { color: #715b27; background: #eae0bc; border-color: #b9a47d; }
+#memo-content .recent-memo-outcome[data-outcome="failed"] { color: #794f46; background: #e7d9d0; border-color: #bfa494; }
+#memo-content:focus-visible { outline: 2px solid #796649; outline-offset: -2px; }
+@media (max-width: 560px) {
+    #memo-content .recent-memo-entry { padding: 12px; }
+    #memo-content .board-markdown h1 { font-size: 19px; }
+    #memo-content .board-markdown h2 { font-size: 17px; }
 }

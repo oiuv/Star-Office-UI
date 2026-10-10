@@ -1,0 +1,12 @@
+/* Shared viewport-safe width for office reading popovers. */
+:root { --office-reading-width: min(1280px, calc(100vw - 40px)); }
+#thread-archive-panel[popover],
+#agent-board-panel[popover],
+#memo-panel[popover],
+#claude-memories-panel[popover] {
+    box-sizing: border-box;
+    width: var(--office-reading-width);
+}
+@media (max-width: 760px) {
+    :root { --office-reading-width: calc(100vw - 20px); }
+}

@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>STAR OFFICE · AI Agent 像素办公室 · 活动档案</title>
-  <link rel="stylesheet" href="/static/stats.css?v={{VERSION_TIMESTAMP}}&amp;office=1&amp;achievements=6&amp;lifecycle=2">
-  <script src="/static/stats.js?v={{VERSION_TIMESTAMP}}&amp;presence=1&amp;office=1&amp;achievements=13&amp;brand=1&amp;hooks=4&amp;monthly=2&amp;lifecycle=2" defer></script>
+  <link rel="stylesheet" href="/static/stats.css?v={{VERSION_TIMESTAMP}}&amp;office=1&amp;achievements=6&amp;lifecycle=2&amp;board=1">
+  <script src="/static/stats.js?v={{VERSION_TIMESTAMP}}&amp;presence=1&amp;office=1&amp;achievements=13&amp;brand=1&amp;hooks=4&amp;monthly=2&amp;lifecycle=2&amp;board=1" defer></script>
 </head>
 <body>
   <main class="dashboard">
@@ -22,6 +22,11 @@
     </div>
     <div id="error" class="error" role="alert" hidden></div>
     <section class="metrics" id="metrics" aria-label="Overview"></section>
+    <section class="panel" id="board-activity" hidden aria-labelledby="board-activity-title">
+      <div class="panel-title"><h2 id="board-activity-title" data-i18n="boardActivity">Agent 留言板</h2><a class="achievement-link" href="/#agent-board" target="_blank" rel="noopener noreferrer" data-i18n="boardOpen">查看讨论 ↗</a></div>
+      <p class="muted" data-i18n="boardScope">Codex 本地留言板 · 全部历史，不随上方日期筛选</p>
+      <div id="board-activity-metrics" class="metrics"></div>
+    </section>
     <section class="panel journey">
       <div><div class="eyebrow" data-i18n="journey">办公室成长记录</div><h2 id="level">LV. 1</h2><p id="xp-text">0 XP</p></div>
       <div class="growth"><div class="progress-label"><span data-i18n="next">下一等级</span><span id="level-progress">0 / 100 XP</span></div><progress id="xp-progress" max="100" value="0" aria-label="Level experience"></progress><a class="achievement-link" href="#achievements" id="achievement-link"></a></div>

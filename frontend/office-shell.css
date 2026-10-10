@@ -51,13 +51,24 @@ body {
 }
 #office-dock[popover]:not(:popover-open) { display: none; }
 #office-dock::backdrop { background: transparent; }
+#office-dock [hidden] { display: none !important; }
+#office-dock .office-menu-full-row { grid-column: 1 / -1; }
+.office-category-items {
+    grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px;
+    padding: 6px 0; border-top: 1px solid #76604270; border-bottom: 1px solid #76604270;
+    background: #17151155;
+}
+#office-dock .office-category-chevron { width: 14px; height: 14px; margin-left: auto; transition: transform .15s; }
+#office-dock [data-office-category][aria-expanded="true"] .office-category-chevron { transform: rotate(180deg); }
+
 #office-dock button, #office-dock a {
     display: flex; align-items: center; justify-content: flex-start; gap: 10px;
-    min-height: 48px; padding: 10px 12px; border: 1px solid transparent;
+    min-width: 0; min-height: 48px; padding: 10px 12px; border: 1px solid transparent;
     border-radius: 2px; background: transparent; color: var(--office-paper);
     font: 13px/1.45 'ArkPixel', monospace;
     text-decoration: none; cursor: pointer; transition: background .15s, color .15s;
 }
+#office-dock button > span, #office-dock a > span { min-width: 0; overflow-wrap: anywhere; }
 #office-dock svg { width: 20px; height: 20px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: square; stroke-linejoin: miter; }
 #office-dock button:hover, #office-dock a:hover,
 #office-dock button[aria-expanded="true"] {
@@ -98,7 +109,6 @@ body {
 }
 /* A reading surface can use more space than the compact utility panels. */
 #memo-panel, #claude-memories-panel {
-    width: min(960px, calc(100vw - 48px));
     max-height: min(820px, calc(100vh - 96px));
     max-height: min(820px, calc(100dvh - 96px));
     overflow: hidden; background: var(--office-paper); color: #463820;
@@ -142,5 +152,5 @@ body.drawer-open { touch-action: auto; }
     #memo-content, #guest-agent-list { max-height: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-    #office-menu-toggle, .office-menu-chevron, #office-dock button, #office-dock a, #asset-drawer { transition: none; }
+    #office-menu-toggle, .office-menu-chevron, #office-dock button, #office-dock a, #office-dock .office-category-chevron, #asset-drawer { transition: none; }
 }

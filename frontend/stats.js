@@ -27,6 +27,7 @@
   ];
   const TEXT = {
     zh: {
+      boardActivity:'Agent 留言板', boardOpen:'查看讨论 ↗', boardScope:'Codex 本地留言板 · 全部历史，不随上方日期筛选', boardMessages:'协作留言', boardTopics:'讨论主题', boardAgents:'参与 Agent', boardChannels:'频道',
       // Trigger semantics reviewed against the official Chinese Claude Code hooks reference.
       hookDescriptions:{
         SessionStart:"开始新会话或恢复会话时触发，也可由清空会话或上下文压缩后的恢复触发。",
@@ -223,6 +224,7 @@
       stateLabels:['待命','写作','调研','执行','同步','异常'],hookLabels:["提示词提交","工具调用前","权限决策请求","工具调用结果","会话开始/恢复","会话结束","子 Agent 启动","子 Agent 响应结束","上下文压缩前","上下文压缩后","响应结束","用户中断","初始化与维护","指令文件加载","配置文件变更","命令展开为提示词","助手消息显示","系统通知","工具批次结束","工具调用失败","自动模式权限拒绝","API 响应失败","MCP 请求用户输入","MCP 用户响应回传前","任务创建时","任务完成前","队友空闲前","受监视文件变更","工作目录变更","工作目录添加","工作副本创建","工作副本移除","模型切换前","模型切换后"]
     },
     en: {
+      boardActivity:'Agent message board', boardOpen:'Read discussions ↗', boardScope:'Local Codex board · All history, independent of the date filter above', boardMessages:'Discussion posts', boardTopics:'Topics', boardAgents:'Agents', boardChannels:'Channels',
       hookViewLifecycle:'Lifecycle', hookViewCategories:'Categories',
       hookLifecycleNote:'Typical lifecycle relationships; counts combine all sessions in the selected dates. Branches are conditional. See the activity log for actual order.',
       hookCategoriesNote:'Received events grouped by purpose. Totals include repeated calls and do not count unique tasks.',
@@ -382,6 +384,7 @@
       stateLabels:['Idle','Writing','Research','Executing','Syncing','Error'],hookLabels:["Prompt submitted","Before tool","Permission decision","Tool result","Session starts / resumes","Session ends","Subagent starts","Subagent response ends","Before context compaction","After context compaction","Response ends","Interrupted","Initialization / maintenance","Instruction file loaded","Config changed","Command expands to prompt","Assistant text displayed","Notification","Tool batch ends","Tool failure","Auto-mode permission denied","API response failure","MCP input requested","Before MCP reply","Task creation","Before task completion","Before teammate idle","Watched file changed","Working directory changed","Working directory added","Worktree creation","Worktree removal","Before model switch","After model switch"]
     },
     ja: {
+      boardActivity:'Agent 掲示板', boardOpen:'議論を読む ↗', boardScope:'Codex のローカル掲示板 · 全履歴（日付の絞り込み対象外）', boardMessages:'協作の投稿', boardTopics:'トピック', boardAgents:'参加 Agent', boardChannels:'チャンネル',
       hookViewLifecycle:'ライフサイクル', hookViewCategories:'分類統計',
       hookLifecycleNote:'典型的な流れを表示。回数は選択期間の全セッションの合計です。分岐は必要に応じて発生し、実際の順序は活動ログで確認できます。',
       hookCategoriesNote:'受信イベントを用途別に集計。繰り返し呼び出しを含むため、個別タスク数ではありません。',
@@ -887,6 +890,16 @@
       card.append(element('div','metric-label',label),element('div','metric-value',value),element('div','metric-note',note));
       $('metrics').append(card);
     });
+    $('board-activity').hidden = !stats.agent_board?.available;
+    $('board-activity-metrics').replaceChildren();
+    if (stats.agent_board?.available) {
+      const summary = stats.agent_board.summary;
+      [['messages','boardMessages'],['threads','boardTopics'],['agents','boardAgents'],['channels','boardChannels']].forEach(([key,label]) => {
+        const card = element('div','metric');
+        card.append(element('div','metric-label',t(label)),element('div','metric-value',number(summary[key] || 0)));
+        $('board-activity-metrics').append(card);
+      });
+    }
     $('level').textContent = 'LV. ' + game.level;
     $('xp-text').textContent = number(game.xp) + ' XP · +' + game.period_xp + ' ' + t('xpPeriod');
     $('level-progress').textContent = game.level_xp + ' / 100 XP';

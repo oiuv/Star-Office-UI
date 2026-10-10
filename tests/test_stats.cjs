@@ -655,3 +655,20 @@ test('Every hook has a Chinese trigger description in both views and accessible 
     assert.ok(hookCards(f).find(card=>card.dataset.hook==='TaskCompleted').children[2].textContent.includes('Before'));
   }
 });
+
+
+test('Board discussion metrics are separate from date-filtered activity and gracefully hide missing data',async()=>{
+  const f=await fixture([],{});
+  assert.equal(f.nodes.get('board-activity').hidden,true);
+  f.stats.agent_board={available:true,summary:{messages:35,threads:21,agents:4,channels:1}};
+  await f.poll();
+  assert.equal(f.nodes.get('board-activity').hidden,false);
+  assert.deepEqual(f.nodes.get('board-activity-metrics').children.map(card=>card.children[1].textContent),['35','21','4','1']);
+  await f.period('7d');
+  assert.equal(f.nodes.get('board-activity-metrics').children[0].children[1].textContent,'35');
+  f.language('en');
+  assert.ok(f.nodes.get('board-activity-metrics').children[0].children[0].textContent.includes('Discussion'));
+  f.stats.agent_board={available:false,status:'unavailable'};
+  await f.poll();
+  assert.equal(f.nodes.get('board-activity').hidden,true);
+});

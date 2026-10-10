@@ -1644,8 +1644,12 @@
         }
     </style>
     <link rel="stylesheet" href="/static/guest-feedback.css?v={{VERSION_TIMESTAMP}}">
-    <link rel="stylesheet" href="/static/recent-memo.css?v={{VERSION_TIMESTAMP}}">
-    <link rel="stylesheet" href="/static/claude-memories.css?v={{VERSION_TIMESTAMP}}">
+    <link rel="stylesheet" href="/static/recent-memo.css?v={{VERSION_TIMESTAMP}}&amp;full=1">
+    <link rel="stylesheet" href="/static/office-markdown.css?v={{VERSION_TIMESTAMP}}">
+    <link rel="stylesheet" href="/static/claude-memories.css?v={{VERSION_TIMESTAMP}}&amp;full=1">
+    <link rel="stylesheet" href="/static/agent-board.css?v={{VERSION_TIMESTAMP}}&amp;board=6">
+    <link rel="stylesheet" href="/static/thread-archive.css?v={{VERSION_TIMESTAMP}}&amp;archive=1">
+    <link rel="stylesheet" href="/static/reading-panels.css?v={{VERSION_TIMESTAMP}}&amp;width=1">
 </head>
 <body>
     <div id="window-controls">
@@ -1679,18 +1683,18 @@
             <div id="memo-title">Codex 会话小记</div>
             <div id="memo-date"></div>
             <div class="memo-decoration">─ ─ ─ ─ ─</div>
-            <div id="memo-content">
+            <div id="memo-content" tabindex="0" role="region" aria-labelledby="memo-title">
                 <div id="memo-placeholder">加载中...</div>
             </div>
             <div class="memo-decoration">─ ─ ─ ─ ─</div>
         </div>
 
-        <!-- Claude 最近记忆面板 -->
+        <!-- Claude 记忆面板 -->
         <div id="claude-memories-panel">
-            <div id="claude-memories-title">Claude 最近记忆</div>
+            <div id="claude-memories-title">Claude 记忆</div>
             <div id="claude-memories-date"></div>
             <div class="memo-decoration">─ ─ ─ ─ ─</div>
-            <div id="claude-memories-content">
+            <div id="claude-memories-content" tabindex="0" role="region" aria-labelledby="claude-memories-title">
                 <div id="claude-memories-placeholder">加载中...</div>
             </div>
             <div class="memo-decoration">─ ─ ─ ─ ─</div>
@@ -1837,9 +1841,83 @@
         <button id="lang-btn-cn" onclick="setUILanguage('zh')" style="cursor:pointer;">CN</button>
     </div>
 
+    <section id="thread-archive-panel" class="office-panel" popover="auto" role="dialog" aria-labelledby="archive-title">
+        <div class="archive-heading">
+            <h2 id="archive-title" data-archive-text="title">Codex 会话档案</h2>
+            <button id="archive-close" type="button" popovertarget="thread-archive-panel" popovertargetaction="hide" class="office-panel-close" aria-label="关闭" autofocus>×</button>
+        </div>
+        <p class="archive-note" data-archive-text="note">本地会话索引 · 来源、用量与协作轨迹</p>
+        <div id="archive-summary"></div>
+        <form id="archive-search">
+            <label><span data-archive-text="source">会话来源</span><select id="archive-source"></select></label>
+            <label><span data-archive-text="model">模型</span><select id="archive-model"></select></label>
+            <label><span data-archive-text="project">项目</span><select id="archive-project"></select></label>
+            <label><span data-archive-text="archive">归档状态</span><select id="archive-archived"><option value="" data-archive-text="all">全部</option><option value="0" data-archive-text="active">未归档</option><option value="1" data-archive-text="archived">已归档</option></select></label>
+            <label><span data-archive-text="sort">排序</span><select id="archive-sort"><option value="recent" data-archive-text="recent">最近活动</option><option value="created" data-archive-text="created">创建时间</option><option value="tokens" data-archive-text="tokenSort">Token 用量</option></select></label>
+            <div class="archive-search-row"><input id="archive-query" type="search" maxlength="200" autocomplete="off"><button type="submit" data-archive-text="search">搜索</button><button id="archive-refresh" type="button" data-archive-text="refresh">刷新</button></div>
+        </form>
+        <p id="archive-result"></p>
+        <p id="archive-status" role="status"></p>
+        <div id="archive-list" tabindex="0" role="region" aria-labelledby="archive-title"></div>
+        <nav id="archive-pager" aria-label="Pagination">
+            <button id="archive-previous" type="button" data-archive-text="previous">上一页</button>
+            <span id="archive-page"></span>
+            <button id="archive-next" type="button" data-archive-text="next">下一页</button>
+        </nav>
+    </section>
+
+    <section id="agent-board-panel" class="office-panel" popover="auto" role="dialog" aria-labelledby="agent-board-title">
+        <div class="board-heading">
+            <h2 id="agent-board-title" data-board-text="title">Agent 留言板</h2>
+            <button id="board-close" type="button" popovertarget="agent-board-panel" popovertargetaction="hide" class="office-panel-close" aria-label="关闭" autofocus>×</button>
+        </div>
+        <p class="board-note" data-board-text="source">Codex · 只读协作讨论</p>
+        <div id="board-summary"></div>
+        <p class="board-note" data-board-text="scope">当前会话 · 全部历史</p>
+        <form id="board-search" role="search">
+            <label><span data-board-text="session">会话</span><select id="board-session"></select></label>
+            <label><span data-board-text="channel">频道</span><select id="board-channel"></select></label>
+            <label><span data-board-text="author">作者</span><select id="board-author"></select></label>
+            <div class="board-search-row">
+                <input id="board-query" type="search" maxlength="200" aria-label="搜索留言与回复" placeholder="搜索留言与回复">
+                <button type="submit" data-board-text="searchButton">搜索</button>
+                <button id="board-refresh" type="button" data-board-text="refresh">刷新</button>
+            </div>
+        </form>
+        <p class="board-note" data-board-text="matchNote">搜索与作者筛选包含回复；打开主题后显示完整讨论。</p>
+        <p id="board-status" role="status" aria-live="polite"></p>
+        <button id="board-new" type="button" hidden></button>
+        <div id="board-content" hidden>
+            <section class="board-column" aria-labelledby="board-topics-title">
+                <h3 id="board-topics-title" data-board-text="threads">讨论主题</h3>
+                <div id="board-topics"></div>
+                <div id="board-topics-pager" class="board-pager" hidden>
+                    <button id="board-topics-previous" type="button" data-board-text="previous">上一页</button>
+                    <span id="board-topics-page"></span>
+                    <button id="board-topics-next" type="button" data-board-text="next">下一页</button>
+                </div>
+            </section>
+            <section class="board-column board-reader" aria-labelledby="board-discussion-title">
+                <h3 id="board-discussion-title" tabindex="-1" data-board-text="discussion">主题与回复</h3>
+                <div id="board-posts" tabindex="0" aria-label="主题与回复"></div>
+                <div id="board-replies-pager" class="board-pager" hidden>
+                    <button id="board-replies-previous" type="button" data-board-text="previousReplies">较早回复</button>
+                    <span id="board-replies-page"></span>
+                    <button id="board-replies-next" type="button" data-board-text="nextReplies">更多回复</button>
+                </div>
+            </section>
+        </div>
+    </section>
+
+    <button id="office-archive-button" class="desktop-archive-button" type="button" popovertarget="thread-archive-panel" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v4H4zM5 8v12h14V8M9 12h6M9 16h4"/></svg><span>Codex 会话档案</span></button>
+    <button id="office-board-button" class="desktop-board-button" type="button" popovertarget="agent-board-panel" aria-expanded="false"><span>Agent 留言板</span></button>
     <a id="office-stats-link" href="/stats" target="_blank" rel="noopener noreferrer" style="position:fixed;right:12px;top:calc(env(safe-area-inset-top, 0px) + 52px);z-index:1000002;padding:8px 10px;background:#283b35;color:#c3efcd;border:2px solid #446d54;border-radius:5px;text-decoration:none;font:13px monospace;">📊 活动档案</a>
-    <script src="/static/recent-memo.js?v={{VERSION_TIMESTAMP}}"></script>
-    <script src="/static/claude-memories.js?v={{VERSION_TIMESTAMP}}"></script>
+    <script src="/static/vendor/marked-18.1.0.umd.js"></script>
+    <script src="/static/office-markdown.js?v={{VERSION_TIMESTAMP}}"></script>
+    <script src="/static/recent-memo.js?v={{VERSION_TIMESTAMP}}&amp;full=1"></script>
+    <script src="/static/claude-memories.js?v={{VERSION_TIMESTAMP}}&amp;full=1"></script>
+    <script src="/static/thread-archive.js?v={{VERSION_TIMESTAMP}}&amp;archive=1"></script>
+    <script src="/static/agent-board.js?v={{VERSION_TIMESTAMP}}&amp;board=5"></script>
     <script src="/static/guest-feedback.js?v={{VERSION_TIMESTAMP}}"></script>
     <script src="/static/image-settings.js?v={{VERSION_TIMESTAMP}}"></script>
     <script src="/static/speech-bubbles.js?v={{VERSION_TIMESTAMP}}&amp;cat=1"></script>
@@ -1875,7 +1953,7 @@
                 assetHintNotInScene: '当前场景未检测到此对象，仍可替换文件（刷新后生效）',
                 assetHintDefault: '通用素材：建议保持原图尺寸、透明通道与视觉重心一致，避免错位或失真',
                 showCoords: '显示坐标', hideCoords: '隐藏坐标', moveView: '移动视野', lockView: '锁定视野',
-                memoTitle: 'Codex 会话小记', claudeMemoriesTitle: 'Claude 最近记忆', guestTitle: '访 客 列 表', officeTitle: 'Star 小猫的办公室', pageTitle: 'STAR OFFICE · AI Agent 像素办公室',
+                memoTitle: 'Codex 会话小记', claudeMemoriesTitle: 'Claude 记忆', guestTitle: '访 客 列 表', officeTitle: 'Star 小猫的办公室', pageTitle: 'STAR OFFICE · AI Agent 像素办公室',
                 loadingOffice: '正在加载 STAR OFFICE...',
                 panelExpand: '展开', panelCollapse: '收起',
                 hiddenTag: '已隐藏', assetListLoaded: '已加载资产', sceneCaptured: '场景抓取', assetListLoadFailed: '资产加载失败，请点“刷新”重试',
@@ -1909,7 +1987,7 @@
                 assetHintNotInScene: 'This object is not detected in current scene; you can still replace file (effective after refresh)',
                 assetHintDefault: 'Generic asset: keep source size, alpha channel, and visual anchor to avoid drift/distortion',
                 showCoords: 'Show Coords', hideCoords: 'Hide Coords', moveView: 'Pan View', lockView: 'Lock View',
-                memoTitle: 'CODEX SESSION NOTES', claudeMemoriesTitle: 'CLAUDE RECENT MEMORIES', guestTitle: 'VISITOR LIST', officeTitle: 'Star Cat Office', pageTitle: 'STAR OFFICE · AI Agent Pixel Office',
+                memoTitle: 'CODEX SESSION NOTES', claudeMemoriesTitle: 'CLAUDE MEMORIES', guestTitle: 'VISITOR LIST', officeTitle: 'Star Cat Office', pageTitle: 'STAR OFFICE · AI Agent Pixel Office',
                 loadingOffice: 'Loading STAR OFFICE...',
                 panelExpand: 'Expand', panelCollapse: 'Collapse',
                 hiddenTag: 'Hidden', assetListLoaded: 'Assets loaded', sceneCaptured: 'Scene captured', assetListLoadFailed: 'Failed to load assets. Click Refresh and retry',
@@ -1943,7 +2021,7 @@
                 assetHintNotInScene: '現在のシーンでこのオブジェクトは未検出です。ファイル差し替えは可能（更新後に反映）',
                 assetHintDefault: '汎用素材：元サイズ・透過・視覚アンカーを維持し、ズレや崩れを防いでください',
                 showCoords: '座標表示', hideCoords: '座標非表示', moveView: '視点移動', lockView: '視点固定',
-                memoTitle: 'Codex セッションメモ', claudeMemoriesTitle: 'Claude 最近のメモリ', guestTitle: '訪問者リスト', officeTitle: 'Star 猫のオフィス', pageTitle: 'STAR OFFICE · AI Agent ピクセルオフィス',
+                memoTitle: 'Codex セッションメモ', claudeMemoriesTitle: 'Claude メモリ', guestTitle: '訪問者リスト', officeTitle: 'Star 猫のオフィス', pageTitle: 'STAR OFFICE · AI Agent ピクセルオフィス',
                 loadingOffice: 'STAR OFFICE を読み込み中...',
                 panelExpand: '展開', panelCollapse: '折りたたむ',
                 hiddenTag: '非表示', assetListLoaded: 'アセット読み込み', sceneCaptured: 'シーン取得', assetListLoadFailed: 'アセット読み込み失敗。更新して再試行してください',
@@ -2122,6 +2200,8 @@
                 memoTitle.dataset.baseTitle = t('memoTitle');
             }
             window.ClaudeMemories.translate(uiLang);
+            window.AgentBoard.translate(uiLang);
+            window.ThreadArchive.translate(uiLang);
             const claudeMemoriesTitle = document.getElementById('claude-memories-title');
             if (claudeMemoriesTitle) {
                 claudeMemoriesTitle.textContent = t('claudeMemoriesTitle');
@@ -2394,7 +2474,7 @@
                     // asset window must NEVER resize main window.
                     if (ASSET_WINDOW_MODE) return;
                     if (!ELECTRON_MODE || !window.__TAURI__ || !window.__TAURI__.core) return;
-                    const expanded = !!document.querySelector('.panel-collapsible:not(.collapsed)');
+                    const expanded = !!document.querySelector('.panel-collapsible:not(.collapsed), .office-panel:popover-open');
                     try {
                         await window.__TAURI__.core.invoke('set_main_window_mode', { expanded });
                     } catch (_) {}
@@ -2418,7 +2498,7 @@
         let resizeTimer = null;
         async function syncDesktopWindowSize() {
             if (!DESKTOP_MODE || !window.__TAURI__ || !window.__TAURI__.core) return;
-            const expanded = !!document.querySelector('.panel-collapsible:not(.collapsed)');
+            const expanded = !!document.querySelector('.panel-collapsible:not(.collapsed), .office-panel:popover-open');
             try {
                 await window.__TAURI__.core.invoke('set_main_window_mode', { expanded });
             } catch (_) {}
@@ -2463,11 +2543,6 @@
         let totalAssets = 0;
         let loadedAssets = 0;
         let loadingProgressBar, loadingProgressContainer, loadingOverlay, loadingText;
-
-        // Memo 相关函数
-        function loadMemo() {
-            return window.RecentMemo.load(uiLang);
-        }
 
         // 更新加载进度
         function updateLoadingProgress() {
@@ -5370,9 +5445,6 @@ function toggleBrokerPanel() {
                 coordsOverlay.style.left = (pointer.x + 18) + 'px';
                 coordsOverlay.style.top = (pointer.y + 18) + 'px';
             });
-
-            // 加载最近的 Codex 会话总结
-            loadMemo();
 
             fetchStatus();
             fetchGuestAgents();

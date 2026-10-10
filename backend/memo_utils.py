@@ -1,14 +1,10 @@
-"""Read display summaries from Codex memory without modifying its files."""
+"""Read Codex summaries and complete Claude memories without modifying their files."""
 from __future__ import annotations
 
 from datetime import datetime, timezone
 import os
 from pathlib import Path
 import re
-
-MAX_SUMMARY_BYTES = 512 * 1024
-CLAUDE_MEMORY_FILE_BYTES = 128 * 1024
-CLAUDE_MEMORIES_LIMIT = 8
 
 
 def sanitize_content(text: str) -> str:
@@ -21,11 +17,11 @@ def sanitize_content(text: str) -> str:
     return re.sub(r"1[3-9]\d{9}", "[手机号]", text)
 
 
-def _display_text(text: str, limit: int = 240) -> str:
+def _display_text(text: str) -> str:
     text = re.sub(r"!?\[([^\]]+)\]\([^)]*\)", r"\1", text)
     text = sanitize_content(text.replace("`", "").replace("**", ""))
     text = " ".join(text.split())
-    return text if len(text) <= limit else text[:limit - 1] + "…"
+    return text
 
 
 def _parse_summary(content: str) -> dict | None:
@@ -36,7 +32,9 @@ def _parse_summary(content: str) -> dict | None:
     in_header = True
     fence = ""
     current_task = None
-    for raw in content.splitlines():
+    body_start = 0
+    lines = content.splitlines(keepends=True)
+    for index, raw in enumerate(lines):
         line = raw.strip()
         if line.startswith(("```", "~~~")):
             if not fence:
@@ -58,6 +56,7 @@ def _parse_summary(content: str) -> dict | None:
             tasks.append(current_task)
         elif line.startswith("# ") and not title:
             title = _display_text(line[2:])
+            body_start = index + 1
         elif current_task and re.match(r"^(?:Task )?Outcome:", line, re.I):
             outcome = line.split(":", 1)[1].strip().lower()
             if outcome in {"success", "partial", "failed", "unknown"}:
@@ -73,7 +72,7 @@ def _parse_summary(content: str) -> dict | None:
     if updated.tzinfo is None:
         updated = updated.replace(tzinfo=timezone.utc)
     cwd = metadata.get("cwd", "").rstrip("/\\")
-    project = _display_text(re.split(r"[\\/]", cwd)[-1], 80) if cwd else ""
+    project = _display_text(re.split(r"[\\/]", cwd)[-1]) if cwd else ""
     if not tasks and fallback:
         tasks = [{"title": fallback, "outcome": ""}]
     return {
@@ -81,7 +80,8 @@ def _parse_summary(content: str) -> dict | None:
         "date": updated.astimezone().date().isoformat(),
         "project": project,
         "title": title,
-        "tasks": tasks[:3],
+        "tasks": tasks,
+        "text": sanitize_content("".join(lines[body_start:]).strip()),
     }
 
 
@@ -91,7 +91,7 @@ def _memory_title(content: str) -> tuple[str, str]:
     title = ""
     lines = content.splitlines()
     if lines and lines[0].strip() == "---":
-        for index in range(1, min(len(lines), 30)):
+        for index in range(1, len(lines)):
             if lines[index].strip() == "---":
                 text = "\n".join(lines[index + 1:])
                 for raw in lines[1:index]:
@@ -102,8 +102,8 @@ def _memory_title(content: str) -> tuple[str, str]:
     return title, text
 
 
-def load_claude_memories(limit: int = CLAUDE_MEMORIES_LIMIT) -> list[dict]:
-    """Read recent auto-memory files across Claude Code projects, ordered by file mtime."""
+def load_claude_memories() -> list[dict]:
+    """Read all auto-memory bodies across Claude Code projects, ordered by file mtime."""
     config_dir = Path(os.environ.get("CLAUDE_CONFIG_DIR", "").strip() or Path.home() / ".claude").expanduser()
     projects = config_dir / "projects"
     if not projects.is_dir():
@@ -117,11 +117,7 @@ def load_claude_memories(limit: int = CLAUDE_MEMORIES_LIMIT) -> list[dict]:
             if path.name == "MEMORY.md" or path.is_symlink() or not path.is_file():
                 continue
             try:
-                with path.open("rb") as stream:
-                    raw = stream.read(CLAUDE_MEMORY_FILE_BYTES + 1)
-                if len(raw) > CLAUDE_MEMORY_FILE_BYTES:
-                    continue
-                title, text = _memory_title(raw.decode("utf-8-sig"))
+                title, text = _memory_title(path.read_text(encoding="utf-8-sig"))
                 updated = datetime.fromtimestamp(path.stat().st_mtime, timezone.utc)
             except (OSError, UnicodeError):
                 continue
@@ -129,15 +125,15 @@ def load_claude_memories(limit: int = CLAUDE_MEMORIES_LIMIT) -> list[dict]:
                 "updated_at": updated.isoformat(),
                 "date": updated.astimezone().date().isoformat(),
                 "project": directory.name,
-                "title": _display_text(title or path.stem, 80),
-                "text": _display_text(text, 200),
+                "title": " ".join(sanitize_content(title or path.stem).split()),
+                "text": sanitize_content(text.strip()),
             })
     entries.sort(key=lambda item: item["updated_at"], reverse=True)
-    return entries[:limit]
+    return entries
 
 
-def load_recent_memos(limit: int = 5) -> list[dict]:
-    """Use updated_at metadata, never filename or filesystem modification time."""
+def load_recent_memos() -> list[dict]:
+    """Read complete summaries, sorted by updated_at rather than filename or file mtime."""
     codex_home = Path(os.environ.get("CODEX_HOME", "").strip() or Path.home() / ".codex").expanduser()
     directory = codex_home / "memories" / "rollout_summaries"
     if not directory.is_dir():
@@ -147,14 +143,10 @@ def load_recent_memos(limit: int = 5) -> list[dict]:
         if path.is_symlink() or not path.is_file():
             continue
         try:
-            with path.open("rb") as stream:
-                raw = stream.read(MAX_SUMMARY_BYTES + 1)
-            if len(raw) > MAX_SUMMARY_BYTES:
-                continue
-            entry = _parse_summary(raw.decode("utf-8-sig"))
+            entry = _parse_summary(path.read_text(encoding="utf-8-sig"))
         except (OSError, UnicodeError, ValueError):
             continue
         if entry:
             entries.append(entry)
     entries.sort(key=lambda item: item["updated_at"], reverse=True)
-    return entries[:limit]
+    return entries

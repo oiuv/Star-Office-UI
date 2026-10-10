@@ -1,12 +1,12 @@
-/* Keep the existing paper panel; memories remain plain text. */
+/* Complete memory records on the shared paper reading surface. */
 #claude-memories-content { white-space: normal; min-width: 0; }
-#claude-memories-content .claude-memories-entry { padding: 0 0 16px; margin: 0 0 16px; border-bottom: 1px solid #b9a47d80; }
-#claude-memories-content .claude-memories-entry:last-child { padding-bottom: 0; margin-bottom: 0; border-bottom: 0; }
+#claude-memories-content .claude-memories-entry { padding: 16px; margin: 0 0 16px; border: 1px solid #b9a47d80; border-radius: 3px; background: #f7edd980; min-width: 0; }
+#claude-memories-content .claude-memories-entry:last-child { margin-bottom: 0; }
 #claude-memories-content .claude-memories-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-bottom: 7px; font: 11px/1.6 system-ui, sans-serif; color: #796649; }
 #claude-memories-content .claude-memories-project { font-weight: 650; overflow-wrap: anywhere; }
 #claude-memories-content .claude-memories-time { white-space: nowrap; }
 #claude-memories-content .claude-memories-title { margin: 0 0 6px; font: 600 14px/1.65 system-ui, sans-serif; color: inherit; overflow-wrap: anywhere; }
-#claude-memories-content .claude-memories-text { margin: 0; font: 13px/1.8 system-ui, sans-serif; overflow-wrap: anywhere; }
+#claude-memories-content .claude-memories-text { margin: 10px 0 0; white-space: normal; min-width: 0; font: 13px/1.8 system-ui, sans-serif; overflow-wrap: anywhere; }
 #claude-memories-content .claude-memories-placeholder { padding: 22px 0; color: #796649; text-align: center; }
 /* Larger type and margins for the browser reading panel on wide screens. */
 @media (min-width: 900px) and (min-height: 481px) {
@@ -27,3 +27,11 @@ body.desktop-shell #claude-memories-panel #claude-memories-content {
     position: static !important; min-height: 0; flex: 1 1 0;
     padding: 6px 2px 0 0; border-top: 1px solid #b9a47d80; color: #463820;
 }
+
+@media (max-width: 560px) {
+    #claude-memories-content .claude-memories-entry { padding: 12px; }
+    #claude-memories-content .board-markdown h1 { font-size: 19px; }
+    #claude-memories-content .board-markdown h2 { font-size: 17px; }
+}
+
+#claude-memories-content:focus-visible { outline: 2px solid #796649; outline-offset: -2px; }

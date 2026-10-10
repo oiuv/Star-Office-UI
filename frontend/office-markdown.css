@@ -1,0 +1,52 @@
+/* Shared Markdown typography for discussions and complete memory records. */
+.board-markdown { overflow-wrap: anywhere; line-height: 1.8; }
+.board-markdown p { margin: 10px 0; }
+:is(#agent-board-panel, #claude-memories-panel, #memo-panel) .board-markdown h1,
+:is(#agent-board-panel, #claude-memories-panel, #memo-panel) .board-markdown h2,
+:is(#agent-board-panel, #claude-memories-panel, #memo-panel) .board-markdown h3,
+:is(#agent-board-panel, #claude-memories-panel, #memo-panel) .board-markdown h4,
+:is(#agent-board-panel, #claude-memories-panel, #memo-panel) .board-markdown h5,
+:is(#agent-board-panel, #claude-memories-panel, #memo-panel) .board-markdown h6 { margin: 22px 0 10px; color: #463820; font: 650 16px/1.5 system-ui, sans-serif; }
+:is(#agent-board-panel, #claude-memories-panel, #memo-panel) .board-markdown h1 { font-size: 22px; }
+:is(#agent-board-panel, #claude-memories-panel, #memo-panel) .board-markdown h2 { font-size: 19px; }
+:is(#agent-board-panel, #claude-memories-panel, #memo-panel) .board-markdown h3 { font-size: 17px; }
+:is(#agent-board-panel, #claude-memories-panel, #memo-panel) .board-markdown h1,
+:is(#agent-board-panel, #claude-memories-panel, #memo-panel) .board-markdown h2 { padding-bottom: 7px; border-bottom: 1px solid #b9a47d80; }
+:is(#agent-board-panel, #claude-memories-panel, #memo-panel) .board-markdown > :first-child { margin-top: 0; }
+.board-markdown > :last-child { margin-bottom: 0; }
+.board-markdown ul, .board-markdown ol { margin: 10px 0; padding-left: 24px; }
+.board-markdown li { margin: 4px 0; }
+.board-markdown li > ul, .board-markdown li > ol { margin: 4px 0; }
+.board-markdown li > p { margin: 6px 0; }
+.board-markdown blockquote { margin: 12px 0; border-left: 3px solid #a18c65; padding: 2px 12px; color: #6c5a3d; background: #e5d6b960; }
+.board-markdown blockquote > :first-child { margin-top: 4px; }
+.board-markdown blockquote > :last-child { margin-bottom: 4px; }
+.board-markdown :not(pre) > code { padding: 2px 5px; border: 1px solid #b9a47d60; border-radius: 3px; background: #e5d6b9; font: 12px/1.7 monospace; }
+.board-markdown a { color: #315c70; text-decoration: underline; text-underline-offset: 3px; }
+.board-markdown a:hover { color: #1b3e4e; }
+.board-markdown hr { border: 0; border-top: 1px solid #b9a47d; margin: 20px 0; }
+.board-markdown .board-literal { white-space: pre-wrap; }
+.board-markdown .board-task { list-style: none; }
+:is(#agent-board-panel, #claude-memories-panel, #memo-panel) .board-task input { width: 14px; min-width: 0; height: 14px; min-height: 0; padding: 0; margin: 0 7px 0 -20px; accent-color: #796649; vertical-align: middle; }
+.board-table { max-width: 100%; margin: 12px 0; overflow-x: auto; border: 1px solid #b9a47d; border-radius: 3px; }
+.board-table table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.board-table th, .board-table td { padding: 7px 10px; border-right: 1px solid #b9a47d80; border-bottom: 1px solid #b9a47d80; min-width: 100px; }
+.board-table th { background: #dfc99f80; font-weight: 650; }
+.board-table tr:last-child td { border-bottom: 0; }
+.board-table th:last-child, .board-table td:last-child { border-right: 0; }
+.board-table tbody tr:nth-child(even) { background: #f7edd960; }
+.board-table .board-align-left { text-align: left; }
+.board-table .board-align-center { text-align: center; }
+.board-table .board-align-right { text-align: right; }
+.board-code { border: 1px solid #b9a47d; border-radius: 3px; background: #e5d6b9; margin: 12px 0; padding: 7px; overflow: hidden; }
+:is(#agent-board-panel, #claude-memories-panel, #memo-panel) .board-copy { display: block; margin-left: auto; padding: 3px 8px; min-height: 28px; font-size: 11px; }
+.board-code pre { margin: 6px 0 0; padding: 6px; overflow: auto; max-width: 100%; white-space: pre; font: 12px/1.7 monospace; }
+
+:is(#claude-memories-panel, #memo-panel) .board-copy {
+    font: 11px/1.5 system-ui, sans-serif; color: #463820; cursor: pointer;
+    border: 1px solid #b9a47d; border-radius: 3px; background: #f7edd9;
+}
+:is(#claude-memories-panel, #memo-panel) .board-copy:hover { background: #e3cea8; }
+:is(#claude-memories-panel, #memo-panel) .board-copy:focus-visible,
+:is(#claude-memories-panel, #memo-panel) .board-table:focus-visible,
+:is(#claude-memories-panel, #memo-panel) .board-code pre:focus-visible { outline: 2px solid #796649; outline-offset: 2px; }
