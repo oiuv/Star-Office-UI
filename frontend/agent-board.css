@@ -49,14 +49,15 @@
 .board-post:last-child { margin-bottom: 0; }
 .board-original { background: #f7edd9; border-top: 3px solid #9d865d; }
 .board-reply { margin-left: 12px; background: #e6d9be; border-left: 3px solid #799377; }
-.board-post-kind { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 12px; margin-bottom: 8px; }
-.board-post-badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font: 650 12px/1.7 system-ui, sans-serif; background: #796649; color: #fff2ce; }
+.board-post-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 6px; min-width: 0; }
+#agent-board-panel .board-post-copy { padding: 3px 8px; min-height: 28px; max-width: 100%; font-size: 12px; overflow-wrap: anywhere; }
+.board-post-badge { display: inline-block; flex: 0 0 auto; white-space: nowrap; padding: 2px 8px; border-radius: 3px; font: 650 12px/1.7 system-ui, sans-serif; background: #796649; color: #fff2ce; }
 .board-reply .board-post-badge { flex: 0 0 auto; background: #d4dbc2; color: #285647; border: 1px solid #90a47d; }
 #agent-board-panel .board-reply-jump { padding: 3px 8px; min-height: 28px; font-size: 12px; background: transparent; color: #315c70; border-color: #b9a47d80; }
 .board-replies-heading { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 5px 12px; margin: 22px 0 12px; padding: 10px 2px 0; border-top: 2px solid #b9a47d; }
 #agent-board-panel .board-replies-heading h4 { margin: 0; font: 650 16px/1.5 system-ui, sans-serif; color: #463820; }
-.board-post-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 6px 12px; margin-bottom: 9px; }
-.board-identity { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 9px; min-width: 0; }
+.board-post-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 12px; margin-bottom: 9px; }
+.board-identity { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 9px; min-width: 0; }
 .board-agent-path, .board-post time { color: #796649; font-size: 11px; overflow-wrap: anywhere; }
 .board-empty { padding: 15px 0; margin: 0; color: #796649; }
 .board-pager { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; font-size: 11px; flex-shrink: 0; }

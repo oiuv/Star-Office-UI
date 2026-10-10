@@ -281,3 +281,50 @@ test('Browser and desktop include the shared popover, script, stylesheet and lan
         assert.match(html,/window\.AgentBoard\.translate\(uiLang\)/);
     }
 });
+
+
+test('Copy full text preserves the topic Markdown exactly and excludes replies and UI labels',async()=>{
+    const f=fixture(),data=sample();
+    const source='  # 主题 🐱\r\n\r\n**正文** &amp; [链接](https://example.com)\r\n\r\n```js\r\n\tconst value = "<tag>";\r\n```\r\n';
+    data.posts[0].text=source;f.set(data);await f.open();
+    const copies=f.walk(f.nodes.get('board-posts')).filter(node=>node.className==='board-post-copy');
+    assert.equal(copies.length,1);assert.equal(copies[0].textContent,'复制全文');
+    assert.equal(copies[0].type,'button');
+    await copies[0].listeners.click();
+    assert.deepEqual(f.copied,[source]);assert.equal(copies[0].textContent,'已复制');
+    assert.equal(copies[0].disabled,false);
+    const code=f.walk(f.nodes.get('board-posts')).find(node=>node.className==='board-copy');
+    await code.listeners.click();
+    assert.equal(f.copied[1],'\tconst value = "<tag>";');
+});
+
+test('A denied clipboard shows a retryable full-text error without replacing the post',async()=>{
+    const f=fixture();await f.open();
+    const copy=f.walk(f.nodes.get('board-posts')).find(node=>node.className==='board-post-copy');
+    f.context.navigator.clipboard.writeText=async()=>{throw new Error('denied');};
+    await copy.listeners.click();
+    assert.equal(copy.textContent,'复制失败，请选中正文复制');assert.equal(copy.disabled,false);
+    assert.ok(f.text('board-posts').includes('讨论方案'));
+    f.context.navigator.clipboard.writeText=async text=>f.copied.push(text);
+    await copy.listeners.click();assert.deepEqual(f.copied,['讨论方案']);assert.equal(copy.textContent,'已复制');
+});
+
+test('Unreadable topics cannot be copied and truncated topics label the available text honestly',async()=>{
+    const f=fixture(),data=sample();data.posts[0].unreadable=true;f.set(data);await f.open();
+    assert.ok(!f.walk(f.nodes.get('board-posts')).some(node=>node.className==='board-post-copy'));
+    data.posts[0].unreadable=false;data.posts[0].truncated=true;f.set(data);await f.poll();
+    const copy=f.walk(f.nodes.get('board-posts')).find(node=>node.className==='board-post-copy');
+    assert.equal(copy.textContent,'复制已显示正文');await copy.listeners.click();
+    assert.deepEqual(f.copied,['讨论方案']);
+});
+
+test('Full-text actions translate and retain keyboard focus when replies arrive',async()=>{
+    const f=fixture();await f.open();
+    const findCopy=()=>f.walk(f.nodes.get('board-posts')).find(node=>node.className==='board-post-copy');
+    findCopy().focus();const data=sample();data.posts.push({...data.posts[1],id:'reply-b',text:'新的回复'});
+    f.set(data);await f.poll();assert.equal(f.context.document.activeElement,findCopy());
+    f.translate('en');assert.equal(findCopy().textContent,'Copy full text');
+    f.translate('ja');assert.equal(findCopy().textContent,'全文をコピー');
+    await findCopy().listeners.click();assert.equal(findCopy().textContent,'コピー済み');
+    assert.deepEqual(f.copied,['讨论方案']);
+});

@@ -2,9 +2,9 @@
 (() => {
     'use strict';
     const words = {
-        zh: { title:'Agent 留言板', source:'Codex · 只读协作讨论', session:'会话', channel:'频道', author:'作者', allAuthors:'全部 Agent', search:'搜索留言与回复', searchButton:'搜索', refresh:'刷新', close:'关闭', threads:'讨论主题', discussion:'主题与回复', previous:'上一页', next:'下一页', previousReplies:'较早回复', nextReplies:'更多回复', loading:'正在读取留言板…', empty:'暂无讨论主题', missing:'未找到本地留言板数据库。请确认 Codex 已启用留言板，并产生过协作讨论。', error:'留言板暂时无法读取，请点击刷新重试。', notFound:'原会话已不可用，点击刷新重新选择。', noPosts:'选择一个主题查看讨论。', unreadable:'这条留言的数据无法解析。', truncated:'正文过长，已截断显示。', main:'主 Agent', table:'表格', topicPost:'主题帖', replyPost:'{number}楼', replySection:'回复（{count}）', replyOrder:'按发表时间排序', viewReplies:'查看回复（{count}）↓', noReplies:'暂无回复', emptyReplies:'本页暂无回复', copy:'复制代码', copied:'已复制', copyError:'复制失败，可直接选中代码复制', newMessages:'本会话新增 {count} 条留言 · 查看', messages:'留言', topics:'主题', agents:'参与 Agent', replies:'回复', page:'第 {start}–{end} 条 / 共 {total} 条', project:'未标注项目', scope:'当前会话 · 全部历史', matchNote:'搜索与作者筛选包含回复；打开主题后显示完整讨论。' },
-        en: { title:'Agent message board', source:'Codex · Read-only discussions', session:'Session', channel:'Channel', author:'Author', allAuthors:'All agents', search:'Search posts and replies', searchButton:'Search', refresh:'Refresh', close:'Close', threads:'Discussion topics', discussion:'Topic and replies', previous:'Previous', next:'Next', previousReplies:'Earlier replies', nextReplies:'More replies', loading:'Loading discussions…', empty:'No matching discussions', missing:'Local message-board database not found. Check that Codex message boards are enabled and have been used.', error:'Could not read the board. Select Refresh to retry.', notFound:'This session is no longer available. Refresh to choose again.', noPosts:'Select a topic to read the discussion.', unreadable:'This message could not be decoded.', truncated:'Long message truncated for display.', main:'Main agent', table:'Table', topicPost:'Original post', replyPost:'#{number}', replySection:'Replies ({count})', replyOrder:'Oldest first', viewReplies:'View replies ({count}) ↓', noReplies:'No replies yet', emptyReplies:'No replies on this page', copy:'Copy code', copied:'Copied', copyError:'Copy failed; select the code to copy it manually', newMessages:'{count} new posts in this session · View', messages:'Posts', topics:'Topics', agents:'Agents', replies:'Replies', page:'{start}–{end} of {total}', project:'Unspecified project', scope:'Current session · All history', matchNote:'Search and author filters include replies. Topics show the full discussion.' },
-        ja: { title:'Agent 掲示板', source:'Codex · 読み取り専用の議論', session:'セッション', channel:'チャンネル', author:'投稿者', allAuthors:'全 Agent', search:'投稿と返信を検索', searchButton:'検索', refresh:'更新', close:'閉じる', threads:'議論のトピック', discussion:'トピックと返信', previous:'前へ', next:'次へ', previousReplies:'以前の返信', nextReplies:'次の返信', loading:'掲示板を読み込み中…', empty:'該当する議論はありません', missing:'ローカル掲示板が見つかりません。Codex の掲示板を有効にし、協作で使用してください。', error:'読み込めませんでした。更新して再試行してください。', notFound:'セッションが利用できません。更新して選び直してください。', noPosts:'トピックを選択してください。', unreadable:'この投稿を解析できませんでした。', truncated:'長い本文を省略して表示しています。', main:'主 Agent', table:'表', topicPost:'トピック', replyPost:'#{number}', replySection:'返信（{count}）', replyOrder:'投稿順', viewReplies:'返信を見る（{count}）↓', noReplies:'返信はまだありません', emptyReplies:'このページには返信がありません', copy:'コードをコピー', copied:'コピー済み', copyError:'コピーできません。コードを選択して手動でコピーしてください', newMessages:'このセッションに新しい投稿 {count} 件 · 表示', messages:'投稿', topics:'トピック', agents:'参加 Agent', replies:'返信', page:'{start}–{end} / {total} 件', project:'プロジェクト未指定', scope:'現在のセッション · 全履歴', matchNote:'検索と投稿者の絞り込みは返信も対象。トピックには議論全体を表示します。' }
+        zh: { title:'Agent 留言板', source:'Codex · 只读协作讨论', session:'会话', channel:'频道', author:'作者', allAuthors:'全部 Agent', search:'搜索留言与回复', searchButton:'搜索', refresh:'刷新', close:'关闭', threads:'讨论主题', discussion:'主题与回复', previous:'上一页', next:'下一页', previousReplies:'较早回复', nextReplies:'更多回复', loading:'正在读取留言板…', empty:'暂无讨论主题', missing:'未找到本地留言板数据库。请确认 Codex 已启用留言板，并产生过协作讨论。', error:'留言板暂时无法读取，请点击刷新重试。', notFound:'原会话已不可用，点击刷新重新选择。', noPosts:'选择一个主题查看讨论。', unreadable:'这条留言的数据无法解析。', truncated:'正文过长，已截断显示。', main:'主 Agent', table:'表格', topicPost:'主题帖', replyPost:'{number}楼', replySection:'回复（{count}）', replyOrder:'按发表时间排序', viewReplies:'查看回复（{count}）↓', noReplies:'暂无回复', emptyReplies:'本页暂无回复', copyPost:'复制全文', copyDisplayed:'复制已显示正文', copyPostError:'复制失败，请选中正文复制', copy:'复制代码', copied:'已复制', copyError:'复制失败，可直接选中代码复制', newMessages:'本会话新增 {count} 条留言 · 查看', messages:'留言', topics:'主题', agents:'参与 Agent', replies:'回复', page:'第 {start}–{end} 条 / 共 {total} 条', project:'未标注项目', scope:'当前会话 · 全部历史', matchNote:'搜索与作者筛选包含回复；打开主题后显示完整讨论。' },
+        en: { title:'Agent message board', source:'Codex · Read-only discussions', session:'Session', channel:'Channel', author:'Author', allAuthors:'All agents', search:'Search posts and replies', searchButton:'Search', refresh:'Refresh', close:'Close', threads:'Discussion topics', discussion:'Topic and replies', previous:'Previous', next:'Next', previousReplies:'Earlier replies', nextReplies:'More replies', loading:'Loading discussions…', empty:'No matching discussions', missing:'Local message-board database not found. Check that Codex message boards are enabled and have been used.', error:'Could not read the board. Select Refresh to retry.', notFound:'This session is no longer available. Refresh to choose again.', noPosts:'Select a topic to read the discussion.', unreadable:'This message could not be decoded.', truncated:'Long message truncated for display.', main:'Main agent', table:'Table', topicPost:'Original post', replyPost:'#{number}', replySection:'Replies ({count})', replyOrder:'Oldest first', viewReplies:'View replies ({count}) ↓', noReplies:'No replies yet', emptyReplies:'No replies on this page', copyPost:'Copy full text', copyDisplayed:'Copy displayed text', copyPostError:'Copy failed; select the post text to copy it manually', copy:'Copy code', copied:'Copied', copyError:'Copy failed; select the code to copy it manually', newMessages:'{count} new posts in this session · View', messages:'Posts', topics:'Topics', agents:'Agents', replies:'Replies', page:'{start}–{end} of {total}', project:'Unspecified project', scope:'Current session · All history', matchNote:'Search and author filters include replies. Topics show the full discussion.' },
+        ja: { title:'Agent 掲示板', source:'Codex · 読み取り専用の議論', session:'セッション', channel:'チャンネル', author:'投稿者', allAuthors:'全 Agent', search:'投稿と返信を検索', searchButton:'検索', refresh:'更新', close:'閉じる', threads:'議論のトピック', discussion:'トピックと返信', previous:'前へ', next:'次へ', previousReplies:'以前の返信', nextReplies:'次の返信', loading:'掲示板を読み込み中…', empty:'該当する議論はありません', missing:'ローカル掲示板が見つかりません。Codex の掲示板を有効にし、協作で使用してください。', error:'読み込めませんでした。更新して再試行してください。', notFound:'セッションが利用できません。更新して選び直してください。', noPosts:'トピックを選択してください。', unreadable:'この投稿を解析できませんでした。', truncated:'長い本文を省略して表示しています。', main:'主 Agent', table:'表', topicPost:'トピック', replyPost:'#{number}', replySection:'返信（{count}）', replyOrder:'投稿順', viewReplies:'返信を見る（{count}）↓', noReplies:'返信はまだありません', emptyReplies:'このページには返信がありません', copyPost:'全文をコピー', copyDisplayed:'表示中の本文をコピー', copyPostError:'コピーできません。本文を選択して手動でコピーしてください', copy:'コードをコピー', copied:'コピー済み', copyError:'コピーできません。コードを選択して手動でコピーしてください', newMessages:'このセッションに新しい投稿 {count} 件 · 表示', messages:'投稿', topics:'トピック', agents:'参加 Agent', replies:'返信', page:'{start}–{end} / {total} 件', project:'プロジェクト未指定', scope:'現在のセッション · 全履歴', matchNote:'検索と投稿者の絞り込みは返信も対象。トピックには議論全体を表示します。' }
     };
     const $ = id => document.getElementById(id);
     const panel = $('agent-board-panel');
@@ -84,8 +84,7 @@
             article.id = 'board-post-' + post.id; article.dataset.kind = isTopic ? 'topic' : 'reply';
             article.setAttribute('aria-label', label + ' · ' + authorName(post.author));
             const badge = element('span', 'board-post-badge', label);
-            const kind = isTopic ? element('div', 'board-post-kind') : null;
-            if (kind) kind.append(badge);
+            const actions = isTopic ? element('div', 'board-post-actions') : null;
             if (isTopic && replyTotal) {
                 const jump = element('button', 'board-reply-jump', l.viewReplies.replace('{count}', replyTotal));
                 jump.id = 'board-replies-jump'; jump.type = 'button';
@@ -93,15 +92,29 @@
                     divider.scrollIntoView({block:'start'});
                     divider.focus({preventScroll:true});
                 });
-                kind.append(jump);
+                actions.append(jump);
+            }
+            if (isTopic && !post.unreadable) {
+                const copy = element('button', 'board-post-copy', post.truncated ? l.copyDisplayed : l.copyPost);
+                copy.id = 'board-post-copy-' + post.id; copy.type = 'button';
+                copy.addEventListener('click', async () => {
+                    copy.disabled = true;
+                    try {
+                        await navigator.clipboard.writeText(post.text);
+                        copy.textContent = labels().copied;
+                    } catch (_) { copy.textContent = labels().copyPostError; }
+                    finally { copy.disabled = false; }
+                });
+                actions.append(copy);
             }
             const head = element('div', 'board-post-head');
             const identity = element('div', 'board-identity');
-            if (!isTopic) identity.append(badge);
+            identity.append(badge);
             identity.append(element('strong', '', authorName(post.author)), element('span', 'board-agent-path', post.author));
             const time = element('time', '', date(post.created_at)); time.dateTime = post.created_at;
-            head.append(identity, time);
-            if (kind) article.append(kind);
+            identity.append(time);
+            head.append(identity);
+            if (actions?.children.length) head.append(actions);
             article.append(head);
             if (post.unreadable) article.append(element('p', 'board-empty', l.unreadable));
             else renderBody(post.text, article);

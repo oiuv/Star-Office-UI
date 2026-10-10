@@ -20,6 +20,8 @@
 
 完成以下三步，Codex 的任务开始、工具调用、上下文整理和本轮结束就会自动映射到办公室动画与活动记录。
 
+Claude Code 用户同样先完成「启动看板」，再按下方「Claude Code hooks 接入」生成并合并配置。
+
 > **环境要求：Python 3.10+**。以下示例使用 `python`；macOS / Linux 可按环境改为 `python3`。网页无需 Node.js 或前端构建；后端首次启动会初始化缺失的运行文件，已有状态与配置会保留。
 
 ### 1) 启动看板
@@ -41,7 +43,7 @@ python scripts/codex_hooks_config.py
 
 把输出配置合并到你使用 Codex 的项目 `.codex/hooks.json`，或用户目录的 `~/.codex/hooks.json`（自定义 Codex 主目录时使用 `$CODEX_HOME/hooks.json`）。同一份办公室 hooks 只配置在一处，避免项目与全局重复执行；已有 hooks 应合并事件数组。然后在 Codex 中使用 `/hooks` 检查并信任配置。
 
-两个生成器默认使用运行生成器的 Python 解释器绝对路径（`sys.executable`），脚本也使用绝对路径，可从其他项目调用。建议用项目虚拟环境生成配置：`.\.venv\Scripts\python.exe -B scripts\codex_hooks_config.py`；Claude 对应 `scripts\claude_hooks_config.py`。可用 `--python` 显式覆盖解释器，示例文件中的解释器及脚本路径均需替换。
+两个生成器默认使用运行生成器的 Python 解释器绝对路径（`sys.executable`），脚本也使用绝对路径，可从其他项目调用。若已创建项目虚拟环境，请用其中的解释器生成配置：Windows 示例为 `.\.venv\Scripts\python.exe -B scripts\codex_hooks_config.py`，macOS / Linux 为 `.venv/bin/python -B scripts/codex_hooks_config.py`；Claude 对应 `scripts/claude_hooks_config.py`。可用 `--python` 显式覆盖解释器，示例文件中的解释器及脚本路径均需替换。
 
 ### 3) 提交任务，查看动画与统计
 
@@ -49,9 +51,9 @@ python scripts/codex_hooks_config.py
 
 也可以让 AI 助手按本仓库的 [SKILL.md](./SKILL.md) 完成部署和 hooks 配置。
 
-**活动档案预览**：与办公室统一的木色像素界面，展示活动概览、经验等级、状态分布、每日趋势和 12 类 hooks 统计。
+**活动档案预览**：与办公室统一的木色像素界面，汇总 Codex / Claude Code 活动、留言板协作数据与经验等级。下方还有徽章收藏、关注目标、状态分布、每日趋势，以及 Codex 12 类 / Claude Code 33 类 hooks 的生命周期与分类统计。
 
-![活动档案：近 7 天统计、月度收藏与关注目标](docs/screenshots/activity-current.png)
+![活动档案：近 7 天活动、留言板汇总与经验等级](docs/screenshots/activity-current.png)
 
 ---
 
@@ -92,7 +94,7 @@ python scripts/codex_hooks_config.py
 - `STAR_OFFICE_STATE_FILE` 可指定兼容状态文件位置。`STAR_OFFICE_HOOK_DEBUG=1` 仅将失败类别写到 stderr。
 - **hook 活动记录**不保存 prompt、命令正文、完整工具输出、transcript 或 cwd；仅读取工具结果中的失败标记，保留事件名、工具名、会话/回合/子 Agent 标识及少量运行元数据。「Codex 会话小记」另行只读 Codex 总结文件。
 - 远程上报超时或失败时跳过该次记录，不重试，也不回退到本地数据库；远程后端需保持在线。
-- 异步 PostToolUse 迟到仍留日志，但不会复活已结束回合；多会话、子 Agent 分别记录。
+- 迟到的工具结果仍留日志，但不会复活已结束回合；多会话、子 Agent 分别记录。
 - 五分钟未更新的状态回到待命。长工具调用可能暂时视为离线，直到下一次 hook；时长是保守观测值。
 
 ---
@@ -128,32 +130,34 @@ python scripts/claude_hooks_config.py
 
 | 入口 | 功能 |
 |------|------|
-| Codex 会话小记 | 读取本机 Codex 全部可读取的会话总结，完整 Markdown 正文，每次打开刷新 |
-| Claude 记忆 | 完整展示各项目 auto-memory 记忆，按更新时间排序，每次打开刷新 |
-| 访客列表 | 查看自动加入的 Codex 子 Agent 和通过密钥接入的外部访客 |
+| Codex → Codex 会话小记 | 读取本机 Codex 全部可读取的会话总结，完整 Markdown 正文，每次打开刷新 |
+| Codex → Codex 会话档案 | 分页查询会话元数据，按来源、模型、项目、归档状态筛选，查看父子会话关系 |
+| Codex → Agent 留言板 | 浏览主题与回复、筛选作者和搜索正文，复制代码或主题全文 |
+| Claude Code → Claude 记忆 | 完整展示各项目 auto-memory 记忆，按更新时间排序，每次打开刷新 |
+| 访客列表 | 查看 hooks 自动加入的会话、子 Agent 和通过密钥接入的外部访客 |
 | 装修房间 | 更换背景、管理素材与图片 API 配置 |
 | 活动档案 | 打开 `/stats`，查看统计、日志、经验与成就 |
 | 更多设置 | 切换语言、调整视野或手动切换角色状态 |
 
 房间中的对话气泡从预设文案中按状态选择，不会调用模型，也不是 Agent 的原始对话。
 
-### Codex 子 Agent 自动访客
+### Codex / Claude Code 自动访客
 
-- 收到带 `agent_id` 的 hook 后，按会话与子 Agent ID 创建独立角色，名称为 `Agent ` 加 ID 末 8 位；约 3.5 秒内在页面刷新显示。
+- 收到带 `agent_id` 的 hook 后，按来源、会话与子 Agent ID 创建独立角色。Codex 子角色名称为 `Agent ` 加 ID 末 8 位，Claude Code 子角色增加 `Claude Code ` 前缀；约 3.5 秒内在页面刷新显示。
 - 子 Agent 独立更新自己的状态，不覆盖主角色小猫；不需要 join key 或 `office-agent-push.py`，不受外部访客密钥的并发数限制。
 - `SubagentStop` 后显示为离线并回到休息区；最后一次事件超过 5 分钟后从房间和列表移除，历史活动仍保留。
-- 父会话中断或结束时，其子 Agent 一并离线。多个 Codex 主会话接入时，主角色优先展示最近活跃的忙碌会话，其余会话作为访客显示。
+- 父会话结束时，其子 Agent 一并离线；Codex 的中断事件也会结束对应会话的子角色。多个主会话接入时，主角色优先展示最近活跃的忙碌会话，其余会话作为访客显示。Codex 与 Claude Code 的会话及子角色分别识别，不相互终止。
 
 ---
 
 ## 📋 功能一览
 
-1. **Codex hooks 自动接入** —— 12 种生命周期事件驱动动画与记录，支持会话、工具、上下文整理、中断和子 Agent
+1. **Codex / Claude Code hooks 自动接入** —— 支持 Codex 12 类、Claude Code 33 类事件，驱动六种动画状态并记录活动；两种来源的会话与子 Agent 分别识别
 2. **活动档案与成长** —— 状态次数、观测时长、事件趋势、工具统计、筛选日志、JSON 导出，以及经验等级、24 枚常规成就、隐藏探索、全成就收藏与月度徽章
 3. **状态可视化** —— 6 种状态（`idle` / `writing` / `researching` / `executing` / `syncing` / `error`）自动映射到办公室不同区域，动画 + 气泡实时展示
 4. **Codex 会话小记** —— 读取 Codex 的全部可读取会话总结，以 Markdown 展示完整正文，保留更新日期、项目、标题和任务结果统计
 5. **Claude 记忆** —— 汇总各项目 auto-memory 目录的全部记忆文件，按更新时间排序展示项目、描述与完整 Markdown 正文
-6. **多 Agent 协作** —— Codex 子 Agent 自动加入；外部 Agent 通过 join key 接入
+6. **多 Agent 协作** —— Codex / Claude Code 会话与子 Agent 自动加入；外部 Agent 通过 join key 接入
 7. **中英日三语** —— CN / EN / JP 一键切换，主要界面、气泡和加载提示联动；活动记录保留原始文案
 8. **美术资产自定义** —— 侧边栏管理角色 / 场景 / 装饰素材，支持动画素材与帧规格管理
 9. **AI 生图装修** —— 接入 OpenAI 兼容图片 API，默认使用 `gpt-image-2` 给办公室换背景；不接入 API 也能正常使用核心功能
@@ -161,6 +165,8 @@ python scripts/claude_hooks_config.py
 11. **安全加固** —— 侧边栏密码保护、生产环境弱密码拦截、Session Cookie 加固
 12. **灵活公网访问** —— 推荐 Cloudflare Tunnel 一键公网化，也可用自有域名 / 反向代理
 13. **桌面宠物版** —— 可选的 Electron 桌面封装，把办公室变成透明窗口的桌面宠物（见下方说明）
+14. **Codex 会话档案** —— 只读查询会话元数据与 Token 记录，支持筛选、搜索、排序和父子会话跳转
+15. **Agent 留言板** —— 只读浏览 Codex 本地讨论，支持主题/回复分页、搜索、代码复制与主题全文复制
 
 ---
 
@@ -179,7 +185,7 @@ python scripts/claude_hooks_config.py
 | `CLAUDE_CONFIG_DIR` | 后端读取 Claude 记忆的配置主目录，默认 `~/.claude` |
 | `STAR_OFFICE_EVENTS_DB` | 活动数据库；本地 hooks 和后端需指向同一文件 |
 | `STAR_OFFICE_STATE_FILE` | 兼容状态文件；本地 hooks 和后端需使用相同配置 |
-| `STAR_OFFICE_URL` | 仅在 Codex 客户端设置；留空为本地记录，填写 URL 为远程上报 |
+| `STAR_OFFICE_URL` | 在 Codex / Claude Code 客户端设置；留空为本地记录，填写 URL 为远程上报 |
 | `STAR_OFFICE_HOOK_TOKEN` | 远程 hooks 的共享 Token，客户端和后端保持一致 |
 | `STAR_OFFICE_HOOK_DEBUG` | `1` 时向 stderr 输出 hook 失败类别 |
 | `ASSET_DRAWER_PASS` | 装修验证码；本地默认 `1234` |
@@ -194,7 +200,7 @@ $env:CODEX_HOME = "$env:USERPROFILE/.codex"
 python backend/app.py
 ```
 
-远程上报时，在**启动 Codex 的终端或应用环境**中设置：
+远程上报时，在**启动 Codex / Claude Code 的终端或应用环境**中设置：
 
 ```powershell
 $env:STAR_OFFICE_URL = "https://your-office.example"
@@ -210,14 +216,14 @@ macOS / Linux 使用 `export NAME=value`。修改环境后重启相关进程；�
 ```bash
 python scripts/smoke_test.py --base-url http://127.0.0.1:19000
 python -B -m unittest discover -s tests -v
-node --test tests/test_stats.cjs tests/test_image_settings.cjs tests/test_speech_bubbles.cjs tests/test_recent_memo.cjs tests/test_agent_board.cjs tests/test_desktop_window.cjs tests/test_desktop_backend.cjs tests/test_guest_positions.cjs
+node --test tests/test_stats.cjs tests/test_image_settings.cjs tests/test_speech_bubbles.cjs tests/test_recent_memo.cjs tests/test_claude_memories.cjs tests/test_thread_archive.cjs tests/test_agent_board.cjs tests/test_desktop_window.cjs tests/test_desktop_backend.cjs tests/test_guest_positions.cjs
 ```
 
-smoke 检查页面与读取接口，不推送测试状态或增加活动记录。自动化测试使用临时数据库和模拟图片接口，不消耗 API 额度；Node.js 仅用于前端测试或桌面壳开发。hooks 是否真正接入，仍需在 Codex 中提交一次任务并确认 `/stats` 出现对应事件。
+smoke 检查页面与读取接口，不推送测试状态或增加活动记录。自动化测试使用临时数据库和模拟图片接口，不消耗 API 额度；Node.js 仅用于前端测试或桌面壳开发。hooks 是否真正接入，仍需分别在已配置的 Codex / Claude Code 中提交一次任务，并确认 `/stats` 出现对应来源的事件。
 
 ### 公网访问（可选）
 
-生产环境设置 `STAR_OFFICE_ENV=production`、强随机 `FLASK_SECRET_KEY`（至少 24 字符）与 `ASSET_DRAWER_PASS`（至少 8 字符）。装修验证码和 hook Token 只保护各自接口，**不是整个网站的访问密码**；活动档案和 Codex 会话小记也会展示给能访问看板的人，公开部署请在网关设置访问控制。
+生产环境设置 `STAR_OFFICE_ENV=production`、强随机 `FLASK_SECRET_KEY`（至少 24 字符）与 `ASSET_DRAWER_PASS`（至少 8 字符）。装修验证码和 hook Token 只保护各自接口，**不是整个网站的访问密码**；活动档案、会话小记、Claude 记忆、会话档案和留言板也会展示给能访问看板的人，公开部署请在网关设置访问控制。
 
 已安装 Cloudflare Tunnel 时可使用：
 
@@ -229,7 +235,7 @@ cloudflared tunnel --url http://127.0.0.1:19000
 
 ## 🤝 其他 AI Agent 接入
 
-任何能执行脚本或发送 HTTP 请求的 Agent 都可以使用原有接入方式。Codex hooks 已配置时，无需再添加手动状态同步规则。
+任何能执行脚本或发送 HTTP 请求的 Agent 都可以使用原有接入方式。Codex / Claude Code hooks 已配置时，无需再添加手动状态同步规则。
 
 ### 状态自动同步
 
@@ -262,7 +268,7 @@ cloudflared tunnel --url http://127.0.0.1:19000
 
 首次启动后端时，如果仓库根目录下不存在 `join-keys.json`，服务会自动根据 `join-keys.sample.json` 生成一个运行时的 `join-keys.json`（内含示例 key，例如 `ocj_example_team_01`）。你可以在生成后的 `join-keys.json` 中自行添加、修改或删除 key，每个 key 的 `maxConcurrent` 默认值为 9，可自行调整；这不是整个办公室的访客总上限。实际分发前请替换公开的示例密钥。已有配置不会自动覆盖，如需调整请修改对应的 `maxConcurrent`。
 
-- 主人不占访客名额；单个密钥接入 9 名普通访客时，加上主人共 10 人。Codex hooks 自动呈现的会话和子 Agent 不受此限制。
+- 主人不占访客名额；单个密钥接入 9 名普通访客时，加上主人共 10 人。Codex / Claude Code hooks 自动呈现的会话和子 Agent 不受此限制。
 - 超过 5 分钟没有推送的普通访客不占在线名额，恢复推送时重新检查容量；满员返回 HTTP 429，推送脚本会在下次轮询重试。
 - 名称可以重复。新版推送脚本持久化 `clientId`，用它和接入密钥识别同一客户端的重复加入；未传 `clientId` 的客户端每次加入都创建新访客。根目录测试脚本仍在每次启动时创建全新访客。
 - `expiresAt` 可省略；支持 ISO 8601 本地时间、`Z` 或时区偏移（如 `2026-12-31T23:59:59+08:00`）。填写无效格式会返回明确错误。
@@ -329,7 +335,9 @@ python office-agent-push.py
 
 默认只读 `~/.codex/agent_message_board_1.sqlite`，并可从同目录的 `state_5.sqlite` 补充会话标题和项目名称。路径优先级为：`STAR_OFFICE_CODEX_SQLITE_HOME` → Codex `config.toml` 的 `sqlite_home` → `CODEX_SQLITE_HOME` → `CODEX_HOME`（默认 `~/.codex`）。指定的值都是数据库所在**目录**，不是数据库文件名。
 
-面板显示最近 100 个有频道或留言的会话，主题和回复各按 20 条分页。正文按 Markdown 排版，支持标题、列表、表格、引用、强调和代码块，可复制代码；原始 HTML 按文字显示，图片以链接展示。沿用会话小记的常见敏感信息脱敏规则。打开时读取，打开期间每 5 秒刷新；关闭或页面隐藏时停止轮询。刷新保留阅读位置，并提示当前会话的新留言。
+面板显示最近 100 个有频道或留言的会话，主题和回复各按 20 条分页。正文按 Markdown 排版，支持标题、列表、表格、引用、强调和代码块，可复制代码；主题帖顶部另有「复制全文」，保留脱敏后正文的 Markdown、代码围栏与换行，不包含回复及作者、时间等界面信息。正文超出显示上限时，按钮改为「复制已显示正文」。主题标签、作者和时间同排，窄屏自动换行。
+
+原始 HTML 按文字显示，图片以链接展示。沿用会话小记的常见敏感信息脱敏规则。打开时读取，打开期间每 5 秒刷新；关闭或页面隐藏时停止轮询。刷新保留阅读位置，并提示当前会话的新留言。
 
 活动档案另行显示本地留言板的留言、主题、参与 Agent 和频道数量，按全部历史统计，不随活动日期筛选，也不额外产生 XP。主题 ID 与 Codex 会话 ID 是不同的概念。
 
@@ -347,6 +355,17 @@ python office-agent-push.py
 
 - **生命周期（默认）**：会话开始 → 消息回合 → 工具循环 → 回合收尾 → 会话结束；权限与 MCP 输入为条件分支，子 Agent、任务、上下文、模型和环境事件在旁路展示。正常结束、失败和中断分别记录。
 - **分类统计**：按会话、工具、权限、收尾、协作、上下文、环境和消息分组，便于比较次数。
+
+卡片角标标明支持来源：Codex 与 Claude Code 共用 11 类事件，`Interrupt` 为 Codex 独有，另有 22 类 Claude Code 独有事件，合并展示共 34 类。角标表示支持能力，次数表示实际接收记录；未订阅或尚未触发的事件仍显示为 0。
+
+<details>
+<summary>查看 hooks 截图：生命周期与分类统计</summary>
+
+![AI Agent 生命周期：典型流程、条件分支与旁路事件](docs/screenshots/hooks-lifecycle.png)
+
+![hooks 分类统计：八组事件与 Codex / Claude Code 支持角标](docs/screenshots/hooks-categories.png)
+
+</details>
 
 卡片次数是所选日期内全部会话的汇总，流程图表示典型关系；事件可能重复、并行或按需触发，具体执行顺序请查看活动日志。点击卡片可筛选对应事件并跳转到日志，日期和已有状态筛选保留。
 
@@ -436,7 +455,7 @@ python office-agent-push.py
 <details>
 <summary>查看隐藏探索截图（含已解锁内容）</summary>
 
-![隐藏探索：已发现经历揭晓，未解锁内容保留秘密](docs/screenshots/exploration-badges.png)
+![隐藏探索：九种经历与集齐奖励，已解锁内容揭晓](docs/screenshots/exploration-badges.png)
 
 </details>
 
@@ -538,10 +557,12 @@ npm run dev
 Star-Office-UI/
 ├── backend/            # Flask 后端
 │   ├── app.py
-│   ├── hook_events.py     # 12 类 hooks 到 6 种状态的映射
+│   ├── hook_events.py     # Codex / Claude Code hooks 归一、状态映射与观察事件
 │   ├── event_store.py     # 活动记录与统计
 │   ├── achievements.py    # 成就里程碑、翻倍进阶、月度徽章与隐藏探索
-│   ├── memo_utils.py      # 只读 Codex 会话总结
+│   ├── memo_utils.py      # 只读 Codex 总结、Claude 记忆与内容脱敏
+│   ├── thread_archive.py  # Codex 会话元数据查询
+│   ├── agent_board.py     # Codex 本地留言板只读查询与汇总
 │   ├── image_client.py    # OpenAI 图片接口
 │   ├── requirements.txt
 │   └── run.sh
@@ -552,6 +573,9 @@ Star-Office-UI/
 │   ├── office-shell.js    # 门牌菜单与弹窗
 │   ├── recent-memo.js     # Codex 会话小记
 │   ├── claude-memories.js # Claude 记忆
+│   ├── thread-archive.js  # Codex 会话档案
+│   ├── agent-board.js     # Agent 留言板、回复与全文复制
+│   ├── office-markdown.js # 阅读面板共用的 Markdown 渲染与代码复制
 │   ├── office-agent-push.py # 分发给访客的稳定身份脚本
 │   ├── join.html
 │   ├── invite.html
@@ -567,7 +591,9 @@ Star-Office-UI/
 ├── state.sample.json     # 状态文件模板
 ├── join-keys.sample.json # Join Key 模板（启动时生成 join-keys.json）
 ├── codex_hook.py         # Codex hooks 事件适配
-├── integrations/codex/   # hooks 配置示例
+├── claude_hook.py        # Claude Code hooks 事件适配
+├── hook_observer.py      # 两种来源共用的本地记录 / 远程上报入口
+├── integrations/         # codex/、claude_code/ hooks 配置示例
 ├── scripts/              # hooks 配置生成器与图片生成 CLI
 ├── SKILL.md              # 通用 Agent 部署指南
 └── LICENSE               # MIT 许可
