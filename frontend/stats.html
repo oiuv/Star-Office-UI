@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>STAR OFFICE · AI Agent 像素办公室 · 活动档案</title>
-  <link rel="stylesheet" href="/static/stats.css?v={{VERSION_TIMESTAMP}}&amp;office=1&amp;achievements=6">
-  <script src="/static/stats.js?v={{VERSION_TIMESTAMP}}&amp;presence=1&amp;office=1&amp;achievements=13&amp;brand=1&amp;hooks=4&amp;monthly=2" defer></script>
+  <link rel="stylesheet" href="/static/stats.css?v={{VERSION_TIMESTAMP}}&amp;office=1&amp;achievements=6&amp;lifecycle=2">
+  <script src="/static/stats.js?v={{VERSION_TIMESTAMP}}&amp;presence=1&amp;office=1&amp;achievements=13&amp;brand=1&amp;hooks=4&amp;monthly=2&amp;lifecycle=2" defer></script>
 </head>
 <body>
   <main class="dashboard">
@@ -43,7 +43,19 @@
       <section class="panel"><div class="panel-title"><h2 data-i18n="states">角色状态</h2><span data-i18n="countTime">次数 / 观测时长</span></div><div id="states" class="state-bars"></div></section>
       <section class="panel"><div class="panel-title"><h2 data-i18n="trend">每日活动</h2><span data-i18n="events">接收事件</span></div><div id="daily" class="daily-chart"></div><p class="muted" data-i18n="trendNote">全部视图显示最近 30 天趋势。</p></section>
     </div>
-    <section class="panel"><div class="panel-title"><h2 data-i18n="hooks">AI Agent 生命周期</h2><span data-i18n="hookNote">Codex 12 类 / Claude Code 33 类 · 6 种动画状态</span></div><p class="hook-legend"><span><i class="provider-dot codex"></i>Codex</span><span><i class="provider-dot claude"></i>Claude Code</span></p><div id="hooks" class="hook-grid"></div></section>
+    <section class="panel lifecycle-panel" aria-labelledby="hooks-title">
+      <div class="panel-title"><h2 id="hooks-title" data-i18n="hooks">AI Agent 生命周期</h2><span data-i18n="hookNote">Codex 12 类 / Claude Code 33 类 · 6 种动画状态</span></div>
+      <div class="lifecycle-toolbar">
+        <div class="periods" role="group" aria-labelledby="hooks-title">
+          <button type="button" data-hook-view="lifecycle" data-i18n="hookViewLifecycle" aria-pressed="true" aria-controls="hooks">生命周期</button>
+          <button type="button" data-hook-view="categories" data-i18n="hookViewCategories" aria-pressed="false" aria-controls="hooks">分类统计</button>
+        </div>
+        <p class="hook-legend"><span><i class="provider-dot codex" aria-hidden="true"></i>Codex</span><span><i class="provider-dot claude" aria-hidden="true"></i>Claude Code</span></p>
+      </div>
+      <p id="hook-view-note" class="muted"></p>
+      <p class="hook-action-note" data-i18n="hookActionNote">悬停查看触发说明，点击事件卡片查看日志；角标表示支持的 Agent。</p>
+      <div id="hooks" aria-describedby="hook-view-note"></div>
+    </section>
     <details class="panel achievements" id="achievements" open>
       <summary><h2 data-i18n="achievements">常规成就</h2><span id="achievement-count"></span></summary>
       <p class="muted achievement-note" data-i18n="achievementNote">8 条成长线，每条包含基础、里程碑和进阶徽章，共 24 枚。前两档只解锁一次，进阶累计门槛逐级翻倍。全成就只计算这 24 枚，隐藏探索与月度徽章单独收藏。</p>
@@ -71,7 +83,7 @@
       <p id="presence-note" class="muted" data-i18n="presenceNote">Star 为办公室主角色，在线按最近 5 分钟收到的状态更新判断。</p>
     </section>
     <section class="panel">
-      <div class="panel-title"><h2 data-i18n="log">活动日志</h2><div class="filters"><label><span class="sr-only" data-i18n="stateFilter">状态筛选</span><select id="state-filter"></select></label><label><span class="sr-only" data-i18n="hookFilter">事件筛选</span><select id="hook-filter"></select></label></div></div>
+      <div class="panel-title"><h2 id="activity-log-title" tabindex="-1" data-i18n="log">活动日志</h2><div class="filters"><label><span class="sr-only" data-i18n="stateFilter">状态筛选</span><select id="state-filter"></select></label><label><span class="sr-only" data-i18n="hookFilter">事件筛选</span><select id="hook-filter"></select></label></div></div>
       <div id="event-list" class="event-list"></div>
     </section>
     <footer><p data-i18n="measurement">次数按实际接收事件统计，心跳单独标记；多 Agent 时长累加，每次状态最多观测 5 分钟，断联时间不累加。</p><p data-i18n="scoreNote">经验值是活动纪念：回合结束 +20，工具成功 +2，子 Agent 收尾 +10。次数与经验值不代表任务质量或 Token 用量。</p><span>STAR OFFICE / KEEP BUILDING, KEEP A RECORD.</span></footer>

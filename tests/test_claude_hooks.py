@@ -31,6 +31,21 @@ class ClaudeLedgerTests(unittest.TestCase):
         return apply_hook(native(name, occurred_at=self.base+offset, **extra),
                           self.store, self.state, provider=provider)
 
+    def test_all_native_events_have_readable_chinese_log_descriptions(self):
+        for name in CLAUDE_HOOKS:
+            with self.subTest(event=name):
+                event = normalize_hook(native(name), "claude_code")
+                self.assertRegex(event["detail"], r"[\u4e00-\u9fff]")
+                self.assertFalse(event["detail"].startswith("已记录 "))
+                self.assertEqual(event["metadata"]["original_event_name"], name)
+        failure = normalize_hook(native("StopFailure", error="SECRET_ERROR"), "claude_code")
+        self.assertIn("API", failure["detail"])
+        self.assertEqual(failure["outcome"], "error")
+        self.assertNotIn("SECRET_ERROR", failure["detail"])
+        completing = normalize_hook(native("TaskCompleted"), "claude_code")
+        self.assertIn("检查", completing["detail"])
+        self.assertTrue(completing["metadata"]["observe_only"])
+
     def test_native_events_and_source_are_valid(self):
         for name in CLAUDE_HOOKS:
             event = normalize_hook(native(name, source="resume"), "claude_code")

@@ -32,6 +32,30 @@ CLAUDE_ASYNC_HOOKS = frozenset(name for name in CLAUDE_OBSERVER_HOOKS
 SHARED_HOOKS = tuple(name for name in HOOKS if name in CLAUDE_HOOKS)
 ALL_HOOKS = tuple(dict.fromkeys((*HOOKS, *CLAUDE_HOOKS)))
 
+# Observation descriptions report trigger timing rather than assuming an operation succeeded.
+CLAUDE_OBSERVATION_DETAILS = {
+    "Setup": "收到环境初始化或维护事件",
+    "UserPromptExpansion": "用户命令正在展开为提示词",
+    "PermissionDenied": "自动模式拒绝工具调用",
+    "PostToolBatch": "本批工具调用已结束",
+    "Notification": "收到系统通知",
+    "MessageDisplay": "正在显示助手消息",
+    "TaskCreated": "收到任务创建事件",
+    "TaskCompleted": "收到任务完成检查事件",
+    "TeammateIdle": "队友即将转为空闲",
+    "InstructionsLoaded": "指令文件已加载到上下文",
+    "ConfigChange": "收到配置文件变更事件",
+    "CwdChanged": "工作目录已变更",
+    "DirectoryAdded": "已添加工作目录",
+    "FileChanged": "受监视文件发生变更",
+    "WorktreeCreate": "收到隔离工作副本创建请求",
+    "WorktreeRemove": "收到隔离工作副本移除请求",
+    "PreModelSwitch": "准备应用请求的模型切换",
+    "PostModelSwitch": "会话模型已更改",
+    "Elicitation": "MCP 服务器请求用户输入",
+    "ElicitationResult": "用户响应即将回传 MCP 服务器",
+}
+
 def short_text(value, limit=160):
     return " ".join(value.split())[:limit] if isinstance(value, str) else ""
 
@@ -78,18 +102,18 @@ def normalize_hook(payload, provider="codex"):
         "SessionStart": ("idle", "会话开始，待命中"),
         "SessionEnd": ("idle", "会话已结束"),
         "UserPromptSubmit": ("researching", "正在理解新任务"),
-        "PermissionRequest": ("idle", "等待执行权限"),
-        "PreCompact": ("syncing", "正在整理上下文"),
-        "PostCompact": ("executing", "上下文整理完成，继续工作"),
+        "PermissionRequest": ("idle", "收到执行权限请求"),
+        "PreCompact": ("syncing", "准备压缩上下文"),
+        "PostCompact": ("executing", "上下文压缩完成，继续工作"),
         "SubagentStart": ("executing", "子 Agent 开始工作"),
-        "SubagentStop": ("idle", "子 Agent 本轮已结束"),
-        "Stop": ("idle", "本轮已结束，待命中"),
+        "SubagentStop": ("idle", "子 Agent 当前响应结束"),
+        "Stop": ("idle", "本轮响应结束，待命中"),
         "Interrupt": ("idle", "已中断，待命中"),
-        "PreToolUse": (tool_state(tool), "正在使用工具"),
+        "PreToolUse": (tool_state(tool), "准备调用工具"),
         "PostToolUse": ("error" if failed else "executing", "工具执行失败" if failed else "正在处理工具结果"),
-    }.get(name, ("idle", "已记录 " + original_name))
+    }.get(name, ("idle", CLAUDE_OBSERVATION_DETAILS.get(original_name, "已记录 " + original_name)))
     if original_name == "StopFailure":
-        state, detail = "error", "本轮响应失败"
+        state, detail = "error", "API 错误导致本轮响应结束"
     if tool and name in {"PreToolUse", "PostToolUse", "PermissionRequest"}:
         detail += " · " + tool
     if name == "SessionStart" and payload.get("source") == "compact":
@@ -97,7 +121,7 @@ def normalize_hook(payload, provider="codex"):
     elif name == "SessionStart" and payload.get("source") == "resume":
         detail = "恢复会话，待命中"
     if name == "PreCompact" and payload.get("trigger") == "auto":
-        detail = "正在自动整理上下文"
+        detail = "准备自动压缩上下文"
     metadata = {
         k: short_text(payload.get(k), 100)
         for k in ("source", "trigger", "model", "agent_type", "permission_mode")

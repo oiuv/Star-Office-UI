@@ -107,7 +107,7 @@ python scripts/claude_hooks_config.py
 
 生成器只输出 JSON；把 `hooks` 合并到 Claude Code 项目的 `.claude/settings.json`、`.claude/settings.local.json`，或用户的 `~/.claude/settings.json`，保留其他设置及已有事件数组。同一份办公室集成只安装在一个层级。生成配置使用当前 Python 的绝对路径；换解释器时可指定 `--python`。使用 `command`（解释器）加 `args`（参数列表）直接启动进程，无需经过 Bash 或 PowerShell 的路径引号处理；不使用 Codex 专用的 `commandWindows`。两边均以 `-B` 执行观察器，避免生成 Python 字节码缓存。
 
-在 Claude Code 的 `/hooks` 中确认配置，然后提交任务。办公室与 `/stats` 会显示 Claude Code 的主会话、工具和子 Agent 活动。配置示例见 [Claude Code hooks](./integrations/claude_code/hooks.example.json)，协议参考 [官方 hooks 文档](https://code.claude.com/docs/en/hooks)。
+在 Claude Code 的 `/hooks` 中确认配置，然后提交任务。办公室与 `/stats` 会显示 Claude Code 的主会话、工具和子 Agent 活动。配置示例见 [Claude Code hooks](./integrations/claude_code/hooks.example.json)，协议参考 [官方中文 hooks 文档](https://code.claude.com/docs/zh-CN/hooks)。
 
 - 支持接收 Claude Code 官方 33 类事件，活动日志、筛选和 hooks 计数保留原始名称；默认生成 32 类观察配置。`WorktreeCreate` 会替换默认 worktree 创建逻辑并要求返回实际路径，因此不自动注册；已有自定义创建器可在创建成功后把 payload 传给 `claude_hook.py`（此事件不输出 `{}`），或上报 HTTP。平台接收能力不等于自动订阅了所有事件。
 - `FileChanged` 默认接收其他 hooks 已指定的监视文件；可用 `--watch-file package.json --watch-file pyproject.toml` 明确监视文件名。它不是全磁盘监视器。`MessageDisplay` 记录批次标识而不保存消息正文，交互流式输出可能产生较多事件。
@@ -318,9 +318,24 @@ python office-agent-push.py
 
 支持今日、近 7 天、近 30 天、全部的事件、会话、回合和工具统计，六类状态的次数与观测时长，Codex 12 类 / Claude Code 33 类 hooks 计数，权限等待、中断、压缩、子 Agent、每日趋势、筛选日志，以及最新 200 条 JSON 导出。
 
+「AI Agent 生命周期」提供两种视图，选择保存在当前浏览器：
+
+- **生命周期（默认）**：会话开始 → 消息回合 → 工具循环 → 回合收尾 → 会话结束；权限与 MCP 输入为条件分支，子 Agent、任务、上下文、模型和环境事件在旁路展示。正常结束、失败和中断分别记录。
+- **分类统计**：按会话、工具、权限、收尾、协作、上下文、环境和消息分组，便于比较次数。
+
+卡片次数是所选日期内全部会话的汇总，流程图表示典型关系；事件可能重复、并行或按需触发，具体执行顺序请查看活动日志。点击卡片可筛选对应事件并跳转到日志，日期和已有状态筛选保留。
+
+中文卡片名称和悬停说明逐项对照 [Claude Code 官方中文 hooks 参考](https://code.claude.com/docs/zh-CN/hooks) 校准，覆盖 Claude Code 的 33 类事件及 Codex 的独有中断事件。新日志使用对应中文描述。几个容易混淆的含义：
+
+- **初始化与维护**是显式触发的准备操作；**指令文件加载**也可能在会话中途或压缩后发生。
+- **命令展开为提示词**是用户命令（如 `/skillname`）的展开；**工作目录添加**是把目录加入当前工作范围。
+- **工具调用结果**在 Claude Code 中由成功调用触发，失败另有事件；Codex 工具结果的成功/失败由返回内容判断。**工具批次结束**每批一次，各工具仍单独记录结果。
+- **响应结束**、**API 响应失败**、**用户中断**分别记录。任务完成前和队友空闲前等事件仍可被其他 hook 阻止；接收次数表示触发次数，不能直接当作最终任务完成数。
+- **模型切换前**针对用户或客户端请求；自动回退和恢复模型可能只出现切换后事件。**MCP 用户响应回传前**可包含接受、拒绝或取消结果。
+
 工具耗时通过 `tool_use_id` 配对开始/结束；只有明确错误标记或非零退出码才计为失败。回合结束 +20 XP、工具成功 +2、子 Agent 收尾 +10，100 XP 升一级。重复回放同一回合/工具不会重复领奖，主动状态心跳不产生经验值；成就和月度徽章不额外发放 XP。
 
-已有 `set_state.py`、`POST /set_state` 和 `POST /agent-push` 同样记录。页面轮询不增加事件，相同状态描述的重复推送标记为心跳。hook 接收次数和去重后的结束回合数分别展示，全部 12 类生命周期统计保留。
+已有 `set_state.py`、`POST /set_state` 和 `POST /agent-push` 同样记录。页面轮询不增加事件，相同状态描述的重复推送标记为心跳。hook 接收次数和去重后的结束回合数分别展示，所有受支持的生命周期事件均保留原始计数。
 
 ### 成就成长线
 

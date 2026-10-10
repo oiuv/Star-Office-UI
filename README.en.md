@@ -246,7 +246,9 @@ Guests can also use `frontend/join-office-skill.md` as a Skill — their agent w
 
 ## 📊 Activity archive and progression
 
-Open the [activity archive](http://127.0.0.1:19000/stats) or click the office's activity link. View today, 7 days, 30 days, or all records, including state counts and observed time, the 12 hook counts, sessions, completed turns, tools, daily trends, and filtered logs. Export the latest 200 matching events as JSON.
+Open the [activity archive](http://127.0.0.1:19000/stats) or click the office's activity link. View today, 7 days, 30 days, or all records, including state counts and observed time, Codex's 12 and Claude Code's 33 hook counts, sessions, completed turns, tools, daily trends, and filtered logs. Export the latest 200 matching events as JSON.
+
+The AI Agent lifecycle panel offers **Lifecycle** (default) and **Categories** views; your browser remembers the choice. Lifecycle shows sessions, message turns, tool loops and turn endings, with conditional permission/MCP branches and separate collaboration, context, model, workspace and notification events. Categories groups counts by purpose. Counts combine all sessions in the selected dates; the diagram shows typical relationships, while the activity log gives actual order. Select a card to filter its event and jump to the log, keeping date and state filters.
 
 Tool durations pair start/end events by `tool_use_id`. Unique completed turns award 20 XP, successful tools 2 XP, and subagent completions 10 XP; each 100 XP adds a level. Duplicate replays and state heartbeats do not award extra XP.
 

@@ -10,7 +10,7 @@ function actor(actor_id, source, online, extra = {}) {
   return {actor_id,source,online,actor_name:source === 'codex' ? 'Codex session-a' : 'Star',
     state:online ? 'executing' : 'idle',updated_at:NOW-(online ? 5 : 3508),is_subagent:0,...extra};
 }
-async function fixture(actors, office, {lang='zh',statusFails=false,achievements=[],storage=new Map(),storageFails=false,gameExtra={}} = {}) {
+async function fixture(actors, office, {lang='zh',statusFails=false,achievements=[],storage=new Map(),storageFails=false,gameExtra={},hookCounts={}} = {}) {
   function node(tag='div') {
     return {tag,children:[],style:{},dataset:{},attributes:{},listeners:{},value:'',textContent:'',hidden:false,
       append(...items) { this.children.push(...items); },
@@ -34,7 +34,7 @@ async function fixture(actors, office, {lang='zh',statusFails=false,achievements
       measured_tools:0,average_tool_seconds:null},
     game:{xp:0,period_xp:0,level:1,level_xp:0,badges:achievements,...gameExtra},
     states:Object.fromEntries(stateNames.map(state => [state,{count:0,seconds:0}])),
-    hooks:Object.fromEntries(hookNames.map(hook => [hook,0])),daily:[],actors
+    hooks:{...Object.fromEntries(hookNames.map(hook => [hook,0])),...hookCounts},daily:[],actors
   };
   const requests=[], intervals=[];
   if (!storage.has('uiLang')) storage.set('uiLang',lang);
@@ -45,6 +45,7 @@ async function fixture(actors, office, {lang='zh',statusFails=false,achievements
     const button=node('button'); button.dataset.lang=value; return button;
   });
   const periodButtons = ['today','7d','30d','all'].map(value => { const button=node('button'); button.dataset.period=value; return button; });
+  const hookViewButtons = ['lifecycle','categories'].map(value => { const button=node('button'); button.dataset.hookView=value; return button; });
   const descendants = item => [item,...(item.children || []).flatMap(descendants)];
   const context={
     document:{hidden:false,documentElement:{},getElementById:id=>nodes.get(id)||[...nodes.values()].flatMap(descendants).find(item=>item.id===id)||null,
@@ -52,7 +53,8 @@ async function fixture(actors, office, {lang='zh',statusFails=false,achievements
         '[data-i18n]':[nodes.get('presence-note')],
         '[data-achievement-filter]':achievementButtons,
         '[data-lang]':languageButtons,
-        '[data-period]':periodButtons
+        '[data-period]':periodButtons,
+        '[data-hook-view]':hookViewButtons
       }[selector] || []),addEventListener(){}},
     localStorage:{getItem:key=>{ if(storageFails) throw new Error('blocked'); return storage.get(key)||null; },setItem(key,value){ if(storageFails) throw new Error('blocked'); storage.set(key,value); }},
     Option:function(text,value) { this.textContent=text; this.value=value; },
@@ -68,9 +70,13 @@ async function fixture(actors, office, {lang='zh',statusFails=false,achievements
   vm.createContext(context);
   vm.runInContext(fs.readFileSync('frontend/stats.js','utf8'),context);
   await new Promise(setImmediate);
-  return {nodes,requests,stats,storage,context,
+  return {nodes,requests,stats,storage,context,hookViewButtons,
     async poll() { intervals[0](); await new Promise(setImmediate); },
     async period(value) { periodButtons.find(b=>b.dataset.period===value).listeners.click(); await new Promise(setImmediate); },
+    async hookView(value) {
+      const button=hookViewButtons.find(b=>b.dataset.hookView===value);
+      button.focus(); button.listeners.click(); await new Promise(setImmediate);
+    },
     badges:nodes.get('actors').children,
     filter:value=>achievementButtons.find(b=>b.dataset.achievementFilter===value).listeners.click(),
     language:value=>languageButtons.find(b=>b.dataset.lang===value).listeners.click()};
@@ -465,7 +471,7 @@ test('Claude Code controls Star while Codex and Claude children retain their sou
 
 test('Hook cards mark provider support with corner dots',async()=>{
   const f=await fixture([actor('main','api',false)],{actor_id:'main'});
-  const cards=f.nodes.get('hooks').children;
+  const cards=hookCards(f);
   assert.equal(cards.length,34);
   const dots=hook=>{
     const card=cards.find(c=>c.children[0].children[0].textContent===hook);
@@ -478,4 +484,174 @@ test('Hook cards mark provider support with corner dots',async()=>{
   assert.deepEqual(dots('MessageDisplay'),['provider-dot claude']);
   assert.equal(dots('Interrupt')[0] && cards.find(c=>c.children[0].children[0].textContent==='Interrupt').children[0].children[1].children[0].title,'Codex');
   assert.equal(cards.find(c=>c.children[0].children[0].textContent==='MessageDisplay').children[0].children[1].children[0].title,'Claude Code');
+});
+
+
+function walkNodes(node) {
+  return [node,...(node.children || []).flatMap(walkNodes)];
+}
+function hookCards(f) {
+  return walkNodes(f.nodes.get('hooks')).filter(node=>node.dataset?.hook);
+}
+
+test('Default lifecycle nests tool loops within turns and covers every supported event once',async()=>{
+  const f=await fixture([],{}, {hookCounts:{SessionStart:3,PreToolUse:5,PostToolUseFailure:2,StopFailure:1}});
+  const root=f.nodes.get('hooks');
+  assert.equal(root.dataset.view,'lifecycle');
+  assert.equal(root.className,'hook-lifecycle');
+  const main=root.children[0];
+  const turn=main.children.find(node=>node.className==='lifecycle-turn');
+  const cycle=turn.children.find(node=>node.className==='lifecycle-cycle');
+  assert.ok(walkNodes(cycle).some(node=>node.dataset?.hook==='PreToolUse'));
+  assert.ok(walkNodes(cycle).some(node=>node.dataset?.hook==='PostToolUseFailure'));
+  assert.ok(walkNodes(cycle).some(node=>node.className==='lifecycle-branches'));
+  assert.ok(walkNodes(turn).some(node=>node.dataset?.hook==='StopFailure'));
+  assert.ok(!walkNodes(turn).some(node=>node.dataset?.hook==='SessionEnd'));
+  assert.equal(main.children.at(-1).children.at(-1).children[0].dataset.hook,'SessionEnd');
+  const schema=fs.readFileSync('backend/hook_events.py','utf8');
+  const claude=[...schema.match(/CLAUDE_HOOKS = \(([\s\S]*?)\)/)[1].matchAll(/"([^"]+)"/g)].map(match=>match[1]);
+  const expected=[...new Set([...hookNames,...claude])].sort();
+  assert.deepEqual(hookCards(f).map(card=>card.dataset.hook).sort(),expected);
+  assert.ok(f.nodes.get('hook-view-note').textContent.includes('全部会话'));
+  assert.ok(f.nodes.get('hook-view-note').textContent.includes('实际顺序'));
+  assert.equal(f.nodes.get('error').hidden,true);
+});
+
+test('Category view totals original failure events separately and switches without refetching',async()=>{
+  const f=await fixture([],{}, {hookCounts:{PreToolUse:8,PostToolUse:6,PostToolUseFailure:2,PostToolBatch:3}});
+  const original=hookCards(f).map(card=>[card.dataset.hook,card.children[1].textContent]).sort();
+  const requests=f.requests.length;
+  await f.hookView('categories');
+  assert.equal(f.requests.length,requests);
+  assert.equal(f.storage.get('starOffice.hookView'),'categories');
+  assert.equal(f.nodes.get('hooks').children.length,8);
+  assert.deepEqual(hookCards(f).map(card=>[card.dataset.hook,card.children[1].textContent]).sort(),original);
+  const tools=f.nodes.get('hooks').children.find(group=>group.dataset.group==='tools');
+  assert.equal(tools.children[0].children[1].textContent,'19 · 接收事件');
+  assert.ok(hookCards(f).find(card=>card.dataset.hook==='PostToolUseFailure').className.includes('exceptional seen') ||
+    hookCards(f).find(card=>card.dataset.hook==='PostToolUseFailure').className.includes('seen exceptional'));
+  await f.hookView('lifecycle');
+  assert.equal(f.nodes.get('hooks').dataset.view,'lifecycle');
+  assert.deepEqual(hookCards(f).map(card=>[card.dataset.hook,card.children[1].textContent]).sort(),original);
+});
+
+test('View preference survives refresh, language, date changes and a new page load',async()=>{
+  const storage=new Map();
+  const f=await fixture([],{}, {storage});
+  await f.hookView('categories');
+  const button=f.hookViewButtons[1];
+  assert.equal(button.attributes['aria-pressed'],'true');
+  assert.equal(f.hookViewButtons[0].attributes['aria-pressed'],'false');
+  assert.equal(f.context.document.activeElement,button);
+  await f.poll();
+  assert.equal(f.context.document.activeElement,button);
+  f.language('en');
+  assert.ok(f.nodes.get('hook-view-note').textContent.includes('unique tasks'));
+  await f.period('7d');
+  assert.equal(f.nodes.get('hooks').dataset.view,'categories');
+  const loaded=await fixture([],{}, {storage});
+  assert.equal(loaded.nodes.get('hooks').dataset.view,'categories');
+  loaded.language('ja');
+  assert.ok(loaded.nodes.get('hook-view-note').textContent.includes('個別タスク数'));
+});
+
+test('Invalid or unavailable browser storage keeps lifecycle available',async()=>{
+  const invalid=await fixture([],{}, {storage:new Map([['starOffice.hookView','unknown']])});
+  assert.equal(invalid.nodes.get('hooks').dataset.view,'lifecycle');
+  const blocked=await fixture([],{}, {storageFails:true});
+  assert.equal(blocked.nodes.get('hooks').dataset.view,'lifecycle');
+  await blocked.hookView('categories');
+  assert.equal(blocked.nodes.get('hooks').dataset.view,'categories');
+  assert.equal(blocked.nodes.get('error').hidden,true);
+});
+
+test('Selecting a failure event opens its log and preserves date and state filters',async()=>{
+  const f=await fixture([],{}, {hookCounts:{PostToolUseFailure:2}});
+  await f.period('7d');
+  f.nodes.get('state-filter').value='error';
+  const card=hookCards(f).find(card=>card.dataset.hook==='PostToolUseFailure');
+  assert.equal(card.type,'button');
+  assert.ok(card.attributes['aria-label'].includes('2'));
+  card.focus();
+  await card.listeners.click();
+  const url=f.requests.filter(url=>url.startsWith('/api/events')).at(-1);
+  const params=new URLSearchParams(url.split('?')[1]);
+  assert.equal(params.get('hook'),'PostToolUseFailure');
+  assert.equal(params.get('state'),'error');
+  assert.equal(params.get('period'),'7d');
+  assert.equal(f.context.document.activeElement,f.nodes.get('activity-log-title'));
+  assert.equal(hookCards(f).find(card=>card.dataset.hook==='PostToolUseFailure').attributes['aria-pressed'],'true');
+});
+
+test('Polling and translation preserve focused event cards in both views',async()=>{
+  for(const view of ['lifecycle','categories']) {
+    const f=await fixture([],{}, {storage:new Map([['starOffice.hookView',view]])});
+    hookCards(f).find(card=>card.dataset.hook==='PreToolUse').focus();
+    f.stats.hooks.PreToolUse=7;
+    await f.poll();
+    assert.equal(f.context.document.activeElement.dataset.hook,'PreToolUse');
+    assert.equal(f.context.document.activeElement.children[1].textContent,'7');
+    assert.ok(hookCards(f).includes(f.context.document.activeElement));
+    f.language('en');
+    assert.equal(f.context.document.activeElement.dataset.hook,'PreToolUse');
+    assert.ok(f.context.document.activeElement.attributes['aria-label'].includes('Before tool'));
+    assert.ok(f.context.document.activeElement.attributes['aria-label'].includes('Codex / Claude Code'));
+  }
+});
+
+test('A failed log request keeps focus on the event card and reports the error',async()=>{
+  const f=await fixture([],{}, {statusFails:true});
+  const card=hookCards(f).find(card=>card.dataset.hook==='StopFailure');
+  card.focus();
+  await card.listeners.click();
+  assert.equal(f.context.document.activeElement,card);
+  assert.equal(f.nodes.get('error').hidden,false);
+});
+
+
+test('Environment events keep related pairs together in both two-column hook views',async()=>{
+  for(const view of ['lifecycle','categories']) {
+    const f=await fixture([],{}, {storage:new Map([['starOffice.hookView',view]])});
+    const group=walkNodes(f.nodes.get('hooks')).find(node=>node.dataset?.group==='environment');
+    const hooks=walkNodes(group).filter(node=>node.dataset?.hook).map(card=>card.dataset.hook);
+    for(const [left,right] of [
+      ['Setup','InstructionsLoaded'],
+      ['WorktreeCreate','WorktreeRemove'],
+      ['ConfigChange','FileChanged'],
+      ['CwdChanged','DirectoryAdded']
+    ]) {
+      const start=hooks.indexOf(left), end=hooks.indexOf(right);
+      assert.ok(start>=0);
+      assert.equal(end,start+1);
+      assert.equal(Math.floor(start/2),Math.floor(end/2));
+    }
+  }
+});
+
+
+test('Every hook has a Chinese trigger description in both views and accessible card labels',async()=>{
+  for(const view of ['lifecycle','categories']) {
+    const f=await fixture([],{}, {storage:new Map([['starOffice.hookView',view]])});
+    for(const card of hookCards(f)) {
+      const description=card.title.split('\n')[0];
+      assert.match(description,/[\u4e00-\u9fff]/);
+      assert.ok(description.length>20,card.dataset.hook);
+      assert.ok(card.attributes['aria-label'].includes(description),card.dataset.hook);
+      assert.ok(card.title.endsWith('查看 '+card.dataset.hook+' 的活动日志'));
+    }
+    const card=hook=>hookCards(f).find(card=>card.dataset.hook===hook);
+    assert.equal(card('Setup').children[2].textContent,'初始化与维护');
+    assert.equal(card('DirectoryAdded').children[2].textContent,'工作目录添加');
+    assert.equal(card('TaskCompleted').children[2].textContent,'任务完成前');
+    assert.equal(card('TeammateIdle').children[2].textContent,'队友空闲前');
+    assert.ok(card('StopFailure').title.includes('API 错误'));
+    assert.ok(card('PermissionDenied').title.includes('自动模式'));
+    assert.ok(card('PostToolUse').title.includes('Codex'));
+    assert.ok(card('PostToolUse').title.includes('PostToolUseFailure'));
+    assert.ok(card('ElicitationResult').title.includes('即将'));
+    assert.ok(card('WorktreeCreate').title.includes('自定义创建器'));
+    f.language('en');
+    assert.ok(!hookCards(f).find(card=>card.dataset.hook==='Setup').title.includes('显式'));
+    assert.ok(hookCards(f).find(card=>card.dataset.hook==='TaskCompleted').children[2].textContent.includes('Before'));
+  }
 });

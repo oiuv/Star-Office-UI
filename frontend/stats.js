@@ -14,8 +14,78 @@
     'FileChanged','CwdChanged','DirectoryAdded','WorktreeCreate','WorktreeRemove', // Workspace and file watching
     'PreModelSwitch','PostModelSwitch' // Model switching
   ];
+  const CODEX_HOOKS = new Set(HOOKS.slice(0, 12));
+  const HOOK_GROUPS = [
+    {id:'session', title:'hookSessionGroup', hooks:['SessionStart','SessionEnd','UserPromptSubmit','UserPromptExpansion']},
+    {id:'tools', title:'hookToolsGroup', hooks:['PreToolUse','PostToolUse','PostToolUseFailure','PostToolBatch']},
+    {id:'permission', title:'hookPermissionGroup', hooks:['PermissionRequest','PermissionDenied','Elicitation','ElicitationResult']},
+    {id:'finish', title:'hookFinish', hooks:['Stop','StopFailure','Interrupt']},
+    {id:'team', title:'hookTeamGroup', note:'hookTeamNote', hooks:['SubagentStart','SubagentStop','TaskCreated','TaskCompleted','TeammateIdle']},
+    {id:'context', title:'hookContextGroup', note:'hookContextNote', hooks:['PreCompact','PostCompact','PreModelSwitch','PostModelSwitch']},
+    {id:'environment', title:'hookEnvironmentGroup', note:'hookEnvironmentNote', hooks:['Setup','InstructionsLoaded','WorktreeCreate','WorktreeRemove','ConfigChange','FileChanged','CwdChanged','DirectoryAdded']},
+    {id:'messages', title:'hookMessagesGroup', note:'hookMessagesNote', hooks:['Notification','MessageDisplay']}
+  ];
   const TEXT = {
     zh: {
+      // Trigger semantics reviewed against the official Chinese Claude Code hooks reference.
+      hookDescriptions:{
+        SessionStart:"开始新会话或恢复会话时触发，也可由清空会话或上下文压缩后的恢复触发。",
+        SessionEnd:"当前会话终止时触发；退出、清空或切换会话都可能结束当前会话。",
+        UserPromptSubmit:"提示词提交后、Agent 处理前触发；Claude Code 的部分自动发起回合也会触发。",
+        UserPromptExpansion:"用户输入的命令即将展开为提示词时触发，例如直接调用 /skillname。",
+        PreToolUse:"工具调用执行之前触发，此时其他 hook 仍可修改、阻止或推迟调用。",
+        PermissionRequest:"工具调用需要权限决策时触发；具体处理方式取决于权限模式与其他 hook。",
+        PermissionDenied:"Claude Code 自动模式拒绝工具调用时触发，也包含未取得分类器判决的拒绝。",
+        Elicitation:"MCP 服务器在工具调用期间请求用户信息时触发，可通过表单或验证页面交互。",
+        ElicitationResult:"用户响应即将发回 MCP 服务器时触发，可包含接受、拒绝或取消结果。",
+        PostToolUse:"Claude Code 工具成功返回后触发，失败另记为 PostToolUseFailure；Codex 的工具结果由返回内容判断成功或失败。",
+        PostToolUseFailure:"Claude Code 工具调用失败后触发，与导致整轮回复失败的 API 错误分别记录。",
+        PostToolBatch:"一批工具调用全部结束后、下一次模型请求前触发；每批一次，各工具仍有自己的结果事件。",
+        SubagentStart:"子 Agent 启动时触发；其工具调用和响应结束可另外记录。",
+        SubagentStop:"子 Agent 结束当前响应时触发；Claude Code 的其他 hook 可要求它继续工作。",
+        TaskCreated:"通过 TaskCreate 创建任务时触发；其他 hook 仍可阻止创建，因此计数表示事件发生次数。",
+        TaskCompleted:"任务即将被标记为已完成时触发；其他 hook 可阻止完成，因此计数表示完成检查次数。",
+        TeammateIdle:"Agent 团队队友即将转为空闲时触发；其他 hook 可要求它继续工作。",
+        Stop:"Agent 结束当前响应时触发；Claude Code 的其他 hook 可要求继续，因此事件计数不等同于任务交付数。",
+        StopFailure:"Claude Code 因 API 错误无法完成本轮回复时触发，例如限流、鉴权失败或服务异常。",
+        Interrupt:"Codex 用户中断执行时触发。Claude Code 没有同名事件，工具失败和会话结束分别记录。",
+        PreCompact:"上下文压缩开始前触发，可由手动操作或自动压缩触发。",
+        PostCompact:"上下文压缩完成后触发；对应一次手动或自动压缩。",
+        PreModelSwitch:"Claude Code 应用用户或客户端请求的模型切换之前触发；自动回退和恢复模型只触发切换后事件。",
+        PostModelSwitch:"会话模型更改后触发，也包括自动回退或恢复会话时还原模型。",
+        Setup:"显式执行初始化或维护时触发；--init-only，或 -p 模式下的 --init / --maintenance。",
+        InstructionsLoaded:"CLAUDE.md 或 .claude/rules/*.md 加载进上下文时触发，包含启动、延迟加载或压缩后重新加载。",
+        ConfigChange:"会话期间配置文件发生变更时触发；其他 hook 仍可阻止新配置生效。",
+        CwdChanged:"主会话中的 shell 命令改变工作目录时触发，例如执行 cd。",
+        DirectoryAdded:"会话中通过 /add-dir 或 SDK 添加工作目录后触发；表示加入工作范围。",
+        FileChanged:"受监视文件在磁盘上发生变化时触发；变更可能来自 Agent、脚本或外部程序。",
+        WorktreeCreate:"创建隔离工作副本时触发；此 hook 接管默认创建流程，需由自定义创建器提供实际目录。",
+        WorktreeRemove:"移除由自定义 WorktreeCreate 创建的隔离工作副本时触发。",
+        Notification:"Claude Code 发出系统通知时触发，例如权限提示、空闲提醒或认证通知。",
+        MessageDisplay:"助手文本在界面中显示或流式更新时触发；作用于显示层，单条消息可触发多次。",
+      },
+      hookViewLifecycle:'生命周期', hookViewCategories:'分类统计',
+      hookLifecycleNote:'按典型流程展示关系；次数为所选日期内全部会话的汇总。分支按需触发，实际顺序见活动日志。',
+      hookCategoriesNote:'按用途汇总每种事件的接收次数；分类合计包含重复调用，不代表独立任务数。',
+      hookActionNote:'悬停查看触发说明，点击事件卡片查看日志；角标表示支持的 Agent。',
+      hookOpenLog:'查看 {hook} 的活动日志', hookSession:'会话开始', hookSessionEnd:'会话结束',
+      hookSessionGroup:'会话与消息', hookPrompt:'接收消息', hookPromptNote:'用户命令展开为提示词时触发，如 /skillname；普通消息可跳过。',
+      hookTurn:'每个消息回合', hookTurnNote:'一段会话可包含多个回合；收尾后可接收下一条消息。',
+      hookCycle:'Agent 工具循环', hookBeforeTool:'准备调用工具', hookPermission:'按需 · 权限确认',
+      hookPermissionNote:'调用需要权限决策时触发；自动模式拒绝单独记录，拒绝后本次调用不执行。',
+      hookMcp:'按需 · MCP 输入', hookMcpNote:'工具运行过程中请求用户补充信息时触发。',
+      hookExecute:'工具执行', hookExecuteNote:'实际工具运行，此处没有独立 Hook。',
+      hookResults:'工具结果 / 失败', hookBatch:'可选 · 工具批次收尾',
+      hookBatchNote:'一批工具调用全部结束后、下一次模型请求前触发；各工具仍有独立结果事件。',
+      hookRepeat:'↺ 处理结果后，可继续调用工具或进入回合收尾',
+      hookFinish:'回合收尾', hookFinishNote:'响应结束、API 错误或用户中断分别记录；Stop hook 可要求继续，次数不等于任务交付数。',
+      hookSessionRepeat:'↺ 继续对话时进入下一回合；关闭会话时触发 SessionEnd。',
+      hookBranches:'条件事件与旁路', hookBranchesNote:'这些事件可在工作过程中穿插，不是必须经过的后续步骤。',
+      hookToolsGroup:'工具调用', hookPermissionGroup:'权限与 MCP',
+      hookTeamGroup:'子 Agent 与任务协作', hookTeamNote:'子 Agent 响应、任务创建/完成检查与队友转为空闲分别触发，可并行发生。',
+      hookContextGroup:'上下文与模型', hookContextNote:'压缩前后、请求模型切换前与模型更改后分别记录；自动切换可能仅触发后者。',
+      hookEnvironmentGroup:'初始化与工作环境', hookEnvironmentNote:'显式初始化/维护、指令加载，以及配置、监视文件、工作副本和工作目录变化。',
+      hookMessagesGroup:'通知与显示', hookMessagesNote:'助手文本显示与系统通知分别记录；流式显示可能多次触发。',
       pageTitle:"STAR OFFICE · AI Agent 像素办公室",
       achievements:"常规成就",
       achievementNote:"8 条成长线，每条包含基础、里程碑和进阶徽章，共 24 枚。前两档只解锁一次，进阶累计门槛逐级翻倍。全成就只计算这 24 枚，隐藏探索与月度徽章单独收藏。",
@@ -150,9 +220,31 @@
       average:'工具平均耗时',measured:'个配对样本',xpPeriod:'本期经验值',late:'迟到事件，未改变角色',observed:'观察事件，未改变角色',online:'在线',offline:'离线',
       mainCharacter:'主角色',codexDriver:'Codex hooks',claudeDriver:'Claude Code hooks',stateDriver:'主动调用',lastUpdate:'最近更新',presenceNote:'Star 为办公室主角色，在线按最近 5 分钟收到的状态更新判断。',
       first_turn:'初次收工',teamwork:'协作伙伴',context_keeper:'记忆管理员',
-      stateLabels:['待命','写作','调研','执行','同步','异常'],hookLabels:["提交消息","工具执行前","等待权限","工具结果","会话开始","会话结束","子 Agent 开始","子 Agent 收尾","压缩前","压缩后","回合结束","用户中断","初始化准备","指令加载","配置变更","提示词展开","消息显示","通知","工具批次结束","工具失败","权限拒绝","响应失败","MCP 请求输入","MCP 输入结果","任务创建","任务完成","队友待命","监视文件变更","工作目录变更","目录加入","工作副本创建","工作副本移除","模型切换前","模型切换后"]
+      stateLabels:['待命','写作','调研','执行','同步','异常'],hookLabels:["提示词提交","工具调用前","权限决策请求","工具调用结果","会话开始/恢复","会话结束","子 Agent 启动","子 Agent 响应结束","上下文压缩前","上下文压缩后","响应结束","用户中断","初始化与维护","指令文件加载","配置文件变更","命令展开为提示词","助手消息显示","系统通知","工具批次结束","工具调用失败","自动模式权限拒绝","API 响应失败","MCP 请求用户输入","MCP 用户响应回传前","任务创建时","任务完成前","队友空闲前","受监视文件变更","工作目录变更","工作目录添加","工作副本创建","工作副本移除","模型切换前","模型切换后"]
     },
     en: {
+      hookViewLifecycle:'Lifecycle', hookViewCategories:'Categories',
+      hookLifecycleNote:'Typical lifecycle relationships; counts combine all sessions in the selected dates. Branches are conditional. See the activity log for actual order.',
+      hookCategoriesNote:'Received events grouped by purpose. Totals include repeated calls and do not count unique tasks.',
+      hookActionNote:'Select an event card to view its log. Corner dots show which agents support it.',
+      hookOpenLog:'View activity log for {hook}', hookSession:'Session starts', hookSessionEnd:'Session ends',
+      hookSessionGroup:'Sessions and prompts', hookPrompt:'Receive a prompt', hookPromptNote:'Prompt expansion is optional.',
+      hookTurn:'Each message turn', hookTurnNote:'A session can contain many turns; the next prompt starts another turn.',
+      hookCycle:'Agent tool loop', hookBeforeTool:'Prepare tool call', hookPermission:'Conditional · Permission',
+      hookPermissionNote:'Skip when approval is unnecessary; denied calls do not execute. PermissionDenied is specific to Claude Code auto mode.',
+      hookMcp:'Conditional · MCP input', hookMcpNote:'When a running tool requests more information from the user.',
+      hookExecute:'Tool executes', hookExecuteNote:'Actual tool execution; no separate hook at this step.',
+      hookResults:'Tool result / failure', hookBatch:'Optional · Tool batch',
+      hookBatchNote:'Claude Code fires this after a batch finishes, before the next model request; each tool still has its own result event.',
+      hookRepeat:'↺ Process results, then call another tool or finish the turn',
+      hookFinish:'Turn finishes', hookFinishNote:'Normal finish, response failure, or user interruption. Stop does not close the session.',
+      hookSessionRepeat:'↺ Continue with another turn, or close the session with SessionEnd.',
+      hookBranches:'Conditional events', hookBranchesNote:'These can occur during work; they are not mandatory next steps.',
+      hookToolsGroup:'Tool calls', hookPermissionGroup:'Permissions and MCP',
+      hookTeamGroup:'Subagents and tasks', hookTeamNote:'Subagent, task and teammate events are independent and may run alongside the main agent.',
+      hookContextGroup:'Context and models', hookContextNote:'Compaction and model changes resume current work when finished.',
+      hookEnvironmentGroup:'Setup and workspace', hookEnvironmentNote:'Setup, instructions, configuration, worktrees, directory and file changes.',
+      hookMessagesGroup:'Notifications and display', hookMessagesNote:'Message display and asynchronous notifications are separate from the tool loop.',
       pageTitle:"STAR OFFICE · AI Agent Pixel Office",
       achievements:"Regular achievements",
       achievementNote:"8 growth tracks, each with a basic badge, a fixed milestone and an advanced badge: 24 in total. The first two unlock once; advanced cumulative targets double. Only these 24 count toward full collection. Hidden and monthly badges are separate.",
@@ -287,9 +379,31 @@
       average:'Average tool time',measured:'paired samples',xpPeriod:'XP this period',late:'Late event; character unchanged',online:'online',offline:'offline',
       mainCharacter:'Main character',codexDriver:'Codex hooks',claudeDriver:'Claude Code hooks',observed:'Observation; actor unchanged',stateDriver:'State updates',lastUpdate:'Last update',presenceNote:'Star is the main office character. Presence reflects state updates received within the last 5 minutes.',
       first_turn:'First finish',teamwork:'Team player',context_keeper:'Memory keeper',
-      stateLabels:['Idle','Writing','Research','Executing','Syncing','Error'],hookLabels:["Message submitted","Before tool","Permission wait","Tool result","Session starts","Session ends","Subagent starts","Subagent ends","Before compact","After compact","Turn ends","Interrupted","Initialization","Instructions loaded","Config changed","Prompt expansion","Message displayed","Notification","Tool batch ends","Tool failure","Permission denied","Response failure","MCP input requested","MCP input received","Task created","Task completed","Teammate idle","Watched file changed","Working directory changed","Directory added","Worktree created","Worktree removed","Before model switch","After model switch"]
+      stateLabels:['Idle','Writing','Research','Executing','Syncing','Error'],hookLabels:["Prompt submitted","Before tool","Permission decision","Tool result","Session starts / resumes","Session ends","Subagent starts","Subagent response ends","Before context compaction","After context compaction","Response ends","Interrupted","Initialization / maintenance","Instruction file loaded","Config changed","Command expands to prompt","Assistant text displayed","Notification","Tool batch ends","Tool failure","Auto-mode permission denied","API response failure","MCP input requested","Before MCP reply","Task creation","Before task completion","Before teammate idle","Watched file changed","Working directory changed","Working directory added","Worktree creation","Worktree removal","Before model switch","After model switch"]
     },
     ja: {
+      hookViewLifecycle:'ライフサイクル', hookViewCategories:'分類統計',
+      hookLifecycleNote:'典型的な流れを表示。回数は選択期間の全セッションの合計です。分岐は必要に応じて発生し、実際の順序は活動ログで確認できます。',
+      hookCategoriesNote:'受信イベントを用途別に集計。繰り返し呼び出しを含むため、個別タスク数ではありません。',
+      hookActionNote:'イベントカードから対応するログへ。角の印は対応する Agent を示します。',
+      hookOpenLog:'{hook} の活動ログを表示', hookSession:'セッション開始', hookSessionEnd:'セッション終了',
+      hookSessionGroup:'セッションとメッセージ', hookPrompt:'メッセージ受付', hookPromptNote:'プロンプト展開は任意のイベントです。',
+      hookTurn:'メッセージごとのターン', hookTurnNote:'1 セッションに複数のターンがあり、次のメッセージで新しいターンが始まります。',
+      hookCycle:'Agent ツールループ', hookBeforeTool:'ツール呼び出し準備', hookPermission:'必要時 · 権限確認',
+      hookPermissionNote:'確認が不要なら省略。拒否された呼び出しは実行しません。拒否イベントは Claude Code の自動権限モードのみです。',
+      hookMcp:'必要時 · MCP 入力', hookMcpNote:'実行中のツールがユーザーに追加情報を求めた場合に発生します。',
+      hookExecute:'ツール実行', hookExecuteNote:'実際のツール実行。この段階に独立した Hook はありません。',
+      hookResults:'ツール結果 / 失敗', hookBatch:'任意 · ツールバッチ終了',
+      hookBatchNote:'ツールバッチ全体が終了し、次のモデル要求を送る前に発生。各ツールの結果も記録されます。',
+      hookRepeat:'↺ 結果を処理し、次のツール呼び出しまたはターン終了へ',
+      hookFinish:'ターン終了', hookFinishNote:'通常終了、応答失敗、またはユーザー中断。Stop はセッション終了を意味しません。',
+      hookSessionRepeat:'↺ 次のターンへ進むか、SessionEnd でセッションを閉じます。',
+      hookBranches:'条件付きイベント', hookBranchesNote:'作業中に随時発生し、必須の後続手順ではありません。',
+      hookToolsGroup:'ツール呼び出し', hookPermissionGroup:'権限と MCP',
+      hookTeamGroup:'子 Agent とタスク', hookTeamNote:'子 Agent、タスク、チームメイトのイベントは独立し、主 Agent と並行して発生します。',
+      hookContextGroup:'コンテキストとモデル', hookContextNote:'圧縮やモデル切り替え後に現在の作業を続行します。',
+      hookEnvironmentGroup:'初期化と作業環境', hookEnvironmentNote:'準備、指示、設定、作業コピー、ディレクトリとファイルの変更。',
+      hookMessagesGroup:'通知と表示', hookMessagesNote:'メッセージ表示と非同期通知はツールループから独立しています。',
       pageTitle:"STAR OFFICE · AI Agent ピクセルオフィス",
       achievements:"通常の実績",
       achievementNote:"8 系統に基本・節目・上級を各 1 個、合計 24 個。基本と節目は一度だけ解除し、上級の累計目標は倍増します。全実績の条件はこの 24 個のみ。隠し実績と月間バッジは別枠です。",
@@ -424,13 +538,19 @@
       average:'ツール平均時間',measured:'組のサンプル',xpPeriod:'期間 XP',late:'遅延イベント：状態変更なし',observed:'観測イベント：状態変更なし',online:'オンライン',offline:'オフライン',
       mainCharacter:'メインキャラクター',codexDriver:'Codex hooks',claudeDriver:'Claude Code hooks',stateDriver:'状態更新',lastUpdate:'最終更新',presenceNote:'Star はオフィスのメインキャラクターです。直近 5 分の状態更新をもとにオンラインを表示します。',
       first_turn:'初めての完了',teamwork:'協力者',context_keeper:'記憶管理者',
-      stateLabels:['待機','執筆','調査','実行','同期','エラー'],hookLabels:["メッセージ送信","ツール実行前","権限待ち","ツール結果","セッション開始","セッション終了","子 Agent 開始","子 Agent 終了","圧縮前","圧縮後","ターン終了","中断","初期化","指示読み込み","設定変更","プロンプト展開","メッセージ表示","通知","ツールバッチ終了","ツール失敗","権限拒否","応答失敗","MCP 入力要求","MCP 入力結果","タスク作成","タスク完了","チームメイト待機","監視ファイル変更","作業ディレクトリ変更","ディレクトリ追加","作業コピー作成","作業コピー削除","モデル切替前","モデル切替後"]
+      stateLabels:['待機','執筆','調査','実行','同期','エラー'],hookLabels:["プロンプト送信","ツール実行前","権限判断の要求","ツール結果","セッション開始・再開","セッション終了","子 Agent 開始","子 Agent 応答終了","コンテキスト圧縮前","コンテキスト圧縮後","応答終了","中断","初期化・保守","指示ファイル読み込み","設定変更","コマンドをプロンプトへ展開","アシスタント文の表示","通知","ツールバッチ終了","ツール失敗","自動モードの権限拒否","API 応答失敗","MCP 入力要求","MCP 応答送信前","タスク作成時","タスク完了前","チームメイト待機前","監視ファイル変更","作業ディレクトリ変更","作業ディレクトリ追加","作業コピー作成時","作業コピー削除時","モデル切替前","モデル切替後"]
     }
   };
   let lang = 'zh';
   try { lang = localStorage.getItem('uiLang') || 'zh'; } catch (_) {}
   if (!TEXT[lang]) lang = 'zh';
   let period = 'today', lastData = null, controller = null, achievementFilter = 'all';
+  const HOOK_VIEW_STORAGE_KEY = 'starOffice.hookView';
+  let hookView = 'lifecycle';
+  try {
+    const saved = localStorage.getItem(HOOK_VIEW_STORAGE_KEY);
+    if (['lifecycle','categories'].includes(saved)) hookView = saved;
+  } catch (_) {}
   const GOALS_STORAGE_KEY = 'starOffice.achievementGoals';
   const MAX_GOALS = 3;
   const GOAL_ALIASES = {prompt_25:'prompt_100', tool_started_100:'tool_started_1000'};
@@ -655,6 +775,104 @@
     if (!monthly.earned.length) $('monthly-archive').append(element('p','muted',t('monthlyEmpty')));
   }
 
+  function hookCard(hook, counts) {
+    const count = counts[hook] || 0;
+    const exceptional = ['PostToolUseFailure','StopFailure','PermissionDenied','Interrupt'].includes(hook);
+    const card = element('button','hook-card' + (count ? ' seen' : '') + (exceptional ? ' exceptional' : ''));
+    card.type = 'button';
+    card.id = 'hook-card-' + hook;
+    card.dataset.hook = hook;
+    const label = TEXT[lang].hookLabels[HOOKS.indexOf(hook)] || hook;
+    const description = TEXT[lang].hookDescriptions?.[hook] || label;
+    const providers = [CODEX_HOOKS.has(hook) ? 'Codex' : '',hook !== 'Interrupt' ? 'Claude Code' : ''].filter(Boolean).join(' / ');
+    card.setAttribute('aria-label',hook + ' · ' + description + ' · ' + number(count) + ' · ' + providers + ' · ' + t('hookOpenLog').replace('{hook}',hook));
+    card.setAttribute('aria-pressed',String($('hook-filter').value === hook));
+    card.title = description + '\n' + t('hookOpenLog').replace('{hook}',hook);
+    const dots = element('span','hook-providers');
+    dots.setAttribute('aria-hidden','true');
+    if (CODEX_HOOKS.has(hook)) dots.append(providerDot('codex','Codex'));
+    if (hook !== 'Interrupt') dots.append(providerDot('claude','Claude Code'));
+    const head = element('span','hook-head');
+    head.append(element('span','hook-name',hook),dots);
+    card.append(head,element('span','hook-count',number(count)),
+      element('span','hook-detail',label));
+    card.addEventListener('click',async () => {
+      $('hook-filter').value = hook;
+      const loaded = await refresh();
+      if (loaded && $('hook-filter').value === hook) $('activity-log-title').focus();
+    });
+    return card;
+  }
+  function hookStage(title, hooks, counts, note, cls = '') {
+    const section = element('section','hook-stage ' + cls);
+    const heading = element('div','hook-stage-heading');
+    heading.append(element('h3','',t(title)),
+      element('span','hook-stage-total',number(hooks.reduce((sum,hook) => sum + (counts[hook] || 0),0)) + ' · ' + t('events')));
+    const grid = element('div','hook-grid');
+    grid.append(...hooks.map(hook => hookCard(hook,counts)));
+    section.append(heading);
+    if (note) section.append(element('p','hook-stage-note',t(note)));
+    section.append(grid);
+    return section;
+  }
+  function flowArrow() {
+    const arrow = element('div','lifecycle-arrow','↓');
+    arrow.setAttribute('aria-hidden','true');
+    return arrow;
+  }
+  function renderHooks(counts = {}) {
+    document.querySelectorAll('[data-hook-view]').forEach(button =>
+      button.setAttribute('aria-pressed',String(button.dataset.hookView === hookView)));
+    $('hook-view-note').textContent = t(hookView === 'lifecycle' ? 'hookLifecycleNote' : 'hookCategoriesNote');
+    const root = $('hooks');
+    const focusedHook = document.activeElement?.dataset?.hook;
+    const restoreFocus = () => {
+      if (focusedHook) $('hook-card-' + focusedHook)?.focus({preventScroll:true});
+    };
+    root.dataset.view = hookView;
+    root.className = hookView === 'lifecycle' ? 'hook-lifecycle' : 'hook-categories';
+    root.replaceChildren();
+    if (hookView === 'categories') {
+      HOOK_GROUPS.forEach(group => {
+        const section = hookStage(group.title,group.hooks,counts);
+        section.dataset.group = group.id;
+        root.append(section);
+      });
+      restoreFocus();
+      return;
+    }
+    const main = element('div','lifecycle-main');
+    const turn = element('div','lifecycle-turn');
+    turn.append(element('h3','lifecycle-region-title',t('hookTurn')),
+      element('p','hook-stage-note',t('hookTurnNote')),
+      hookStage('hookPrompt',['UserPromptSubmit','UserPromptExpansion'],counts,'hookPromptNote'),flowArrow());
+    const cycle = element('div','lifecycle-cycle');
+    cycle.append(element('h3','lifecycle-region-title',t('hookCycle')),
+      hookStage('hookBeforeTool',['PreToolUse'],counts),flowArrow());
+    const permission = hookStage('hookPermission',['PermissionRequest','PermissionDenied'],counts,'hookPermissionNote','conditional');
+    const execution = element('div','lifecycle-execution');
+    execution.append(element('strong','',t('hookExecute')),element('p','hook-stage-note',t('hookExecuteNote')));
+    const branches = element('div','lifecycle-branches');
+    branches.append(execution,hookStage('hookMcp',['Elicitation','ElicitationResult'],counts,'hookMcpNote','conditional'));
+    cycle.append(permission,flowArrow(),branches,flowArrow(),
+      hookStage('hookResults',['PostToolUse','PostToolUseFailure'],counts),
+      hookStage('hookBatch',['PostToolBatch'],counts,'hookBatchNote','conditional lifecycle-batch'),
+      element('p','lifecycle-repeat',t('hookRepeat')));
+    turn.append(cycle,flowArrow(),hookStage('hookFinish',['Stop','StopFailure','Interrupt'],counts,'hookFinishNote','lifecycle-finish'));
+    main.append(hookStage('hookSession',['SessionStart'],counts,null,'lifecycle-session'),flowArrow(),turn,
+      element('p','lifecycle-repeat',t('hookSessionRepeat')),flowArrow(),
+      hookStage('hookSessionEnd',['SessionEnd'],counts,null,'lifecycle-session'));
+    const side = element('aside','lifecycle-side');
+    side.append(element('h3','lifecycle-region-title',t('hookBranches')),element('p','hook-stage-note',t('hookBranchesNote')));
+    HOOK_GROUPS.filter(group => ['team','context','environment','messages'].includes(group.id)).forEach(group => {
+      const section = hookStage(group.title,group.hooks,counts,group.note,'conditional');
+      section.dataset.group = group.id;
+      side.append(section);
+    });
+    root.append(main,side);
+    restoreFocus();
+  }
+
   function render(stats, events, office) {
     const o = stats.overview, game = stats.game;
     $('connection').textContent = t('live');
@@ -685,17 +903,7 @@
       row.append(element('span','',stateLabel(state)),track,element('span','state-value',v.count + ' / ' + duration(v.seconds)));
       $('states').append(row);
     });
-    $('hooks').replaceChildren(...HOOKS.map((hook,i) => {
-      const card = element('div','hook-card' + (stats.hooks[hook] ? ' seen' : ''));
-      const dots = element('span','hook-providers','');
-      // The first twelve follow the Codex schema (Interrupt is Codex-only); the rest is Claude Code.
-      if (i < 12) dots.append(providerDot('codex','Codex'));
-      if (hook !== 'Interrupt') dots.append(providerDot('claude','Claude Code'));
-      const head = element('div','hook-head','');
-      head.append(element('div','hook-name',hook), dots);
-      card.append(head,element('div','hook-count',number(stats.hooks[hook])),element('div','hook-detail',TEXT[lang].hookLabels[i] || hook));
-      return card;
-    }));
+    renderHooks(stats.hooks);
     const daily = new Map(stats.daily.map(day => [day.date,day]));
     const end = new Date(stats.until * 1000), start = new Date(Math.max(stats.since * 1000,end.getTime() - 29 * 86400000));
     start.setHours(0,0,0,0);
@@ -755,10 +963,12 @@
         get('/status',controller.signal,false)
       ]);
       lastData = [stats,history.events,office]; render(...lastData); $('error').hidden = true;
+      return true;
     } catch (error) {
-      if (error.name === 'AbortError') return;
+      if (error.name === 'AbortError') return false;
       $('error').textContent = t('failed'); $('error').hidden = false;
       $('connection').textContent = t('failed');
+      return false;
     }
   }
   document.querySelectorAll('[data-lang]').forEach(button => button.addEventListener('click',() => {
@@ -774,6 +984,11 @@
   document.querySelectorAll('[data-achievement-filter]').forEach(button => button.addEventListener('click',() => {
     achievementFilter = button.dataset.achievementFilter;
     if (lastData) renderAchievements(lastData[0].game.badges);
+  }));
+  document.querySelectorAll('[data-hook-view]').forEach(button => button.addEventListener('click',() => {
+    hookView = button.dataset.hookView;
+    try { localStorage.setItem(HOOK_VIEW_STORAGE_KEY,hookView); } catch (_) {}
+    if (lastData) renderHooks(lastData[0].hooks);
   }));
   $('achievement-link').addEventListener('click',() => { $('achievements').open = true; });
   $('achievement-goals-link').addEventListener('click',() => {
@@ -793,7 +1008,7 @@
       setTimeout(() => URL.revokeObjectURL(url),1000);
     } catch (_) { $('error').textContent = t('failed'); $('error').hidden = false; }
   });
-  translate(); refresh();
+  translate(); renderHooks(); refresh();
   setInterval(() => { if (!document.hidden) refresh(); },10000);
   document.addEventListener('visibilitychange',() => { if (!document.hidden) refresh(); });
 })();
