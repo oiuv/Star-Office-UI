@@ -144,6 +144,30 @@ test('Switching back to all sessions clears channel, author and pagination filte
     assert.equal(params.get('offset'),'0');assert.equal(params.get('reply_offset'),'0');
 });
 
+test('Long filter labels are abbreviated while full names and selection values remain intact',async()=>{
+    const f=fixture(),data=sample();
+    data.boards[0].title='😀'.repeat(165)+'完整会话标题';
+    data.channels[0].name='评审频道'.repeat(40);data.channel_name=data.channels[0].name;
+    data.authors[1]='/root/'+'long-review-agent'.repeat(12);
+    f.set(data);await f.open();
+    const session=f.nodes.get('board-session'),option=session.children[1];
+    assert.equal(Array.from(option.textContent).length,38);assert.ok(option.textContent.endsWith('…'));
+    assert.ok(!/[\uD800-\uDBFF]…$/.test(option.textContent),'emoji surrogate pairs stay intact');
+    assert.equal(option.title,'office · '+data.boards[0].title);assert.equal(session.title,option.title);
+    assert.equal(option.value,'session-a');assert.equal(session.value,'session-a');
+    assert.equal(session.children[0].textContent,'全部会话');
+    for(const id of ['board-channel','board-author']){
+        const select=f.nodes.get(id),last=select.children.at(-1);
+        assert.equal(Array.from(last.textContent).length,38);assert.ok(last.title.length>38);
+    }
+    assert.ok(f.nodes.get('board-channel').title.includes(data.channels[0].name));
+    assert.ok(f.nodes.get('board-channel').title.includes('共享设计'));
+    await f.event('board-session','change');
+    assert.equal(new URL(f.requests.at(-1).url,'http://local').searchParams.get('board'),'session-a');
+    const changed=sample();changed.boards[0].title='新标题';f.set(changed);await f.event('board-refresh');
+    assert.equal(session.children[1].textContent,'office · 新标题');assert.equal(session.title,'office · 新标题');
+});
+
 test('Raw HTML stays literal while Markdown code blocks can be copied',async()=>{
     const f=fixture(),data=sample();
     data.posts[1].text='<img src=x onerror=alert(1)>\n\n```js\nconst a = "<script>";\n```';

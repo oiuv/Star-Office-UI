@@ -8,9 +8,8 @@
 #claude-memories-content .claude-memories-title { margin: 0 0 6px; font: 600 14px/1.65 system-ui, sans-serif; color: inherit; overflow-wrap: anywhere; }
 #claude-memories-content .claude-memories-text { margin: 10px 0 0; white-space: normal; min-width: 0; font: 13px/1.8 system-ui, sans-serif; overflow-wrap: anywhere; }
 #claude-memories-content .claude-memories-placeholder { padding: 22px 0; color: #796649; text-align: center; }
-/* Larger type and margins for the browser reading panel on wide screens. */
+/* Larger type for the browser reading panel on wide screens. */
 @media (min-width: 900px) and (min-height: 481px) {
-    #claude-memories-panel[popover] { padding: 24px 28px; }
     #claude-memories-panel[popover] .claude-memories-title { font-size: 16px; }
     #claude-memories-panel[popover] .claude-memories-text { font-size: 14px; }
 }

@@ -9,11 +9,16 @@
         ja: {title:'Claude Code セッション履歴', note:'グローバルディレクトリ · 保持されたローカル履歴 · 開く時や更新時のみ読取', scope:'集計は該当セッション全体。モデル指定はそのモデルを含むセッション。メッセージとツール呼び出しは ID で重複除外。', total:'メイン', agents:'サブ Agent', tokens:'記録 Token', tools:'ツール呼び出し', input:'入力', output:'出力', cacheRead:'キャッシュ読取', cacheWrite:'キャッシュ書込', ranks:'モデルとツール順位', model:'セッションモデル', project:'プロジェクト', kind:'種類', main:'メイン', subagent:'サブ Agent', sort:'並び順', recent:'最近の活動', created:'作成日時', tokenSort:'Token 使用量', toolSort:'ツール呼び出し', all:'すべて', search:'検索', placeholder:'タイトル、概要、セッション ID を検索', refresh:'更新', previous:'前へ', next:'次へ', loading:'読み込み中…', missing:'Claude Code 履歴ディレクトリがありません', error:'読み込めません。更新して再試行してください。', empty:'該当セッションがありません', unknown:'未記録', untitled:'無題のセッション', id:'セッション ID', parent:'親セッション', branch:'Git ブランチ', version:'Claude Code バージョン', agent:'Agent 名', updated:'最近の活動', prompts:'ユーザーメッセージ', replies:'モデル応答', preview:'最初のユーザーメッセージ', close:'閉じる', coverage:'使用量のある応答', skipped:'解析できない記録', unreadable:'読取不可ファイル', unidentified:'メッセージ ID のない使用量', inherited:'個別履歴は継承記録を含むため、行の合計は加算できません。', range:(start,end,total)=>start+'–'+end+' / '+total+' 件'}
     };
     const tokenFields = [['input','input_tokens'],['output','output_tokens'],['cacheRead','cache_read_input_tokens'],['cacheWrite','cache_creation_input_tokens']];
+    const rankWords = {
+        zh: {expandRanks:'展开排行', collapseRanks:'收起排行', modelRanks:'模型 Token 排行', toolRanks:'工具调用 TOP 5', calls:'次', noModels:'暂无模型用量记录', noTools:'暂无工具调用记录', rankHint:(models,tools)=>models+' 个模型 · '+tools+' 种工具'},
+        en: {expandRanks:'View rankings', collapseRanks:'Hide rankings', modelRanks:'Model token ranking', toolRanks:'Top 5 tools', calls:'calls', noModels:'No recorded model usage', noTools:'No recorded tool calls', rankHint:(models,tools)=>models+' models · '+tools+' tools'},
+        ja: {expandRanks:'順位を表示', collapseRanks:'順位を閉じる', modelRanks:'モデル Token 順位', toolRanks:'ツール呼び出し TOP 5', calls:'回', noModels:'モデル使用量の記録なし', noTools:'ツール呼び出しの記録なし', rankHint:(models,tools)=>models+' モデル · '+tools+' ツール'}
+    };
     const buttonLabels = {zh:{menu:'Claude 会话档案',desktop:'Claude 会话档案'},en:{menu:'Claude sessions',desktop:'Claude sessions'},ja:{menu:'Claude セッション履歴',desktop:'Claude セッション履歴'}};
     let language = 'zh', open = false, data = null, controller = null, generation = 0, fingerprint = '', state = 'loading';
     try { language = localStorage.getItem('uiLang') || 'zh'; } catch (_) {}
     const filters = {query:'', kind:'', model:'', project:'', sort:'recent', offset:0}, expanded = new Set();
-    const labels = () => words[language] || words.zh;
+    const labels = () => ({...(words[language] || words.zh), ...(rankWords[language] || rankWords.zh)});
     const locale = () => ({zh:'zh-CN',en:'en-US',ja:'ja-JP'}[language] || 'zh-CN');
     const number = value => new Intl.NumberFormat(locale()).format(value ?? 0);
     const date = value => value ? new Date(value).toLocaleString(locale()) : labels().unknown;
@@ -27,6 +32,25 @@
         $(id).replaceChildren(...values.map(([label,value]) => {
             const box = node('div','archive-stat'); box.append(node('strong','',number(value)),node('span','',labels()[label])); return box;
         }));
+    }
+    function ranking(title, items, field, unit, empty, className) {
+        const group = node('section','claude-rank-group ' + className);
+        group.append(node('h3','',title));
+        if (!items.length) { group.append(node('p','archive-note',empty)); return group; }
+        const list = node('ol','claude-rank-items');
+        const maximum = items.reduce((max,item)=>Math.max(max,item[field]),0);
+        items.forEach((item,index)=>{
+            const entry = node('li','claude-rank-item'), position = node('span','claude-rank-position',index + 1);
+            position.setAttribute('aria-hidden','true');
+            const name = node('span','claude-rank-name',item.value);
+            const metric = node('span','claude-rank-value');
+            metric.append(node('strong','',number(item[field])),node('span','',unit));
+            const track = node('div','claude-rank-track'), bar = node('div','claude-rank-bar');
+            track.setAttribute('aria-hidden','true');
+            bar.style.width = (maximum ? Math.max(0,item[field]) / maximum * 100 : 0) + '%';
+            track.append(bar); entry.append(position,name,metric,track); list.append(entry);
+        });
+        group.append(list); return group;
     }
     function options(key, values) {
         const entries = [node('option','',labels().all)]; entries[0].value = '';
@@ -73,7 +97,11 @@
             if (data.coverage[field]) $('claude-archive-coverage').textContent += ' · ' + w[label] + ': ' + number(data.coverage[field]);
         }
         const ranks = $('claude-archive-rank-list');
-        ranks.replaceChildren(node('p','archive-note',w.model + ': ' + (s.models.map(item=>item.value + ' ' + number(item.tokens) + ' Token').join(' · ') || w.unknown)),node('p','archive-note',w.tools + ': ' + (s.tools.slice(0,5).map(item=>item.value + ' × ' + number(item.count)).join(' · ') || '0')));
+        $('claude-archive-rank-hint').textContent = w.rankHint(number(s.models.length),number(s.tools.length));
+        ranks.replaceChildren(
+            ranking(w.modelRanks,s.models,'tokens','Token',w.noModels,'claude-model-ranks'),
+            ranking(w.toolRanks,s.tools.slice(0,5),'count',w.calls,w.noTools,'claude-tool-ranks')
+        );
         for (const key of ['kind','model','project']) options(key,data.facets[{kind:'kinds',model:'models',project:'projects'}[key]]);
         $('claude-archive-sort').value = filters.sort;
         const key = language + JSON.stringify(data.sessions);

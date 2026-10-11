@@ -16,7 +16,7 @@ function sample() {
 function fixture(desktop=false,storageFails=false) {
     let context;
     class Element {
-        constructor(tag='div'){this.tag=tag;this.children=[];this.listeners={};this.dataset={};this.attributes={};this.textContent='';this.value='';this.className='';this.scrollTop=0;this.open=false;}
+        constructor(tag='div'){this.tag=tag;this.children=[];this.listeners={};this.dataset={};this.attributes={};this.style={};this.textContent='';this.value='';this.className='';this.scrollTop=0;this.open=false;}
         append(...items){this.children.push(...items);}
         replaceChildren(...items){this.children=items;}
         addEventListener(name,callback){this.listeners[name]=callback;}
@@ -69,9 +69,38 @@ test('no background requests; open and refresh read, close aborts pending reads'
 test('shows usage breakdown, coverage, top tools and stored text safely',async()=>{
     const f=fixture(),data=sample();data.sessions[0].preview += '\n' + '评审正文。'.repeat(200) + '\n最后一段完整显示';
     f.set(data);await f.open();assert.ok(f.text('summary').includes('155'));assert.ok(f.text('usage').includes('缓存读取'));
-    assert.ok(f.text('coverage').includes('2 / 3'));assert.ok(f.text('rank-list').includes('Read × 2'));
+    assert.ok(f.text('coverage').includes('2 / 3'));assert.ok(f.text('rank-list').includes('Read'));assert.ok(f.text('rank-list').includes('2 次'));
     assert.ok(f.text('list').includes('<script>stored text</script>'));assert.ok(f.text('list').includes('<img src=x>'));
     assert.ok(f.text('list').includes(data.sessions[0].preview));
+});
+
+test('rankings show exact values, relative bars, literal names and only the top five tools',async()=>{
+    const f=fixture(),data=sample();
+    data.filtered_summary.models=[{value:'<img src=x>',tokens:200},{value:'model-b',tokens:50}];
+    data.filtered_summary.tools=Array.from({length:6},(_,index)=>({value:'Tool-'+index,count:12-index*2}));
+    f.set(data);await f.open();
+    const groups=f.nodes.get('claude-archive-rank-list').children;
+    const models=groups[0].children[1].children,tools=groups[1].children[1].children;
+    assert.equal(models[0].children[1].textContent,'<img src=x>');
+    assert.equal(models[0].children[2].children[0].textContent,'200');
+    assert.equal(models[0].children[3].children[0].style.width,'100%');
+    assert.equal(models[1].children[3].children[0].style.width,'25%');
+    assert.equal(tools.length,5);assert.equal(tools[0].children[1].textContent,'Tool-0');
+    assert.equal(tools[1].children[3].children[0].style.width,(10/12*100)+'%');
+    assert.equal(f.text('rank-hint'),'2 个模型 · 6 种工具');
+    f.translate('en');assert.ok(f.text('rank-list').includes('Model token ranking'));assert.ok(f.text('rank-list').includes('12 calls'));
+    assert.equal(f.requests.length,1,'translation uses the existing summary without scanning again');
+});
+
+test('rankings refresh with filtered totals and handle empty and zero usage',async()=>{
+    const f=fixture();await f.open();const data=sample();
+    data.filtered_summary.models=[{value:'model-zero',tokens:0}];data.filtered_summary.tools=[];
+    f.set(data);f.nodes.get('claude-archive-project').value='empty';await f.event('project','change');
+    const group=f.nodes.get('claude-archive-rank-list').children[0];
+    assert.equal(group.children[1].children[0].children[3].children[0].style.width,'0%');
+    assert.ok(f.text('rank-list').includes('暂无工具调用记录'));assert.ok(!f.text('rank-list').includes('Read'));
+    data.filtered_summary.models=[];f.set(data);await f.event('refresh');
+    assert.ok(f.text('rank-list').includes('暂无模型用量记录'));assert.equal(f.text('rank-hint'),'0 个模型 · 0 种工具');
 });
 test('menu labels are short and the panel keeps its complete provider name',async()=>{
     const f=fixture();assert.equal(f.nodes.get('office-claude-archive-button').querySelector('span').textContent,'Claude 会话档案');

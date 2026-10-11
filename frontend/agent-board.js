@@ -26,11 +26,14 @@
         const key = JSON.stringify(items);
         if (select.dataset.optionsKey !== key) {
             select.replaceChildren(...items.map(([value, text]) => {
-                const option = element('option', '', text); option.value = value; return option;
+                const characters = Array.from(text);
+                const option = element('option', '', characters.length > 38 ? characters.slice(0, 37).join('') + '…' : text);
+                option.value = value; option.title = text; return option;
             }));
             select.dataset.optionsKey = key;
         }
         select.value = selected;
+        select.title = items.find(([value]) => value === selected)?.[1] || '';
     }
     function date(value) {
         const parsed = new Date(value);
@@ -176,7 +179,7 @@
         options($('board-channel'), [['', l.allChannels], ...data.channels.map(channel => [channel.name,
             channel.name + ' (' + channel.message_count + ')'])], data.channel_name);
         const channel = data.channels.find(channel => channel.name === data.channel_name);
-        $('board-channel').title = channel?.description || '';
+        if (channel?.description) $('board-channel').title += '\n' + channel.description;
         options($('board-author'), [['', l.allAuthors], ...data.authors.map(author => [author, author])], filters.author);
         renderTopics(); renderPosts();
         pager('board-topics', data.pagination || {offset:0, limit:20, total:0});

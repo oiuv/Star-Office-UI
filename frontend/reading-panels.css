@@ -1,5 +1,5 @@
-/* Shared viewport-safe width for office reading popovers. */
-:root { --office-reading-width: min(1280px, calc(100vw - 40px)); }
+/* Shared viewport-safe dimensions for all five office reading popovers. */
+:root { --office-reading-width: min(1440px, calc(100vw - 40px)); }
 #thread-archive-panel[popover],
 #claude-archive-panel[popover],
 #agent-board-panel[popover],
@@ -7,7 +7,19 @@
 #claude-memories-panel[popover] {
     box-sizing: border-box;
     width: var(--office-reading-width);
+    height: min(920px, calc(100dvh - 32px));
+    max-height: none;
+    padding: 16px 18px;
+    gap: 8px;
 }
 @media (max-width: 760px) {
     :root { --office-reading-width: calc(100vw - 20px); }
+    #thread-archive-panel[popover],
+    #claude-archive-panel[popover],
+    #agent-board-panel[popover],
+    #memo-panel[popover],
+    #claude-memories-panel[popover] {
+        height: calc(100dvh - 24px);
+        padding: 14px;
+    }
 }

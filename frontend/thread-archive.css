@@ -1,7 +1,7 @@
 /* Session archive shares the office's paper palette and reading-panel width. */
 #thread-archive-panel {
     position: fixed; inset: 50% auto auto 50%; transform: translate(-50%, -50%);
-    height: min(820px, calc(100dvh - 56px)); margin: 0; padding: 20px;
+    margin: 0;
     border: 2px solid #766042; border-radius: 4px; background: #eddec0; color: #463820;
     box-shadow: 0 8px 30px #0008; font: 14px/1.6 system-ui, sans-serif; overflow: auto;
     overscroll-behavior: contain; -webkit-app-region: no-drag;
@@ -67,7 +67,6 @@
 .desktop-archive-button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: square; stroke-linejoin: miter; }
 body.asset-window-mode .desktop-archive-button, body.asset-window-mode #thread-archive-panel { display: none !important; }
 @media(max-width:760px) {
-    #thread-archive-panel { height: calc(100dvh - 24px); padding: 14px; }
     #archive-summary { grid-template-columns: 1fr 1.6fr; gap: 8px; }
     #archive-search { grid-template-columns: repeat(2,minmax(0,1fr)); }
     #archive-search label:last-of-type { grid-column: 1 / -1; }

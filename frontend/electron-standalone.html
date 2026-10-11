@@ -1647,10 +1647,10 @@
     <link rel="stylesheet" href="/static/recent-memo.css?v={{VERSION_TIMESTAMP}}&amp;full=1">
     <link rel="stylesheet" href="/static/office-markdown.css?v={{VERSION_TIMESTAMP}}">
     <link rel="stylesheet" href="/static/claude-memories.css?v={{VERSION_TIMESTAMP}}&amp;full=1">
-    <link rel="stylesheet" href="/static/agent-board.css?v={{VERSION_TIMESTAMP}}&amp;board=7">
+    <link rel="stylesheet" href="/static/agent-board.css?v={{VERSION_TIMESTAMP}}&amp;board=9">
     <link rel="stylesheet" href="/static/thread-archive.css?v={{VERSION_TIMESTAMP}}&amp;archive=1">
-    <link rel="stylesheet" href="/static/claude-archive.css?v={{VERSION_TIMESTAMP}}">
-    <link rel="stylesheet" href="/static/reading-panels.css?v={{VERSION_TIMESTAMP}}&amp;width=1">
+    <link rel="stylesheet" href="/static/claude-archive.css?v={{VERSION_TIMESTAMP}}&amp;archive=2">
+    <link rel="stylesheet" href="/static/reading-panels.css?v={{VERSION_TIMESTAMP}}&amp;size=2">
 </head>
 <body>
     <div id="window-controls">
@@ -1852,7 +1852,15 @@
             <div id="claude-archive-summary"></div>
             <div id="claude-archive-usage"></div>
             <p id="claude-archive-coverage" class="archive-note"></p>
-            <details><summary data-claude-archive-text="ranks">模型与工具排行</summary><div id="claude-archive-rank-list"></div></details>
+            <details id="claude-archive-ranks" class="claude-ranks">
+                <summary>
+                    <span class="claude-ranks-icon" aria-hidden="true"><i></i><i></i><i></i></span>
+                    <strong data-claude-archive-text="ranks">模型与工具排行</strong>
+                    <span id="claude-archive-rank-hint"></span>
+                    <span class="claude-ranks-action"><span data-claude-archive-text="expandRanks" class="claude-ranks-expand">展开排行</span><span data-claude-archive-text="collapseRanks" class="claude-ranks-collapse">收起排行</span></span>
+                </summary>
+                <div id="claude-archive-rank-list"></div>
+            </details>
         </div>
         <form id="claude-archive-search" role="search">
             <label><span data-claude-archive-text="kind">会话类型</span><select id="claude-archive-kind"></select></label>
@@ -1898,12 +1906,13 @@
 
     <section id="agent-board-panel" class="office-panel" popover="auto" role="dialog" aria-labelledby="agent-board-title">
         <div class="board-heading">
-            <h2 id="agent-board-title" data-board-text="title">Agent 留言板</h2>
+            <div class="board-title">
+                <h2 id="agent-board-title" data-board-text="title">Agent 留言板</h2>
+                <p class="board-note" data-board-text="source">Codex · Agent 协作讨论</p>
+            </div>
+            <div id="board-summary"></div>
             <button id="board-close" type="button" popovertarget="agent-board-panel" popovertargetaction="hide" class="office-panel-close" aria-label="关闭" autofocus>×</button>
         </div>
-        <p class="board-note" data-board-text="source">Codex · Agent 协作讨论</p>
-        <div id="board-summary"></div>
-        <p id="board-scope" class="board-note" data-board-text="scope">全部会话 · 全部历史</p>
         <form id="board-search" role="search">
             <label><span data-board-text="session">会话</span><select id="board-session"></select></label>
             <label><span data-board-text="channel">频道</span><select id="board-channel"></select></label>
@@ -1914,9 +1923,12 @@
                 <button id="board-refresh" type="button" data-board-text="refresh">刷新</button>
             </div>
         </form>
-        <p class="board-note" data-board-text="matchNote">搜索与作者筛选包含回复；打开主题后显示完整讨论。</p>
+        <div class="board-toolbar-note">
+            <p id="board-scope" class="board-note" data-board-text="scope">全部会话 · 全部历史</p>
+            <p class="board-note board-match-note" data-board-text="matchNote">搜索与作者筛选包含回复；打开主题后显示完整讨论。</p>
+            <button id="board-new" type="button" hidden></button>
+        </div>
         <p id="board-status" role="status" aria-live="polite"></p>
-        <button id="board-new" type="button" hidden></button>
         <div id="board-content" hidden>
             <section class="board-column" aria-labelledby="board-topics-title">
                 <h3 id="board-topics-title" data-board-text="threads">讨论主题</h3>
@@ -1948,8 +1960,8 @@
     <script src="/static/recent-memo.js?v={{VERSION_TIMESTAMP}}&amp;full=1"></script>
     <script src="/static/claude-memories.js?v={{VERSION_TIMESTAMP}}&amp;full=1"></script>
     <script src="/static/thread-archive.js?v={{VERSION_TIMESTAMP}}&amp;archive=1"></script>
-    <script src="/static/claude-archive.js?v={{VERSION_TIMESTAMP}}"></script>
-    <script src="/static/agent-board.js?v={{VERSION_TIMESTAMP}}&amp;board=6"></script>
+    <script src="/static/claude-archive.js?v={{VERSION_TIMESTAMP}}&amp;archive=2"></script>
+    <script src="/static/agent-board.js?v={{VERSION_TIMESTAMP}}&amp;board=18"></script>
     <script src="/static/guest-feedback.js?v={{VERSION_TIMESTAMP}}"></script>
     <script src="/static/image-settings.js?v={{VERSION_TIMESTAMP}}"></script>
     <script src="/static/speech-bubbles.js?v={{VERSION_TIMESTAMP}}&amp;cat=1"></script>

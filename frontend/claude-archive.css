@@ -1,13 +1,13 @@
 /* Reuse the existing archive rows and paper palette; no additional chart library. */
 #claude-archive-panel {
     position: fixed; inset: 50% auto auto 50%; transform: translate(-50%, -50%);
-    height: min(820px, calc(100dvh - 56px)); margin: 0; padding: 20px;
+    margin: 0;
     border: 2px solid #766042; border-radius: 4px; background: #eddec0; color: #463820;
     box-shadow: 0 8px 30px #0008; font: 14px/1.6 system-ui, sans-serif; overflow: auto;
     overscroll-behavior: contain; -webkit-app-region: no-drag;
 }
 #claude-archive-panel:not(:popover-open) { display: none !important; }
-#claude-archive-panel:popover-open { display: flex; flex-direction: column; gap: 12px; }
+#claude-archive-panel:popover-open { display: flex; flex-direction: column; gap: 8px; }
 #claude-archive-panel::backdrop { background: #17151155; }
 #claude-archive-panel * { box-sizing: border-box; min-width: 0; -webkit-app-region: no-drag; }
 #claude-archive-panel [hidden] { display: none !important; }
@@ -22,11 +22,37 @@
 #claude-archive-close { flex: 0 0 36px; padding: 0 !important; font-size: 20px !important; }
 #claude-archive-overview { flex-shrink: 0; }
 #claude-archive-summary, #claude-archive-usage { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; }
-#claude-archive-usage { margin-top: 12px; }
+#claude-archive-usage { margin-top: 8px; }
 #claude-archive-usage strong { font-size: 15px; }
-#claude-archive-overview > details { font-size: 12px; margin-top: 8px; }
-#claude-archive-overview > details > summary { cursor: pointer; }
-#claude-archive-rank-list p { overflow-wrap: anywhere; }
+#claude-archive-coverage { margin-top: 4px; }
+.claude-ranks { margin-top: 8px; border: 1px solid #b29b71; border-radius: 3px; background: #f7edd9; }
+.claude-ranks > summary { display: flex; align-items: center; gap: 10px; padding: 10px 12px; cursor: pointer; list-style: none; }
+.claude-ranks > summary::-webkit-details-marker { display: none; }
+.claude-ranks > summary:hover { background: #f0e1c4; }
+.claude-ranks > summary strong { font-size: 13px; }
+.claude-ranks-icon { display: flex; align-items: flex-end; gap: 3px; height: 17px; flex-shrink: 0; }
+.claude-ranks-icon i { display: block; width: 4px; height: 8px; background: #927344; }
+.claude-ranks-icon i:nth-child(2) { height: 13px; }
+.claude-ranks-icon i:nth-child(3) { height: 17px; }
+#claude-archive-rank-hint { color: #796649; font-size: 12px; }
+.claude-ranks-action { display: flex; align-items: center; gap: 10px; margin-left: auto; color: #4a5a46; font-size: 12px; white-space: nowrap; }
+.claude-ranks-action::after { content: ''; width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg) translateY(-2px); }
+.claude-ranks-collapse, .claude-ranks[open] .claude-ranks-expand { display: none; }
+.claude-ranks[open] .claude-ranks-collapse { display: inline; }
+.claude-ranks[open] .claude-ranks-action::after { transform: rotate(225deg) translate(-2px,-2px); }
+#claude-archive-rank-list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); border-top: 1px solid #cfbd9d; }
+.claude-rank-group { padding: 12px; }
+.claude-rank-group + .claude-rank-group { border-left: 1px solid #cfbd9d; }
+.claude-rank-group h3 { margin: 0 0 10px; font-size: 12px; color: #796649; }
+.claude-rank-items { display: grid; gap: 10px; max-height: 230px; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #b9a47d transparent; margin: 0; padding: 0 4px 0 0; list-style: none; }
+.claude-rank-item { display: grid; grid-template-columns: 22px minmax(0,1fr) auto; align-items: baseline; gap: 3px 8px; font-size: 12px; }
+.claude-rank-position { grid-row: 1 / 3; align-self: center; text-align: center; color: #927344; font-weight: 600; }
+.claude-rank-name { overflow-wrap: anywhere; }
+.claude-rank-value { display: flex; align-items: baseline; gap: 5px; font-variant-numeric: tabular-nums; }
+.claude-rank-value > span { font-size: 10px; color: #796649; }
+.claude-rank-track { grid-column: 2 / -1; height: 4px; background: #e8dcc4; }
+.claude-rank-bar { height: 100%; background: #aa8b59; }
+.claude-tool-ranks .claude-rank-bar { background: #819273; }
 #claude-archive-search { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 8px; }
 #claude-archive-search label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; }
 #claude-archive-search select { width: 100%; }
@@ -37,10 +63,13 @@
 .desktop-claude-archive-button { top: calc(env(safe-area-inset-top, 0px) + 178px); }
 body.asset-window-mode #office-claude-archive-button, body.asset-window-mode #claude-archive-panel { display: none !important; }
 @media(max-width:760px) {
-    #claude-archive-panel { height: calc(100dvh - 24px); padding: 14px; }
     #claude-archive-summary, #claude-archive-usage { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
     #claude-archive-search { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
 @media(max-width:560px) {
+    .claude-ranks > summary { flex-wrap: wrap; gap: 4px 8px; }
+    #claude-archive-rank-hint { order: 1; flex-basis: 100%; padding-left: 26px; }
+    #claude-archive-rank-list { grid-template-columns: minmax(0,1fr); }
+    .claude-rank-group + .claude-rank-group { border-left: 0; border-top: 1px solid #cfbd9d; }
     #claude-archive-list { flex: none; overflow: visible; }
 }
