@@ -4,14 +4,16 @@ const { EventEmitter } = require('node:events');
 const path = require('node:path');
 const fs = require('node:fs');
 const vm = require('node:vm');
-const { spawnBackend } = require('../electron-shell/backend-process');
+const { spawnBackend, ensureBackend, probeBackend } = require('../electron-shell/backend-process');
+const http = require('node:http');
 const logger = { log() {}, warn() {} };
 
 function fakeSpawner(failures) {
   const calls = [];
-  return { calls, spawnProcess(bin, args, options) {
+  return { calls, probe:async()=> 'ready', spawnProcess(bin, args, options) {
     calls.push({ bin, args, options });
     const child = new EventEmitter();
+    child.kill = () => { child.signalCode = 'SIGTERM'; process.nextTick(()=>child.emit('exit',null,'SIGTERM')); };
     process.nextTick(() => child.emit(calls.length <= failures ? 'error' : 'spawn', new Error('ENOENT')));
     return child;
   } };
@@ -45,13 +47,58 @@ test('Synchronous launch failures also try the next interpreter', async () => {
   const fake = fakeSpawner(0);
   let first = true;
   const child = await spawnBackend('/office', {
-    env: {}, logger, existsSync: () => true,
+    env: {}, logger, existsSync: () => true, probe:fake.probe,
     spawnProcess(...args) {
       if (first) { first = false; throw new Error('invalid launch'); }
       return fake.spawnProcess(...args);
     },
   });
   assert.ok(child);
+});
+
+test('health probe rejects a different service, HTTP errors and malformed data',async t=>{
+  let body={status:'ok',service:'star-office-ui'}, status=200;
+  const server=http.createServer((request,response)=>{response.writeHead(status);response.end(typeof body==='string'?body:JSON.stringify(body));});
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  t.after(()=>server.close());
+  const baseUrl=`http://127.0.0.1:${server.address().port}`;
+  assert.equal(await probeBackend(baseUrl),'ready');
+  assert.equal(await ensureBackend('/office',{baseUrl,spawnProcess(){throw new Error('must reuse');}}),null);
+  body={status:'ok',service:'other'};
+  assert.equal(await probeBackend(baseUrl),'foreign');
+  await assert.rejects(ensureBackend('/office',{baseUrl,spawnProcess(){throw new Error('must not spawn');}}),/another service/);
+  body={status:'ok',service:'star-office-ui'};status=503;
+  assert.equal(await probeBackend(baseUrl),'foreign');
+  body='not json';status=200;
+  assert.equal(await probeBackend(baseUrl),'foreign');
+});
+
+test('an interpreter that exits after spawn falls back to the next candidate',async()=>{
+  const children=[];
+  const child=await spawnBackend('/office',{
+    env:{},logger,existsSync:()=>true,pollMs:1,
+    spawnProcess(){
+      const child=new EventEmitter();children.push(child);
+      child.kill=()=>{child.signalCode='SIGTERM';child.emit('exit');};
+      process.nextTick(()=>{child.emit('spawn');if(children.length===1){child.exitCode=1;child.emit('exit',1);}});
+      return child;
+    },
+    probe:async()=> 'ready',
+  });
+  assert.equal(children.length,2);assert.equal(child,children[1]);
+});
+
+test('startup timeouts stop owned candidates and fail instead of opening an unavailable backend',async()=>{
+  const children=[];
+  await assert.rejects(ensureBackend('/office',{
+    env:{},logger,existsSync:()=>true,timeoutMs:2,pollMs:1,probe:async()=> 'unavailable',
+    spawnProcess(){
+      const child=new EventEmitter();children.push(child);child.killed=false;
+      child.kill=()=>{child.killed=true;child.signalCode='SIGTERM';child.emit('exit');};
+      process.nextTick(()=>child.emit('spawn'));return child;
+    },
+  }),/Cannot start/);
+  assert.equal(children.length,3);assert.ok(children.every(child=>child.killed));
 });
 
 const miniHtml = fs.readFileSync(path.join(__dirname, '../desktop-pet/src/minimized.html'), 'utf8');

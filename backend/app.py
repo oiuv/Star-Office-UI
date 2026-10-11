@@ -58,9 +58,6 @@ JOIN_KEYS_FILE = os.path.join(ROOT_DIR, "join-keys.json")
 FRONTEND_PATH = Path(FRONTEND_DIR)
 ASSET_ALLOWED_EXTS = {".png", ".webp", ".jpg", ".jpeg", ".gif", ".svg", ".avif"}
 ASSET_TEMPLATE_ZIP = os.path.join(ROOT_DIR, "assets-replace-template.zip")
-WORKSPACE_DIR = os.path.dirname(ROOT_DIR)
-OPENCLAW_WORKSPACE = os.environ.get("OPENCLAW_WORKSPACE") or os.path.join(os.path.expanduser("~"), ".openclaw", "workspace")
-IDENTITY_FILE = os.path.join(OPENCLAW_WORKSPACE, "IDENTITY.md")
 ROOM_REFERENCE_IMAGE = (
     os.path.join(ROOT_DIR, "assets", "room-reference.webp")
     if os.path.exists(os.path.join(ROOT_DIR, "assets", "room-reference.webp"))
@@ -266,20 +263,9 @@ def load_state():
     return state
 
 
-def get_office_name_from_identity():
-    """Read office display name from OpenClaw workspace IDENTITY.md (Name field) -> 'XXX的办公室'."""
-    if not os.path.isfile(IDENTITY_FILE):
-        return None
-    try:
-        with open(IDENTITY_FILE, "r", encoding="utf-8") as f:
-            content = f.read()
-        m = re.search(r"-\s*\*\*Name:\*\*\s*(.+)", content)
-        if m:
-            name = m.group(1).strip().replace("\r", "").split("\n")[0].strip()
-            return f"{name}的办公室" if name else None
-    except Exception:
-        pass
-    return None
+def get_office_name():
+    """Return the configured title, or let clients use their localized default."""
+    return os.environ.get("STAR_OFFICE_NAME", "").strip()
 
 
 def save_state(state: dict):
@@ -901,7 +887,7 @@ def join_agent():
         existing.update({
             "name": name, "state": state, "detail": detail,
             "updated_at": now.isoformat(), "area": state_to_area(state),
-            "source": "remote-openclaw", "joinKey": join_key,
+            "source": "remote-agent", "joinKey": join_key,
             "authStatus": "approved", "authApprovedAt": now.isoformat(),
             "authExpiresAt": (now + timedelta(hours=24)).isoformat(),
             "lastPushAt": now.isoformat(),
@@ -973,18 +959,16 @@ def leave_agent():
 
 @app.route("/status", methods=["GET"])
 def get_status():
-    """Get current main state (backward compatibility). Optionally include officeName from IDENTITY.md."""
+    """Get current main state and the office's own display-name configuration."""
     state = event_store.main_state() or load_state()
-    office_name = get_office_name_from_identity()
-    if office_name:
-        state["officeName"] = office_name
+    state["officeName"] = get_office_name()
     return jsonify(state)
 
 
 @app.route("/agent-push", methods=["POST"])
 @serialized_visitors
 def agent_push():
-    """Remote openclaw actively pushes status to office.
+    """A remote Agent actively pushes status to the office.
 
     Required fields:
     - agentId
@@ -1046,7 +1030,7 @@ def agent_push():
             target["name"] = name
         target["updated_at"] = datetime.now().isoformat()
         target["area"] = state_to_area(state)
-        target["source"] = "remote-openclaw"
+        target["source"] = "remote-agent"
         target["lastPushAt"] = datetime.now().isoformat()
 
         event_store.record_state(state, detail, actor_id=agent_id,

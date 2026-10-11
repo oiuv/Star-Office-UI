@@ -94,6 +94,7 @@ See the [official Codex hooks documentation](https://learn.chatgpt.com/docs/hook
 - **Local default**: `codex_hook.py` writes SQLite and the state file directly. It records events even while Flask is stopped; run the backend to view them.
 - **Remote**: set `STAR_OFFICE_URL`, for example `https://your-office.example`, in the Codex process. Set the same `STAR_OFFICE_HOOK_TOKEN` on both client and backend. Without a token, only direct loopback requests are accepted; use a token behind a reverse proxy.
 - The default database is `data/office-events.sqlite3`; override it with `STAR_OFFICE_EVENTS_DB`. Use `STAR_OFFICE_STATE_FILE` to change the state-file path.
+- Set `STAR_OFFICE_NAME` to the full office display title and restart the backend. Leave it blank for the localized default, or the saved custom title in Electron. No external Agent identity file is read.
 - Prompts, command bodies, full tool outputs, transcripts, and working directories are not stored. Late asynchronous tool results remain in the log without reviving a completed turn.
 - States expire after five minutes without updates. Long tool calls may temporarily appear offline until the next hook.
 

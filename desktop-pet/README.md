@@ -8,7 +8,7 @@
 
 ```bash
 uv venv .venv
-uv pip install -r backend/requirements.txt --python .venv/bin/python
+uv sync
 ```
 
 然后从仓库根目录进入桌面端目录，启动 Tauri：
@@ -21,9 +21,10 @@ npm run dev
 
 ## 自动拉起后端逻辑
 
-- 优先使用：`../.venv/bin/python backend/app.py`
+- 优先使用：`STAR_BACKEND_PYTHON` 指定的 Python；其次使用项目 `.venv`（Windows 为 `Scripts/python.exe`，其他平台为 `bin/python`）
 - 回退到：`python3 backend/app.py`
 - 再回退到：`python backend/app.py`
+- 检查 `/health` 的服务标识后才打开窗口。Python 提前退出会尝试下一候选；所有候选失败或端口被其他服务占用时停止启动。退出时只关闭本次启动的后端。
 
 窗口默认会跳转到：
 
@@ -33,4 +34,6 @@ npm run dev
 
 - `STAR_PROJECT_ROOT`：项目根目录（默认会自动探测）
 - `STAR_BACKEND_PYTHON`：自定义 Python 可执行路径
-- `STAR_BACKEND_URL`：自定义桌面窗口打开的 URL
+- `STAR_BACKEND_PORT`：本地后端端口（默认 `19000`），主窗口、mini 资源与状态读取使用同一端口
+
+使用 `uv sync` 需要 Python 3.10+；Windows 启动脚本不依赖 POSIX 环境变量语法，直接执行 `npm run dev` 即可。

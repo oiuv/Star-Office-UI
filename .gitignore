@@ -36,6 +36,9 @@ desktop-pet/src-tauri/icons/*Logo.png
 # Electron local build artifacts
 electron-shell/node_modules/
 electron-shell/release/
+desktop-pet/node_modules/
+desktop-pet/src-tauri/target/
+desktop-pet/src-tauri/gen/schemas/windows-schema.json
 join-keys.json
 
 # Durable activity ledger

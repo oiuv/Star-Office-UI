@@ -4,7 +4,7 @@
 
 ## 已接入能力
 
-- 复用原有前端：`http://127.0.0.1:19000/?desktop=1`
+- 使用桌面前端：`http://127.0.0.1:19000/electron-standalone?desktop=1`
 - 复用 mini 页面：`desktop-pet/src/minimized.html`
 - 启动时自动拉起 Python backend（若未运行）
 - 主窗口 / mini 窗口切换
@@ -16,8 +16,9 @@
 从本机克隆的仓库根目录运行：
 
 ```bash
+uv sync
 cd electron-shell
-npm install
+npm ci
 npm run dev
 ```
 
@@ -32,3 +33,4 @@ npm run dev
 
 - 当前阶段是“可运行迁移骨架”，目的是先替换桌面容器层。
 - 现有 Tauri 目录不受影响，可随时回滚或并行对比。
+- 启动时校验 `/health` 的服务标识；Python 提前退出会尝试下一候选，无法启动或端口被其他服务占用时显示错误。退出时只关闭本次启动的后端。

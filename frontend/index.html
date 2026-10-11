@@ -1231,7 +1231,10 @@
     <script src="/static/vendor/phaser-3.80.1.min.js?v={{VERSION_TIMESTAMP}}"></script>
     <script>
         // 简易中英文切换
-        let uiLang = localStorage.getItem('uiLang') || 'en';
+        function readPreference(key) {
+            try { return localStorage.getItem(key); } catch (_) { return null; }
+        }
+        let uiLang = readPreference('uiLang') || 'en';
         const I18N = {
             zh: {
                 controlTitle: 'Star 状态',
@@ -1418,7 +1421,7 @@
         function setUILanguage(lang) {
             if (!['zh', 'en', 'ja'].includes(lang)) return;
             uiLang = lang;
-            localStorage.setItem('uiLang', uiLang);
+            try { localStorage.setItem('uiLang', uiLang); } catch (_) {}
             applyLanguage();
             updateSpeedModeUI();
 
@@ -1599,7 +1602,7 @@
         let roomLoadingEmojiIndex = 0;
 
         // 默认走更稳的模型档（quality），避免部分通道不支持 fast 模型时报错
-        let speedMode = localStorage.getItem('speedMode') || 'quality';
+        let speedMode = readPreference('speedMode') || 'quality';
         function setSpeedMode(mode) {
             speedMode = (mode === 'quality') ? 'quality' : 'fast';
             try { localStorage.setItem('speedMode', speedMode); } catch(e) {}
@@ -3694,11 +3697,13 @@ function toggleBrokerPanel() {
             } catch (e) { console.error('强制冒泡失败:', e); }
         }
 
+        let guestAgentsRequest = null;
         function fetchGuestAgents() {
+            if (guestAgentsRequest) return guestAgentsRequest;
             // demo 随机状态先更新（不依赖后端）
             maybeRandomizeDemoVisitors();
 
-            return fetch('/agents?t=' + Date.now(), { cache: 'no-store' })
+            guestAgentsRequest = fetch('/agents?t=' + Date.now(), { cache: 'no-store' })
                 .then(response => response.json())
                 .then(data => {
                     // 无论后端返回是否为数组，demo=1 都应保证本地 demo 访客可见
@@ -3755,7 +3760,8 @@ function toggleBrokerPanel() {
                         renderGuestAgentList();
                         renderGuestAgentsInScene();
                     }
-                });
+                }).finally(() => { guestAgentsRequest = null; });
+            return guestAgentsRequest;
         }
 
         // 初始化：先检测 WebP 支持，再启动游戏
@@ -4461,15 +4467,16 @@ function toggleBrokerPanel() {
             }
         }
 
+        let statusRequest = null;
         function fetchStatus() {
-            return fetch('/status', { cache: 'no-store' })
+            if (statusRequest) return statusRequest;
+            statusRequest = fetch('/status', { cache: 'no-store' })
                 .then(response => response.json())
                 .then(data => {
                     try {
-                        if (data.officeName) {
-                            window.officeNameFromServer = data.officeName;
-                            window.OfficeShell.setTitle(data.officeName);
-                        }
+                        const officeName = typeof data.officeName === 'string' ? data.officeName.trim() : '';
+                        window.officeNameFromServer = officeName;
+                        window.OfficeShell.setTitle(officeName || t('officeTitle'));
                         const nextState = normalizeState(data.state);
                         const stateInfo = STATES[nextState] || STATES.idle;
                         // If we're mid-transition, don't restart the path every poll
@@ -4504,7 +4511,8 @@ function toggleBrokerPanel() {
                     typewriterTarget = '连接失败，正在重试...';
                     typewriterText = '';
                     typewriterIndex = 0;
-                });
+                }).finally(() => { statusRequest = null; });
+            return statusRequest;
         }
 
         function moveStar(time) {

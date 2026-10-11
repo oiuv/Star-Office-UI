@@ -9,6 +9,7 @@
     "windows": [
       {
         "label": "main",
+        "create": false,
         "title": "STAR OFFICE · AI Agent 像素办公室",
         "x": 80,
         "y": 60,

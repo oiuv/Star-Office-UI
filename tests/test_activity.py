@@ -230,6 +230,14 @@ class AppTests(unittest.TestCase):
         stats=self.client.get("/api/stats").json
         self.assertTrue(stats["ok"]); self.assertEqual(stats["overview"]["events"],1)
         self.assertEqual(self.client.get("/stats").status_code,200)
+
+    def test_office_title_uses_project_configuration_and_clears(self):
+        with patch.dict(os.environ, {"STAR_OFFICE_NAME": "  风雪的办公室  "}):
+            self.assertEqual(self.client.get("/status").json["officeName"], "风雪的办公室")
+        with patch.dict(os.environ, {"STAR_OFFICE_NAME": " \t "}):
+            self.assertEqual(self.client.get("/status").json["officeName"], "")
+        with patch.dict(os.environ, clear=True):
+            self.assertEqual(self.client.get("/status").json["officeName"], "")
     def test_recent_memo_reads_configured_codex_home_and_keeps_alias(self):
         directory = Path(self.tmp.name) / "memories" / "rollout_summaries"
         directory.mkdir(parents=True)
@@ -312,6 +320,15 @@ class AppTests(unittest.TestCase):
 
     def push_visitor(self, agent_id, key="team"):
         return self.client.post("/agent-push", json={"agentId": agent_id, "joinKey": key, "state": "writing"})
+
+    def test_remote_visitor_uses_generic_source_after_join_and_push(self):
+        self.seed_visitor_keys()
+        agent_id = self.join_visitor(clientId="generic-client").json["agentId"]
+        visitor = next(a for a in self.app.load_agents_state() if a["agentId"] == agent_id)
+        self.assertEqual(visitor["source"], "remote-agent")
+        self.assertEqual(self.push_visitor(agent_id).status_code, 200)
+        visitor = next(a for a in self.app.load_agents_state() if a["agentId"] == agent_id)
+        self.assertEqual(visitor["source"], "remote-agent")
 
     def test_same_names_are_independent_and_retries_reuse_client_identity(self):
         self.seed_visitor_keys()

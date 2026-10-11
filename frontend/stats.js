@@ -963,25 +963,30 @@
     if (!response.ok || (requireSuccess && !data.ok)) throw new Error(data.msg || response.status);
     return data;
   }
-  async function refresh() {
+  async function refresh(poll = false) {
+    if (poll === true && controller) return false;
     if (controller) controller.abort();
-    controller = new AbortController();
+    const request = new AbortController();
+    controller = request;
     const params = new URLSearchParams({period,limit:'50'});
     if ($('state-filter').value) params.set('state',$('state-filter').value);
     if ($('hook-filter').value) params.set('hook',$('hook-filter').value);
     try {
       const [stats,history,office] = await Promise.all([
-        get('/api/stats?period='+period,controller.signal),
-        get('/api/events?'+params,controller.signal),
-        get('/status',controller.signal,false)
+        get('/api/stats?period='+period,request.signal),
+        get('/api/events?'+params,request.signal),
+        get('/status',request.signal,false)
       ]);
+      if (controller !== request) return false;
       lastData = [stats,history.events,office]; render(...lastData); $('error').hidden = true;
       return true;
     } catch (error) {
-      if (error.name === 'AbortError') return false;
+      if (controller !== request || error.name === 'AbortError') return false;
       $('error').textContent = t('failed'); $('error').hidden = false;
       $('connection').textContent = t('failed');
       return false;
+    } finally {
+      if (controller === request) controller = null;
     }
   }
   document.querySelectorAll('[data-lang]').forEach(button => button.addEventListener('click',() => {
@@ -1022,6 +1027,6 @@
     } catch (_) { $('error').textContent = t('failed'); $('error').hidden = false; }
   });
   translate(); renderHooks(); refresh();
-  setInterval(() => { if (!document.hidden) refresh(); },10000);
-  document.addEventListener('visibilitychange',() => { if (!document.hidden) refresh(); });
+  setInterval(() => { if (!document.hidden) refresh(true); },10000);
+  document.addEventListener('visibilitychange',() => { if (!document.hidden) refresh(true); });
 })();

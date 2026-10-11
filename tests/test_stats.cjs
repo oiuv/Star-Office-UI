@@ -10,7 +10,7 @@ function actor(actor_id, source, online, extra = {}) {
   return {actor_id,source,online,actor_name:source === 'codex' ? 'Codex session-a' : 'Star',
     state:online ? 'executing' : 'idle',updated_at:NOW-(online ? 5 : 3508),is_subagent:0,...extra};
 }
-async function fixture(actors, office, {lang='zh',statusFails=false,achievements=[],storage=new Map(),storageFails=false,gameExtra={},hookCounts={}} = {}) {
+async function fixture(actors, office, {lang='zh',statusFails=false,achievements=[],storage=new Map(),storageFails=false,gameExtra={},hookCounts={},requestHandler=null} = {}) {
   function node(tag='div') {
     return {tag,children:[],style:{},dataset:{},attributes:{},listeners:{},value:'',textContent:'',hidden:false,
       append(...items) { this.children.push(...items); },
@@ -24,6 +24,7 @@ async function fixture(actors, office, {lang='zh',statusFails=false,achievements
   const markup = fs.readFileSync('frontend/stats.html','utf8');
   const ids = new Set([...markup.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]));
   const nodes = new Map([...ids].map(id => [id,node()]));
+  nodes.get('error').hidden=true;
   nodes.get('presence-note').dataset.i18n='presenceNote';
   const history = [{occurred_at:NOW-3508,event_name:'StateUpdate',actor_name:'Star',state:'idle',
     source:'api',detail:'Manual update',applied:true,heartbeat:false}];
@@ -59,8 +60,9 @@ async function fixture(actors, office, {lang='zh',statusFails=false,achievements
     localStorage:{getItem:key=>{ if(storageFails) throw new Error('blocked'); return storage.get(key)||null; },setItem(key,value){ if(storageFails) throw new Error('blocked'); storage.set(key,value); }},
     Option:function(text,value) { this.textContent=text; this.value=value; },
     AbortController,URLSearchParams,URL,Blob,setInterval(callback){ intervals.push(callback); },setTimeout(){},
-    fetch:async url=>{
+    fetch:async (url,options)=>{
       requests.push(url);
+      if (requestHandler) return requestHandler(url,options,{stats,history,office});
       if(url==='/status') return {ok:!statusFails,status:statusFails?503:200,json:async()=>office};
       if(url.startsWith('/api/stats')) return {ok:true,json:async()=>stats};
       if(url.startsWith('/api/events')) return {ok:true,json:async()=>({ok:true,events:history})};
@@ -81,6 +83,53 @@ async function fixture(actors, office, {lang='zh',statusFails=false,achievements
     filter:value=>achievementButtons.find(b=>b.dataset.achievementFilter===value).listeners.click(),
     language:value=>languageButtons.find(b=>b.dataset.lang===value).listeners.click()};
 }
+
+function delayedRequests() {
+  const pending=[];
+  const requestHandler=(url,options,data)=>new Promise((resolve,reject)=> {
+    const payload=url==='/status'?data.office:url.startsWith('/api/stats')?data.stats:{ok:true,events:data.history};
+    const snapshot=structuredClone(payload);
+    pending.push({signal:options.signal,reject,resolve:()=>resolve({ok:true,json:async()=>snapshot})});
+  });
+  return {pending,requestHandler};
+}
+
+test('automatic polling lets slow requests finish and resumes afterwards',async()=>{
+  const delayed=delayedRequests(), f=await fixture([],{},delayed);
+  await f.poll(); await f.poll();
+  assert.equal(delayed.pending.length,3);
+  assert.ok(delayed.pending.every(request=>!request.signal.aborted));
+  delayed.pending.forEach(request=>request.resolve()); await new Promise(setImmediate);
+  assert.equal(f.nodes.get('level').textContent,'LV. 1');
+  await f.poll(); assert.equal(delayed.pending.length,6);
+  delayed.pending.slice(3).forEach(request=>request.resolve()); await new Promise(setImmediate);
+});
+
+test('manual filters supersede pending requests without stale results or errors',async()=>{
+  for (const staleFailure of [false,true]) {
+    const delayed=delayedRequests(), f=await fixture([],{},delayed);
+    f.stats.game.level=9;
+    await f.period('all');
+    assert.ok(delayed.pending.slice(0,3).every(request=>request.signal.aborted));
+    if (staleFailure) delayed.pending[0].reject(new Error('old failure'));
+    else delayed.pending.slice(0,3).forEach(request=>request.resolve());
+    await new Promise(setImmediate);
+    await f.poll(); assert.equal(delayed.pending.length,6);
+    assert.equal(f.nodes.get('error').hidden,true);
+    delayed.pending.slice(3).forEach(request=>request.resolve()); await new Promise(setImmediate);
+    assert.equal(f.nodes.get('level').textContent,'LV. 9');
+    assert.equal(f.nodes.get('error').hidden,true);
+  }
+});
+
+test('a late successful old response cannot overwrite a newer rendered selection',async()=>{
+  const delayed=delayedRequests(), f=await fixture([],{},delayed);
+  f.stats.game.level=7; await f.period('7d');
+  delayed.pending.slice(3).forEach(request=>request.resolve()); await new Promise(setImmediate);
+  assert.equal(f.nodes.get('level').textContent,'LV. 7');
+  delayed.pending.slice(0,3).forEach(request=>request.resolve()); await new Promise(setImmediate);
+  assert.equal(f.nodes.get('level').textContent,'LV. 7');
+});
 
 test('Codex and old manual updates display as one current Star character',async()=>{
   const codex=actor('codex-a','codex',true);

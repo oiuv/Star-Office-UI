@@ -10,7 +10,8 @@
     };
     const tokenFields = [['input','input_tokens'],['output','output_tokens'],['cacheRead','cache_read_input_tokens'],['cacheWrite','cache_creation_input_tokens']];
     const buttonLabels = {zh:{menu:'Claude 会话档案',desktop:'Claude 会话档案'},en:{menu:'Claude sessions',desktop:'Claude sessions'},ja:{menu:'Claude セッション履歴',desktop:'Claude セッション履歴'}};
-    let language = localStorage.getItem('uiLang') || 'zh', open = false, data = null, controller = null, generation = 0, fingerprint = '', state = 'loading';
+    let language = 'zh', open = false, data = null, controller = null, generation = 0, fingerprint = '', state = 'loading';
+    try { language = localStorage.getItem('uiLang') || 'zh'; } catch (_) {}
     const filters = {query:'', kind:'', model:'', project:'', sort:'recent', offset:0}, expanded = new Set();
     const labels = () => words[language] || words.zh;
     const locale = () => ({zh:'zh-CN',en:'en-US',ja:'ja-JP'}[language] || 'zh-CN');

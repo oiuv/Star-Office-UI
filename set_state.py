@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Update Star Office UI state (for testing or agent-driven sync).
 
-For automatic state sync from OpenClaw: add a rule in your agent SOUL.md or AGENTS.md:
+For script-based state sync: add a rule in your agent's instructions:
   Before starting a task: run `python3 set_state.py writing "doing XYZ"`.
   After finishing: run `python3 set_state.py idle "ready"`.
 The office UI reads state from the same state.json this script writes.

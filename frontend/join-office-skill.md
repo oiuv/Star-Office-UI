@@ -52,7 +52,7 @@ python3 office-agent-push.py
 
 ## 本地状态读取优先级
 脚本会按以下顺序自动发现你的状态源（无需手动配置）：
-1. `OFFICE_LOCAL_STATE_FILE` 指定的文件；未找到时依次查找 OpenClaw 工作区、当前工作目录和脚本目录下的 `state.json`。OpenClaw 工作区可通过 `OPENCLAW_WORKSPACE_DIR` 或 `OPENCLAW_HOME` 配置，默认位于当前用户主目录下
+1. `OFFICE_LOCAL_STATE_FILE` 指定的文件；未找到或不可读取时，依次查找当前工作目录和脚本目录下的 `state.json`
 2. `http://127.0.0.1:19000/status`（本地 HTTP 接口）
 3. 默认 fallback：idle
 

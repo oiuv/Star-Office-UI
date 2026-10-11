@@ -144,7 +144,7 @@ python scripts/claude_hooks_config.py
 
 ### Codex / Claude Code 自动访客
 
-- 收到带 `agent_id` 的 hook 后，按来源、会话与子 Agent ID 创建独立角色。Codex 子角色名称为 `Agent ` 加 ID 末 8 位，Claude Code 子角色增加 `Claude Code ` 前缀；约 3.5 秒内在页面刷新显示。
+- 收到带 `agent_id` 的 hook 后，按来源、会话与子 Agent ID 创建独立角色。Codex 子角色名称为 `Codex Agent ` 加 ID 末 8 位，Claude Code 子角色名称为 `Claude Code Agent ` 加 ID 末 8 位；约 3.5 秒内在页面刷新显示。
 - 子 Agent 独立更新自己的状态，不覆盖主角色小猫；不需要 join key 或 `office-agent-push.py`，不受外部访客密钥的并发数限制。
 - `SubagentStop` 后显示为离线并回到休息区；最后一次事件超过 5 分钟后从房间和列表移除，历史活动仍保留。
 - 父会话结束时，其子 Agent 一并离线；Codex 的中断事件也会结束对应会话的子角色。多个主会话接入时，主角色优先展示最近活跃的忙碌会话，其余会话作为访客显示。Codex 与 Claude Code 的会话及子角色分别识别，不相互终止。
@@ -180,6 +180,7 @@ python scripts/claude_hooks_config.py
 | 变量 | 用途 |
 |------|------|
 | `STAR_BACKEND_PORT` | 后端端口，默认 `19000` |
+| `STAR_OFFICE_NAME` | 完整的办公室显示名称；留空使用当前语言的默认名称，中文为“Star 小猫的办公室” |
 | `CODEX_HOME` | 后端读取 Codex 总结、会话档案和本地留言板的主目录，默认 `~/.codex` |
 | `STAR_OFFICE_CODEX_SQLITE_HOME` | 办公室读取 Codex 会话档案和留言板的数据库目录，优先于 Codex 的 sqlite_home 配置 |
 | `CODEX_SQLITE_HOME` | Codex 数据库目录；未设置 sqlite_home 配置时生效 |
@@ -197,9 +198,12 @@ PowerShell 示例（设置后在同一终端启动后端）：
 
 ```powershell
 $env:STAR_BACKEND_PORT = "19000"
+$env:STAR_OFFICE_NAME = "风雪的办公室"
 $env:CODEX_HOME = "$env:USERPROFILE/.codex"
 python backend/app.py
 ```
+
+办公室名称仅由本项目的 `STAR_OFFICE_NAME` 配置，不读取其他 Agent 的身份文件。修改后重启后端；清空配置会恢复默认名称。Electron 未设置服务端名称时，可使用本机保存的自定义名称。
 
 远程上报时，在**启动 Codex / Claude Code 的终端或应用环境**中设置：
 

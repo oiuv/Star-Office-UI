@@ -13,7 +13,7 @@ function sample() {
             project:'office',parent_id:'',agent:'',created_ms:1000,updated_ms:2000,branch:'main',version:'1',prompts:1,replies:2,usage_replies:2,
             models:['model-a'],usage,tokens:155,tool_calls:2}]};
 }
-function fixture(desktop=false) {
+function fixture(desktop=false,storageFails=false) {
     let context;
     class Element {
         constructor(tag='div'){this.tag=tag;this.children=[];this.listeners={};this.dataset={};this.attributes={};this.textContent='';this.value='';this.className='';this.scrollTop=0;this.open=false;}
@@ -42,7 +42,7 @@ function fixture(desktop=false) {
     const requests=[],invocations=[];
     context={window:{location:{hash:''},...(desktop?{__TAURI__:{core:{invoke:async(...args)=>invocations.push(args)}}}:{})},
         document:{activeElement:null,getElementById:id=>nodes.get(id),querySelector:()=>null,createElement:tag=>new Element(tag)},
-        localStorage:{getItem:()=>null},URLSearchParams,AbortController,
+        localStorage:{getItem:()=>{if(storageFails)throw new Error('blocked');return null;}},URLSearchParams,AbortController,
         setInterval:()=>{throw new Error('This archive must not poll');},setTimeout:()=>{throw new Error('This archive must not schedule scans');},
         fetch:async(url,options)=>{requests.push({url,options});if(deferred)return deferred;if(failed)throw new Error('offline');return {ok:true,json:async()=>structuredClone(result)};}};
     vm.runInNewContext(fs.readFileSync('frontend/claude-archive.js','utf8'),context);
@@ -52,6 +52,11 @@ function fixture(desktop=false) {
         async event(id,name='click'){const target=nodes.get('claude-archive-'+id);await target.listeners[name]({target,preventDefault(){}});await settle();},
         text:id=>text(nodes.get('claude-archive-'+id)),translate:lang=>context.window.ClaudeArchive.translate(lang)};
 }
+
+test('blocked local storage still permits opening Claude sessions',async()=>{
+    const f=fixture(false,true);await f.open();
+    assert.equal(f.requests.length,1);assert.ok(f.text('list').includes('stored text'));
+});
 
 test('no background requests; open and refresh read, close aborts pending reads',async()=>{
     const f=fixture();assert.equal(f.requests.length,0);await f.event('refresh');assert.equal(f.requests.length,0);

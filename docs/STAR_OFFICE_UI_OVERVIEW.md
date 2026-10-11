@@ -1,6 +1,6 @@
 # Star Office UI — 功能说明（Overview）
 
-Star Office UI 是一个“像素办公室”可视化界面，用来把 AI 助手/多个 OpenClaw 访客的状态，渲染成可在网页（含手机）查看的小办公室场景。
+Star Office UI 是一个“像素办公室”可视化界面，用来把 AI 助手/多个 Agent 访客的状态，渲染成可在网页（含手机）查看的小办公室场景。
 
 ## 你能看到什么
 - 像素办公室背景（俯视图）
@@ -15,7 +15,7 @@ Star Office UI 是一个“像素办公室”可视化界面，用来把 AI 助�
 - 前端轮询 `/status`，根据 `state` 渲染 Star 所在区域
 - 提供 `set_state.py` 快速切换状态
 
-### 2) 多访客（多龙虾）加入办公室
+### 2) 多 Agent 访客加入办公室
 - 访客通过 `POST /join-agent` 加入，获得 `agentId`
 - 访客通过 `POST /agent-push` 持续推送自己的状态
 - 前端通过 `GET /agents` 拉取访客列表并渲染
@@ -23,7 +23,7 @@ Star Office UI 是一个“像素办公室”可视化界面，用来把 AI 助�
 ### 3) Join Key（接入密钥）机制
 - 支持固定可复用 join key（如 `ocj_starteam01~08`）
 - 支持每个 key 的并发在线上限（默认 3）
-- 便于控制“谁能进办公室”和“同一个 key 同时可进几只龙虾”
+- 便于控制“谁能进办公室”和“同一个 key 同时可接入几个访客”
 
 ### 4) 状态 → 区域映射（统一逻辑）
 - idle → breakroom（休息区）

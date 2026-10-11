@@ -1,13 +1,12 @@
-const { app, BrowserWindow, Tray, Menu, ipcMain, shell, nativeImage } = require("electron");
-const { spawnBackend } = require("./backend-process");
+const { app, BrowserWindow, Tray, Menu, ipcMain, shell, nativeImage, dialog } = require("electron");
+const { ensureBackend } = require("./backend-process");
 const fs = require("fs");
 const path = require("path");
-const net = require("net");
 const { MAIN_WINDOW_SIZE, resizeMainWindow } = require("./window-layout");
 const APP_NAME = "STAR OFFICE · AI Agent 像素办公室";
 const BACKEND_HOST = process.env.STAR_BACKEND_HOST || "127.0.0.1";
 const rawBackendPort = Number(process.env.STAR_BACKEND_PORT || 19000);
-const BACKEND_PORT = Number.isFinite(rawBackendPort) && rawBackendPort > 0 ? rawBackendPort : 19000;
+const BACKEND_PORT = Number.isInteger(rawBackendPort) && rawBackendPort > 0 && rawBackendPort <= 65535 ? rawBackendPort : 19000;
 const BACKEND_BASE_URL = `http://${BACKEND_HOST}:${BACKEND_PORT}`;
 
 let mainWindow = null;
@@ -17,38 +16,6 @@ let tray = null;
 let backendChild = null;
 let isQuitting = false;
 let currentUiLang = "en";
-
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function tcpReachable(host, port, timeoutMs = 500) {
-  return new Promise((resolve) => {
-    const socket = new net.Socket();
-    let settled = false;
-    const done = (ok) => {
-      if (settled) return;
-      settled = true;
-      socket.destroy();
-      resolve(ok);
-    };
-    socket.setTimeout(timeoutMs);
-    socket.once("connect", () => done(true));
-    socket.once("timeout", () => done(false));
-    socket.once("error", () => done(false));
-    socket.connect(port, host);
-  });
-}
-
-async function waitBackendReady(timeoutMs = 20000) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    if (await tcpReachable(BACKEND_HOST, BACKEND_PORT, 400)) return true;
-    await sleep(200);
-  }
-  return false;
-}
-
 
 function findProjectRoot() {
   if (process.env.STAR_PROJECT_ROOT) {
@@ -482,13 +449,10 @@ async function bootstrap() {
   const iconPath = applyAppIcon(projectRoot);
   if (iconPath) console.log(`app icon: ${iconPath}`);
 
-  if (!(await tcpReachable(BACKEND_HOST, BACKEND_PORT, 400))) {
-    backendChild = await spawnBackend(projectRoot);
-    const ready = await waitBackendReady(20000);
-    if (!ready) console.warn("backend not ready within 20s");
-  } else {
-    console.log(`backend already running on ${BACKEND_HOST}:${BACKEND_PORT}`);
-  }
+  backendChild = await ensureBackend(projectRoot, {
+    baseUrl: BACKEND_BASE_URL,
+    env: { ...process.env, STAR_BACKEND_PORT: String(BACKEND_PORT) },
+  });
 
   registerIpc(projectRoot);
   createWindows(projectRoot);
@@ -511,4 +475,8 @@ app.on("before-quit", () => {
 
 // Keep the existing Electron profile name so saved preferences remain available.
 if (app.setName) app.setName("Star Office UI");
-app.whenReady().then(bootstrap);
+app.whenReady().then(bootstrap).catch(error => {
+  console.error(error);
+  dialog.showErrorBox(APP_NAME, error.message);
+  app.quit();
+});

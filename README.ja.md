@@ -94,6 +94,7 @@ AI アシスタントに、このリポジトリの [SKILL.md](./SKILL.md) に�
 - **既定のローカル方式**：`codex_hook.py` が SQLite と状態ファイルに直接書き込みます。Flask が停止中でも記録でき、起動後に閲覧できます。
 - **リモート方式**：Codex の環境に `STAR_OFFICE_URL`（例：`https://your-office.example`）を設定し、クライアントとバックエンドに同じ `STAR_OFFICE_HOOK_TOKEN` を設定します。トークンなしでは直接の loopback 接続のみ許可されます。リバースプロキシ環境ではトークンを使用してください。
 - データベースは `data/office-events.sqlite3`。`STAR_OFFICE_EVENTS_DB` で変更できます。状態ファイルは `STAR_OFFICE_STATE_FILE` で指定できます。
+- `STAR_OFFICE_NAME` にオフィス名全体を設定し、バックエンドを再起動してください。空欄なら現在の言語の既定名、Electron では保存済みのカスタム名を使います。他の Agent の識別ファイルは読みません。
 - Prompt、コマンド本文、完全なツール出力、transcript、作業ディレクトリは保存しません。遅れて届いた非同期結果はログに残りますが、終了済みターンを再開しません。
 - 5 分間更新がないと待機に戻ります。長いツール処理では次の hook まで一時的にオフライン扱いになる場合があります。
 

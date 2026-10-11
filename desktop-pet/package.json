@@ -3,8 +3,8 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "dev": "STAR_PROJECT_ROOT=.. tauri dev",
-    "build": "STAR_PROJECT_ROOT=.. tauri build",
+    "dev": "tauri dev",
+    "build": "tauri build",
     "tauri": "tauri"
   },
   "devDependencies": {

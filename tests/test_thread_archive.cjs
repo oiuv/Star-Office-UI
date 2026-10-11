@@ -14,7 +14,7 @@ function sample() {
             agent_path:'/root/a',parent_id:'parent',child_count:2}]
     };
 }
-function fixture({desktop=false}={}) {
+function fixture({desktop=false,storageFails=false}={}) {
     let context;
     class Element {
         constructor(tag='div') { this.tag=tag; this.children=[]; this.listeners={}; this.dataset={}; this.attributes={}; this.textContent=''; this.value=''; this.className=''; this.scrollTop=0; this.open=false; this.hidden=false; }
@@ -54,7 +54,7 @@ function fixture({desktop=false}={}) {
         document:{hidden:false,activeElement:null,getElementById:id=>nodes.get(id)||[...nodes.values()].flatMap(walk).find(node=>node.id===id),
             createElement:tag=>new Element(tag),createTextNode:text=>{const node=new Element();node.textContent=text;return node;},
             querySelector:()=>null,addEventListener(){}},
-        localStorage:{getItem:()=>null},AbortController,URLSearchParams,URL,
+        localStorage:{getItem:()=>{if(storageFails)throw new Error('blocked');return null;}},AbortController,URLSearchParams,URL,
         setInterval:callback=>{timers.push(callback);return timers.length;},
         fetch:async(url,options)=>{
             requests.push({url,options});
@@ -75,6 +75,11 @@ function fixture({desktop=false}={}) {
         translate:lang=>context.window.ThreadArchive.translate(lang),
         text:id=>text(nodes.get(id)),walk,settle};
 }
+
+test('blocked local storage still permits opening Codex sessions',async()=>{
+    const f=fixture({storageFails:true});await f.open();
+    assert.equal(f.requests.length,1);assert.ok(f.text('archive-list').includes('alert(1)'));
+});
 
 test('archive only reads when open and visible, aborting closed requests',async()=>{
     const f=fixture(); await f.poll(); assert.equal(f.requests.length,0);

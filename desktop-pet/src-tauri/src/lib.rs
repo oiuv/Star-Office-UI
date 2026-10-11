@@ -3,12 +3,11 @@ use base64::Engine;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
-use std::io::{Read, Write};
 use std::path::PathBuf;
-use std::process::{Child, Command, Stdio};
+use std::process::{Child, Command};
 use std::sync::Mutex;
-use std::time::{Duration, Instant};
 use tauri::{Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
+mod backend;
 
 // ── state.json ──
 
@@ -169,6 +168,7 @@ struct PoiOut {
 
 struct AppPaths {
     state_path: PathBuf,
+    backend_port: u16,
     layers_dir: PathBuf,
 }
 
@@ -209,35 +209,12 @@ fn read_state_file(state_path: &PathBuf) -> Result<PetState, String> {
     serde_json::from_str(&raw).map_err(|e| format!("parse: {e}"))
 }
 
-fn read_state_via_backend() -> Result<PetState, String> {
-    let mut stream = std::net::TcpStream::connect("127.0.0.1:19000")
-        .map_err(|e| format!("backend connect: {e}"))?;
-    let _ = stream.set_read_timeout(Some(Duration::from_millis(1200)));
-    let _ = stream.set_write_timeout(Some(Duration::from_millis(1200)));
-
-    let request = b"GET /status HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n";
-    stream
-        .write_all(request)
-        .map_err(|e| format!("backend write: {e}"))?;
-
-    let mut raw = String::new();
-    stream
-        .read_to_string(&mut raw)
-        .map_err(|e| format!("backend read: {e}"))?;
-
-    let body = raw
-        .split_once("\r\n\r\n")
-        .map(|(_, b)| b)
-        .ok_or_else(|| "backend response parse failed".to_string())?;
-    serde_json::from_str(body).map_err(|e| format!("backend json parse: {e}"))
-}
-
-fn read_state_with_fallback(state_path: &PathBuf) -> Result<PetState, String> {
+fn read_state_with_fallback(state_path: &PathBuf, port: u16) -> Result<PetState, String> {
     match read_state_file(state_path) {
         Ok(state) => Ok(state),
         Err(file_err) => {
             eprintln!("⚠️ read state file failed, fallback to backend: {file_err}");
-            read_state_via_backend()
+            serde_json::from_value(backend::read_json(port, "/status")?).map_err(|e| e.to_string())
         }
     }
 }
@@ -245,7 +222,7 @@ fn read_state_with_fallback(state_path: &PathBuf) -> Result<PetState, String> {
 #[tauri::command]
 fn read_state(paths: tauri::State<'_, Mutex<AppPaths>>) -> Result<PetState, String> {
     let p = paths.lock().map_err(|e| e.to_string())?;
-    read_state_with_fallback(&p.state_path)
+    read_state_with_fallback(&p.state_path, p.backend_port)
 }
 
 #[tauri::command]
@@ -440,75 +417,6 @@ fn find_project_root() -> PathBuf {
     std::env::current_dir().unwrap_or_default()
 }
 
-fn spawn_backend(root: &PathBuf) -> Option<Child> {
-    if std::net::TcpStream::connect("127.0.0.1:19000").is_ok() {
-        eprintln!("ℹ️ backend already running on 127.0.0.1:19000");
-        return None;
-    }
-
-    let script = root.join("backend").join("app.py");
-    if !script.exists() {
-        eprintln!("⚠️ backend/app.py not found: {}", script.display());
-        return None;
-    }
-
-    let mut candidates: Vec<(PathBuf, Vec<String>)> = vec![
-        (
-            root.join(".venv").join("bin").join("python"),
-            vec![script.to_string_lossy().to_string()],
-        ),
-        (
-            PathBuf::from("python3"),
-            vec![script.to_string_lossy().to_string()],
-        ),
-        (
-            PathBuf::from("python"),
-            vec![script.to_string_lossy().to_string()],
-        ),
-    ];
-
-    if let Ok(custom_python) = std::env::var("STAR_BACKEND_PYTHON") {
-        candidates.insert(
-            0,
-            (
-                PathBuf::from(custom_python),
-                vec![script.to_string_lossy().to_string()],
-            ),
-        );
-    }
-
-    for (bin, args) in candidates {
-        let mut cmd = Command::new(&bin);
-        cmd.current_dir(root)
-            .args(&args)
-            .stdout(Stdio::inherit())
-            .stderr(Stdio::inherit());
-
-        match cmd.spawn() {
-            Ok(child) => {
-                eprintln!("🚀 backend started with {}", bin.display());
-                return Some(child);
-            }
-            Err(err) => {
-                eprintln!("⚠️ failed to spawn {}: {}", bin.display(), err);
-            }
-        }
-    }
-
-    None
-}
-
-fn wait_backend_ready() -> bool {
-    let deadline = Instant::now() + Duration::from_secs(20);
-    while Instant::now() < deadline {
-        if std::net::TcpStream::connect("127.0.0.1:19000").is_ok() {
-            return true;
-        }
-        std::thread::sleep(Duration::from_millis(200));
-    }
-    false
-}
-
 #[tauri::command]
 fn enter_minimize_mode(
     app: tauri::AppHandle,
@@ -521,11 +429,11 @@ fn enter_minimize_mode(
         .get_webview_window("mini")
         .ok_or_else(|| "mini window not found".to_string())?;
 
-    let state_path = {
+    let (state_path, backend_port) = {
         let p = paths.lock().map_err(|e| e.to_string())?;
-        p.state_path.clone()
+        (p.state_path.clone(), p.backend_port)
     };
-    if let Ok(snapshot) = read_state_with_fallback(&state_path) {
+    if let Ok(snapshot) = read_state_with_fallback(&state_path, backend_port) {
         // Sync mini immediately before showing it, avoiding stale one-shot transition.
         let _ = mini.emit("mini-sync-state", snapshot);
     }
@@ -594,24 +502,37 @@ pub fn run() {
     let root = find_project_root();
     eprintln!("📦 State : {}", root.join("state.json").display());
     eprintln!("🎨 Layers: {}", root.join("layers").display());
-    let backend_child = spawn_backend(&root);
-    let backend_ready = wait_backend_ready();
-    if !backend_ready {
-        eprintln!("⚠️ backend not ready within 10s");
-    }
-
+    let port = match backend::port(std::env::var("STAR_BACKEND_PORT").ok().as_deref()) {
+        Ok(port) => port,
+        Err(error) => {
+            eprintln!("{error}");
+            return;
+        }
+    };
+    let backend_child = match backend::start(&root, port) {
+        Ok(child) => child,
+        Err(error) => {
+            eprintln!("{error}");
+            return;
+        }
+    };
+    let backend_url = format!("http://127.0.0.1:{port}");
     tauri::Builder::default()
         .manage(Mutex::new(BackendProcess { child: backend_child }))
         .manage(Mutex::new(AppPaths {
             state_path: root.join("state.json"),
+            backend_port: port,
             layers_dir: root.join("layers"),
         }))
-        .setup(|app| {
+        .setup(move |app| {
+            let mut main_config = app.config().app.windows[0].clone();
+            main_config.url = WebviewUrl::External(format!("{backend_url}/?desktop=1").parse()?);
+            WebviewWindowBuilder::from_config(app, &main_config)?.build()?;
             // Hidden mini window: transparent square with only avatar + status.
             let mini = WebviewWindowBuilder::new(
                 app,
                 "mini",
-                WebviewUrl::App("minimized.html".into()),
+                WebviewUrl::App(format!("minimized.html?backendUrl={backend_url}").into()),
             )
             .title("STAR OFFICE · Mini")
             .inner_size(220.0, 240.0)

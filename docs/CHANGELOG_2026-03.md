@@ -2,7 +2,7 @@
 
 ## 2026-03-06
 
-- 默认端口从 `18791` 调整为 `19000`，避开 OpenClaw Browser Control 端口冲突
+- 默认端口从 `18791` 调整为 `19000`，减少与其他本地服务的端口冲突
 - 同步更新 `office-agent-push.py`、`healthcheck.sh`、`scripts/smoke_test.py` 的默认地址
 - 同步更新 Tauri / Electron 桌面壳默认连接地址
 - 同步更新 README / SKILL / join-office 文档中的本地访问与 tunnel 示例
