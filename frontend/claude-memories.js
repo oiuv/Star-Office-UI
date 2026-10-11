@@ -2,7 +2,7 @@
 (() => {
     'use strict';
     const words = {
-        zh: { source: 'Claude Code · 全部项目记忆 · 按更新时间排序', empty: '暂无 Claude 记忆', loading: '正在读取记忆…', error: '记忆加载失败，请稍后重新打开', project: '未标注项目', updated: '记忆更新', count: '共 {count} 条记忆' },
+        zh: { source: 'Claude Code · 全部项目记忆 · 按更新时间排序', empty: '暂无 Claude 项目记忆', loading: '正在读取记忆…', error: '记忆加载失败，请稍后重新打开', project: '未标注项目', updated: '记忆更新', count: '共 {count} 条记忆' },
         en: { source: 'Claude Code · All project memories · Latest updates first', empty: 'No Claude memories yet', loading: 'Loading recent memories…', error: 'Could not load memories. Reopen to retry.', project: 'Unspecified project', updated: 'Memory updated', count: '{count} memories' },
         ja: { source: 'Claude Code · 全プロジェクトのメモリ · 更新順', empty: 'Claude のメモリはまだありません', loading: '最近のメモリを読み込み中…', error: '読み込めませんでした。開き直して再試行してください。', project: 'プロジェクト未指定', updated: 'メモリ更新', count: '{count} 件のメモリ' }
     };

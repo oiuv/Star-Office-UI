@@ -416,7 +416,7 @@ class AppTests(unittest.TestCase):
         self.client.post("/hooks/codex", json=hook("SubagentStart", agent_id="child-12345678"))
         guest = next(a for a in self.client.get("/agents").json if a.get("source") == "codex")
         self.assertEqual((guest["name"], guest["state"], guest["area"], guest["authStatus"]),
-                         ("Agent 12345678", "executing", "writing", "approved"))
+                         ("Codex Agent 12345678", "executing", "writing", "approved"))
         self.client.post("/hooks/codex", json=hook("PostToolUse", agent_id="child-12345678",
                                                   tool_name="Bash", tool_response={"exit_code": 1}))
         guest = next(a for a in self.client.get("/agents").json if a.get("source") == "codex")

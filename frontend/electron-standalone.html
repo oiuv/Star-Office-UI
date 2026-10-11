@@ -1649,6 +1649,7 @@
     <link rel="stylesheet" href="/static/claude-memories.css?v={{VERSION_TIMESTAMP}}&amp;full=1">
     <link rel="stylesheet" href="/static/agent-board.css?v={{VERSION_TIMESTAMP}}&amp;board=7">
     <link rel="stylesheet" href="/static/thread-archive.css?v={{VERSION_TIMESTAMP}}&amp;archive=1">
+    <link rel="stylesheet" href="/static/claude-archive.css?v={{VERSION_TIMESTAMP}}">
     <link rel="stylesheet" href="/static/reading-panels.css?v={{VERSION_TIMESTAMP}}&amp;width=1">
 </head>
 <body>
@@ -1680,7 +1681,7 @@
     <div id="bottom-panels">
         <!-- Memo 面板 -->
         <div id="memo-panel">
-            <div id="memo-title">Codex 会话小记</div>
+            <div id="memo-title">Codex 会话总结</div>
             <div id="memo-date"></div>
             <div class="memo-decoration">─ ─ ─ ─ ─</div>
             <div id="memo-content" tabindex="0" role="region" aria-labelledby="memo-title">
@@ -1689,9 +1690,9 @@
             <div class="memo-decoration">─ ─ ─ ─ ─</div>
         </div>
 
-        <!-- Claude 记忆面板 -->
+        <!-- Claude 项目记忆面板 -->
         <div id="claude-memories-panel">
-            <div id="claude-memories-title">Claude 记忆</div>
+            <div id="claude-memories-title">Claude 项目记忆</div>
             <div id="claude-memories-date"></div>
             <div class="memo-decoration">─ ─ ─ ─ ─</div>
             <div id="claude-memories-content" tabindex="0" role="region" aria-labelledby="claude-memories-title">
@@ -1841,6 +1842,35 @@
         <button id="lang-btn-cn" onclick="setUILanguage('zh')" style="cursor:pointer;">CN</button>
     </div>
 
+    <section id="claude-archive-panel" class="office-panel" popover="auto" role="dialog" aria-labelledby="claude-archive-title">
+        <div class="archive-heading">
+            <h2 id="claude-archive-title" data-claude-archive-text="title">Claude Code 会话档案</h2>
+            <button id="claude-archive-close" type="button" popovertarget="claude-archive-panel" popovertargetaction="hide" class="office-panel-close" aria-label="关闭" autofocus>×</button>
+        </div>
+        <p class="archive-note" data-claude-archive-text="note"></p>
+        <div id="claude-archive-overview" hidden>
+            <div id="claude-archive-summary"></div>
+            <div id="claude-archive-usage"></div>
+            <p id="claude-archive-coverage" class="archive-note"></p>
+            <details><summary data-claude-archive-text="ranks">模型与工具排行</summary><div id="claude-archive-rank-list"></div></details>
+        </div>
+        <form id="claude-archive-search" role="search">
+            <label><span data-claude-archive-text="kind">会话类型</span><select id="claude-archive-kind"></select></label>
+            <label><span data-claude-archive-text="model">会话模型</span><select id="claude-archive-model"></select></label>
+            <label><span data-claude-archive-text="project">项目</span><select id="claude-archive-project"></select></label>
+            <label><span data-claude-archive-text="sort">排序</span><select id="claude-archive-sort"><option value="recent" data-claude-archive-text="recent">最近活动</option><option value="created" data-claude-archive-text="created">创建时间</option><option value="tokens" data-claude-archive-text="tokenSort">Token 用量</option><option value="tools" data-claude-archive-text="toolSort">工具调用</option></select></label>
+            <div class="archive-search-row"><input id="claude-archive-query" type="search" maxlength="200" autocomplete="off"><button type="submit" data-claude-archive-text="search">搜索</button><button id="claude-archive-refresh" type="button" data-claude-archive-text="refresh">刷新</button></div>
+        </form>
+        <p class="archive-note" data-claude-archive-text="scope"></p>
+        <p id="claude-archive-status" role="status" aria-live="polite"></p>
+        <div id="claude-archive-list" tabindex="0" role="region" aria-labelledby="claude-archive-title"></div>
+        <nav id="claude-archive-pager" aria-label="Pagination">
+            <button id="claude-archive-previous" type="button" data-claude-archive-text="previous">上一页</button>
+            <span id="claude-archive-page"></span>
+            <button id="claude-archive-next" type="button" data-claude-archive-text="next">下一页</button>
+        </nav>
+    </section>
+
     <section id="thread-archive-panel" class="office-panel" popover="auto" role="dialog" aria-labelledby="archive-title">
         <div class="archive-heading">
             <h2 id="archive-title" data-archive-text="title">Codex 会话档案</h2>
@@ -1871,9 +1901,9 @@
             <h2 id="agent-board-title" data-board-text="title">Agent 留言板</h2>
             <button id="board-close" type="button" popovertarget="agent-board-panel" popovertargetaction="hide" class="office-panel-close" aria-label="关闭" autofocus>×</button>
         </div>
-        <p class="board-note" data-board-text="source">Codex · 只读协作讨论</p>
+        <p class="board-note" data-board-text="source">Codex · Agent 协作讨论</p>
         <div id="board-summary"></div>
-        <p class="board-note" data-board-text="scope">当前会话 · 全部历史</p>
+        <p id="board-scope" class="board-note" data-board-text="scope">全部会话 · 全部历史</p>
         <form id="board-search" role="search">
             <label><span data-board-text="session">会话</span><select id="board-session"></select></label>
             <label><span data-board-text="channel">频道</span><select id="board-channel"></select></label>
@@ -1910,6 +1940,7 @@
     </section>
 
     <button id="office-archive-button" class="desktop-archive-button" type="button" popovertarget="thread-archive-panel" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v4H4zM5 8v12h14V8M9 12h6M9 16h4"/></svg><span>Codex 会话档案</span></button>
+    <button id="office-claude-archive-button" class="desktop-archive-button desktop-claude-archive-button" type="button" popovertarget="claude-archive-panel" aria-expanded="false"><span>Claude 会话档案</span></button>
     <button id="office-board-button" class="desktop-board-button" type="button" popovertarget="agent-board-panel" aria-expanded="false"><span>Agent 留言板</span></button>
     <a id="office-stats-link" href="/stats" target="_blank" rel="noopener noreferrer" style="position:fixed;right:12px;top:calc(env(safe-area-inset-top, 0px) + 52px);z-index:1000002;padding:8px 10px;background:#283b35;color:#c3efcd;border:2px solid #446d54;border-radius:5px;text-decoration:none;font:13px monospace;">📊 活动档案</a>
     <script src="/static/vendor/marked-18.1.0.umd.js"></script>
@@ -1917,6 +1948,7 @@
     <script src="/static/recent-memo.js?v={{VERSION_TIMESTAMP}}&amp;full=1"></script>
     <script src="/static/claude-memories.js?v={{VERSION_TIMESTAMP}}&amp;full=1"></script>
     <script src="/static/thread-archive.js?v={{VERSION_TIMESTAMP}}&amp;archive=1"></script>
+    <script src="/static/claude-archive.js?v={{VERSION_TIMESTAMP}}"></script>
     <script src="/static/agent-board.js?v={{VERSION_TIMESTAMP}}&amp;board=6"></script>
     <script src="/static/guest-feedback.js?v={{VERSION_TIMESTAMP}}"></script>
     <script src="/static/image-settings.js?v={{VERSION_TIMESTAMP}}"></script>
@@ -1953,7 +1985,7 @@
                 assetHintNotInScene: '当前场景未检测到此对象，仍可替换文件（刷新后生效）',
                 assetHintDefault: '通用素材：建议保持原图尺寸、透明通道与视觉重心一致，避免错位或失真',
                 showCoords: '显示坐标', hideCoords: '隐藏坐标', moveView: '移动视野', lockView: '锁定视野',
-                memoTitle: 'Codex 会话小记', claudeMemoriesTitle: 'Claude 记忆', guestTitle: '访 客 列 表', officeTitle: 'Star 小猫的办公室', pageTitle: 'STAR OFFICE · AI Agent 像素办公室',
+                memoTitle: 'Codex 会话总结', claudeMemoriesTitle: 'Claude 项目记忆', guestTitle: '访 客 列 表', officeTitle: 'Star 小猫的办公室', pageTitle: 'STAR OFFICE · AI Agent 像素办公室',
                 loadingOffice: '正在加载 STAR OFFICE...',
                 panelExpand: '展开', panelCollapse: '收起',
                 hiddenTag: '已隐藏', assetListLoaded: '已加载资产', sceneCaptured: '场景抓取', assetListLoadFailed: '资产加载失败，请点“刷新”重试',
@@ -1987,7 +2019,7 @@
                 assetHintNotInScene: 'This object is not detected in current scene; you can still replace file (effective after refresh)',
                 assetHintDefault: 'Generic asset: keep source size, alpha channel, and visual anchor to avoid drift/distortion',
                 showCoords: 'Show Coords', hideCoords: 'Hide Coords', moveView: 'Pan View', lockView: 'Lock View',
-                memoTitle: 'CODEX SESSION NOTES', claudeMemoriesTitle: 'CLAUDE MEMORIES', guestTitle: 'VISITOR LIST', officeTitle: 'Star Cat Office', pageTitle: 'STAR OFFICE · AI Agent Pixel Office',
+                memoTitle: 'CODEX SESSION SUMMARIES', claudeMemoriesTitle: 'CLAUDE MEMORIES', guestTitle: 'VISITOR LIST', officeTitle: 'Star Cat Office', pageTitle: 'STAR OFFICE · AI Agent Pixel Office',
                 loadingOffice: 'Loading STAR OFFICE...',
                 panelExpand: 'Expand', panelCollapse: 'Collapse',
                 hiddenTag: 'Hidden', assetListLoaded: 'Assets loaded', sceneCaptured: 'Scene captured', assetListLoadFailed: 'Failed to load assets. Click Refresh and retry',
@@ -2021,7 +2053,7 @@
                 assetHintNotInScene: '現在のシーンでこのオブジェクトは未検出です。ファイル差し替えは可能（更新後に反映）',
                 assetHintDefault: '汎用素材：元サイズ・透過・視覚アンカーを維持し、ズレや崩れを防いでください',
                 showCoords: '座標表示', hideCoords: '座標非表示', moveView: '視点移動', lockView: '視点固定',
-                memoTitle: 'Codex セッションメモ', claudeMemoriesTitle: 'Claude メモリ', guestTitle: '訪問者リスト', officeTitle: 'Star 猫のオフィス', pageTitle: 'STAR OFFICE · AI Agent ピクセルオフィス',
+                memoTitle: 'Codex セッション要約', claudeMemoriesTitle: 'Claude メモリ', guestTitle: '訪問者リスト', officeTitle: 'Star 猫のオフィス', pageTitle: 'STAR OFFICE · AI Agent ピクセルオフィス',
                 loadingOffice: 'STAR OFFICE を読み込み中...',
                 panelExpand: '展開', panelCollapse: '折りたたむ',
                 hiddenTag: '非表示', assetListLoaded: 'アセット読み込み', sceneCaptured: 'シーン取得', assetListLoadFailed: 'アセット読み込み失敗。更新して再試行してください',
@@ -2202,6 +2234,7 @@
             window.ClaudeMemories.translate(uiLang);
             window.AgentBoard.translate(uiLang);
             window.ThreadArchive.translate(uiLang);
+            window.ClaudeArchive.translate(uiLang);
             const claudeMemoriesTitle = document.getElementById('claude-memories-title');
             if (claudeMemoriesTitle) {
                 claudeMemoriesTitle.textContent = t('claudeMemoriesTitle');
@@ -2781,7 +2814,7 @@
                     'plants-spritesheet': '随机绿植',
                     'flowers-bloom-v2': '随机花朵',
                     'office_bg_small': '办公室背景',
-                    'memo-bg': 'Codex 会话小记底图',
+                    'memo-bg': 'Codex 会话总结底图',
                     'desk-v3': '办公桌',
                     'desk': '办公桌（旧）',
                     'guest_anim_1': '访客动画 1',
@@ -2857,7 +2890,7 @@
                 'desk': '旧版办公桌素材（兼容用）。建议与 desk-v3 保持相近体积与锚点，避免遮挡异常。',
                 'sofa-idle-v3': '沙发静态素材。建议保持 256×256 与透明背景，避免替换后位置漂移。',
                 'sofa-shadow-v1': '沙发阴影层。建议与沙发主体同坐标叠放，增强贴地感。',
-                'memo-bg': '小记面板底图。建议留出文字阅读区域，降低高频纹理，避免信息难读。',
+                'memo-bg': '总结面板底图。建议留出文字阅读区域，降低高频纹理，避免信息难读。',
                 'plants-spritesheet': '绿植随机素材。保持 160×160 分帧，可一次替换多个绿植位的观感。',
                 'posters-spritesheet': '海报随机素材。保持 160×160 分帧，建议统一风格避免墙面杂乱。',
                 'cats-spritesheet': '猫咪随机素材。保持 160×160 分帧，建议轮廓清晰、识别度高。',

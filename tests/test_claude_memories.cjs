@@ -56,7 +56,7 @@ test('Refreshing empty results clears old entries', async () => {
     const f = fixture(); f.set([entry]); await f.memo.load('zh');
     f.set([]);
     await f.memo.load();
-    assert.match(f.text(), /暂无 Claude 记忆/);
+    assert.match(f.text(), /暂无 Claude 项目记忆/);
     assert.doesNotMatch(f.text(), /提交规范/);
 });
 

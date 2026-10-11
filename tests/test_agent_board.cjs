@@ -11,7 +11,7 @@ function sample() {
         boards:[{id:'session-a',title:'留言板实现',project:'office'},{id:'session-b',title:'其他任务',project:'other'}],
         channels:[{name:'planning',description:'共享设计',message_count:2}],
         authors:['/root','/root/review'], board_id:'session-a',channel_name:'planning',thread_id:'topic-a',
-        threads:[{id:'topic-a',author:'/root',preview:'讨论方案',reply_count:1,last_seq:2}],
+        threads:[{id:'topic-a',author:'/root',channel_name:'planning',preview:'讨论方案',reply_count:1,last_seq:2}],
         posts:[{id:'topic-a',thread_id:'topic-a',author:'/root',seq:1,created_at:'2026-10-10T08:00:00Z',text:'讨论方案'},
                {id:'reply-a',thread_id:'topic-a',author:'/root/review',seq:2,created_at:'2026-10-10T08:01:00Z',text:'已验证'}],
         pagination:{...page},reply_pagination:{...page}};
@@ -88,6 +88,60 @@ test('The board only fetches while open and pauses polling when closed or hidden
     f.context.document.hidden=true;await f.poll();assert.equal(f.requests.length,2);
     await f.close(); f.context.document.hidden=false;await f.poll();assert.equal(f.requests.length,2);
     assert.equal(f.requests[0].options.cache,'no-store');
+});
+
+test('Polling skips pending manual reads and resumes after they finish',async()=>{
+    const f=fixture();await f.open();let resolve;
+    f.defer(new Promise(done=>{resolve=done;}));
+    const refresh=f.event('board-refresh');await f.settle();
+    const pending=f.requests.at(-1), before=f.requests.length;
+    await f.poll();
+    assert.equal(f.requests.length,before);assert.equal(pending.options.signal.aborted,false);
+    f.defer(null);resolve({ok:true,status:200,json:async()=>sample()});await refresh;
+    await f.poll();assert.equal(f.requests.length,before+1);
+});
+
+test('A new manual read still cancels an older read and stale completion does not block polling',async()=>{
+    const f=fixture();await f.open();let resolve;
+    f.defer(new Promise(done=>{resolve=done;}));
+    const first=f.event('board-refresh');await f.settle();
+    const pending=f.requests.at(-1);
+    f.defer(null);await f.event('board-refresh');
+    assert.equal(pending.options.signal.aborted,true);
+    const stale=sample();stale.posts[0].text='STALE';
+    resolve({ok:true,status:200,json:async()=>stale});await first;
+    assert.ok(!f.text('board-posts').includes('STALE'));
+    const before=f.requests.length;await f.poll();assert.equal(f.requests.length,before+1);
+});
+
+test('All-session results stay unfiltered during polling and show each topic channel',async()=>{
+    const f=fixture(),data=sample();
+    data.board_id=''; data.channel_name=''; data.board_summary=data.summary;
+    data.threads.push({id:'topic-b',author:'/root/review',channel_name:'review',preview:'另一会话',reply_count:0,last_seq:1});
+    f.set(data);await f.open();
+    assert.equal(f.nodes.get('board-session').children[0].textContent,'全部会话');
+    assert.equal(f.nodes.get('board-session').value,'');
+    assert.equal(f.nodes.get('board-channel').children[0].textContent,'全部频道');
+    assert.match(f.text('board-topics'),/主 Agent · planning/);
+    assert.match(f.text('board-topics'),/review · review/);
+    await f.poll();
+    const params=new URLSearchParams(f.requests.at(-1).url.split('?')[1]);
+    assert.equal(params.has('board'),false);assert.equal(params.has('channel'),false);
+    const topic=f.walk(f.nodes.get('board-topics')).find(node=>node.id==='board-topic-topic-b');
+    await topic.listeners.click();
+    const selected=new URLSearchParams(f.requests.at(-1).url.split('?')[1]);
+    assert.equal(selected.get('thread'),'topic-b');assert.equal(selected.has('board'),false);
+    f.translate('en');assert.equal(f.nodes.get('board-session').children[0].textContent,'All sessions');
+    f.translate('ja');assert.equal(f.nodes.get('board-session').children[0].textContent,'全セッション');
+});
+
+test('Switching back to all sessions clears channel, author and pagination filters',async()=>{
+    const f=fixture();await f.open();
+    f.nodes.get('board-session').value='';
+    await f.event('board-session','change');
+    const params=new URLSearchParams(f.requests.at(-1).url.split('?')[1]);
+    for(const key of ['board','channel','author','thread']) assert.equal(params.has(key),false);
+    assert.equal(params.get('offset'),'0');assert.equal(params.get('reply_offset'),'0');
 });
 
 test('Raw HTML stays literal while Markdown code blocks can be copied',async()=>{

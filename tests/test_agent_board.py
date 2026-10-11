@@ -85,6 +85,38 @@ class AgentBoardTests(unittest.TestCase):
         self.assertNotIn("Another project", str(data["posts"]))
         self.assertEqual(self.path.read_bytes(), before)
 
+    def test_default_lists_all_sessions_and_channels_and_replies_keep_their_session(self):
+        with self.database() as writer:
+            self.post(writer, "topic-a", "First session")
+            self.post(writer, "reply-a", "First reply", root="topic-a", author="/root/one")
+            self.post(writer, "topic-b", "Second session", board="session-b", channel="review")
+            self.post(writer, "reply-b", "Second reply", root="topic-b", author="/root/two", board="session-b", channel="review")
+        before = self.path.read_bytes()
+        data = self.client.get("/api/agent-board").json
+        self.assertEqual((data["board_id"], data["channel_name"]), ("", ""))
+        self.assertEqual(data["board_summary"]["messages"], 4)
+        self.assertEqual([(t["id"], t["channel_name"]) for t in data["threads"]],
+                         [("topic-b", "review"), ("topic-a", "planning")])
+        self.assertEqual([p["id"] for p in data["posts"]], ["topic-b", "reply-b"])
+        self.assertEqual([p["id"] for p in read_board(thread="topic-a")["posts"]], ["topic-a", "reply-a"])
+        self.assertEqual([t["id"] for t in read_board(channel="planning")["threads"]], ["topic-a"])
+        self.assertEqual([t["id"] for t in read_board(query="Second reply", author="/root/two")["threads"]], ["topic-b"])
+        self.assertEqual(self.path.read_bytes(), before)
+
+    def test_shared_channel_names_are_merged_and_default_pagination_spans_sessions(self):
+        with self.database() as writer:
+            writer.execute("INSERT INTO channels(board,name,author) VALUES('session-b','planning','/root')")
+            writer.commit()
+            for i in range(22):
+                self.post(writer, f"topic-{i}", f"Topic {i}", board="session-a" if i % 2 == 0 else "session-b")
+        data = read_board()
+        planning = next(c for c in data["channels"] if c["name"] == "planning")
+        self.assertEqual((planning["message_count"], planning["thread_count"]), (22, 22))
+        self.assertEqual(data["pagination"]["total"], 22)
+        self.assertTrue(data["pagination"]["has_more"])
+        self.assertEqual([t["id"] for t in read_board(offset=20)["threads"]], ["topic-1", "topic-0"])
+        self.assertEqual(read_board(board="session-a")["pagination"]["total"], 11)
+
     def test_reply_search_and_author_filters_open_the_complete_discussion(self):
         with self.database() as writer:
             self.post(writer, "topic", "讨论设计")

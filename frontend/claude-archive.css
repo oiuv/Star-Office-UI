@@ -1,0 +1,46 @@
+/* Reuse the existing archive rows and paper palette; no additional chart library. */
+#claude-archive-panel {
+    position: fixed; inset: 50% auto auto 50%; transform: translate(-50%, -50%);
+    height: min(820px, calc(100dvh - 56px)); margin: 0; padding: 20px;
+    border: 2px solid #766042; border-radius: 4px; background: #eddec0; color: #463820;
+    box-shadow: 0 8px 30px #0008; font: 14px/1.6 system-ui, sans-serif; overflow: auto;
+    overscroll-behavior: contain; -webkit-app-region: no-drag;
+}
+#claude-archive-panel:not(:popover-open) { display: none !important; }
+#claude-archive-panel:popover-open { display: flex; flex-direction: column; gap: 12px; }
+#claude-archive-panel::backdrop { background: #17151155; }
+#claude-archive-panel * { box-sizing: border-box; min-width: 0; -webkit-app-region: no-drag; }
+#claude-archive-panel [hidden] { display: none !important; }
+#claude-archive-panel h2 { margin: 0; font: 600 17px/1.5 ArkPixel, monospace; }
+#claude-archive-panel button, #claude-archive-panel input, #claude-archive-panel select {
+    font: inherit; color: inherit; border: 1px solid #b9a47d; border-radius: 3px;
+    background: #f7edd9; padding: 7px 10px; min-height: 36px;
+}
+#claude-archive-panel button { cursor: pointer; }
+#claude-archive-panel button:disabled { opacity: .5; cursor: default; }
+#claude-archive-panel :focus-visible, #office-claude-archive-button:focus-visible { outline: 2px solid #796649; outline-offset: 2px; }
+#claude-archive-close { flex: 0 0 36px; padding: 0 !important; font-size: 20px !important; }
+#claude-archive-overview { flex-shrink: 0; }
+#claude-archive-summary, #claude-archive-usage { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; }
+#claude-archive-usage { margin-top: 12px; }
+#claude-archive-usage strong { font-size: 15px; }
+#claude-archive-overview > details { font-size: 12px; margin-top: 8px; }
+#claude-archive-overview > details > summary { cursor: pointer; }
+#claude-archive-rank-list p { overflow-wrap: anywhere; }
+#claude-archive-search { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 8px; }
+#claude-archive-search label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; }
+#claude-archive-search select { width: 100%; }
+#claude-archive-query { flex: 1; width: 0; }
+#claude-archive-list { flex: 1; min-height: 120px; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #b9a47d transparent; padding: 2px; }
+#claude-archive-status { text-align: center; padding: 40px 10px; margin: 0; color: #796649; }
+#claude-archive-pager { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-shrink: 0; font-size: 12px; }
+.desktop-claude-archive-button { top: calc(env(safe-area-inset-top, 0px) + 178px); }
+body.asset-window-mode #office-claude-archive-button, body.asset-window-mode #claude-archive-panel { display: none !important; }
+@media(max-width:760px) {
+    #claude-archive-panel { height: calc(100dvh - 24px); padding: 14px; }
+    #claude-archive-summary, #claude-archive-usage { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+    #claude-archive-search { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:560px) {
+    #claude-archive-list { flex: none; overflow: visible; }
+}

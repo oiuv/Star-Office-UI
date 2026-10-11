@@ -92,7 +92,7 @@ python scripts/codex_hooks_config.py
 - **远程模式**：Codex 进程环境设置 `STAR_OFFICE_URL`，例如 `https://your-office.example`；客户端与后端设置相同 `STAR_OFFICE_HOOK_TOKEN`。未设置 Token 时仅接受直接来自 loopback 的 hook 请求，反向代理部署应始终设置 Token。
 - 默认数据库是 `data/office-events.sqlite3`，支持 `STAR_OFFICE_EVENTS_DB` 指定位置，数据库及 WAL/SHM 文件不会提交到 Git。备份时使用 SQLite 备份机制或停止写入后备份。
 - `STAR_OFFICE_STATE_FILE` 可指定兼容状态文件位置。`STAR_OFFICE_HOOK_DEBUG=1` 仅将失败类别写到 stderr。
-- **hook 活动记录**不保存 prompt、命令正文、完整工具输出、transcript 或 cwd；仅读取工具结果中的失败标记，保留事件名、工具名、会话/回合/子 Agent 标识及少量运行元数据。「Codex 会话小记」另行只读 Codex 总结文件。
+- **hook 活动记录**不保存 prompt、命令正文、完整工具输出、transcript 或 cwd；仅读取工具结果中的失败标记，保留事件名、工具名、会话/回合/子 Agent 标识及少量运行元数据。「Codex 会话总结」另行只读 Codex 总结文件。
 - 远程上报超时或失败时跳过该次记录，不重试，也不回退到本地数据库；远程后端需保持在线。
 - 迟到的工具结果仍留日志，但不会复活已结束回合；多会话、子 Agent 分别记录。
 - 五分钟未更新的状态回到待命。长工具调用可能暂时视为离线，直到下一次 hook；时长是保守观测值。
@@ -120,7 +120,7 @@ python scripts/claude_hooks_config.py
 - Claude Code 不注册 Codex 的 `Interrupt`。工具失败、会话退出不冒充用户中断；中断只计入统计与日志，不作为成就数据源。仅启用客户端实际支持的事件；旧版本缺少 `PostCompact` 或 `StopFailure` 时应升级或移除对应配置。
 - 采用混合执行：13 类关键事件同步（会话、提示词、工具前后/失败、权限等待、压缩、子 Agent、回复结束/失败），超时 3 秒；19 类日志观察事件异步，不阻塞 Agent。Claude 不对 `async: true` 强制执行 hook 的 `timeout`，`claude -p` 退出时会取消未完成的异步 hooks，因此日志观察事件尽力记录，不能承诺零漏记；关键事件保留同步以确保活动统计与离线投影可靠。
 - 观察器遇错仍输出 `{}` 并返回 0，不批准权限、不要求继续任务。敏感输入裁剪规则与 Codex 相同。
-- 活动档案默认合并两个来源，日志及角色名区分来源；本阶段尚未提供按 provider 筛选。Codex 会话小记读取的是 Codex 会话总结，Claude 侧暂无会话总结接入；「Claude 记忆」面板另行只读各项目 auto-memory 文件，展示前同样脱敏。
+- 活动档案默认合并两个来源，日志及角色名区分来源；本阶段尚未提供按 provider 筛选。Codex 会话总结读取的是 Codex 会话总结，Claude 侧暂无会话总结接入；「Claude 项目记忆」面板另行只读各项目 auto-memory 文件，展示前同样脱敏。
 
 ---
 
@@ -130,10 +130,11 @@ python scripts/claude_hooks_config.py
 
 | 入口 | 功能 |
 |------|------|
-| Codex → Codex 会话小记 | 读取本机 Codex 全部可读取的会话总结，完整 Markdown 正文，每次打开刷新 |
+| Codex → Codex 会话总结 | 读取本机 Codex 全部可读取的会话总结，完整 Markdown 正文，每次打开刷新 |
 | Codex → Codex 会话档案 | 分页查询会话元数据，按来源、模型、项目、归档状态筛选，查看父子会话关系 |
+| Claude Code → Claude 会话档案 | 汇总全局目录的主会话、子 Agent、Token 用量、模型与工具统计，打开或手动刷新时读取 |
 | Codex → Agent 留言板 | 浏览主题与回复、筛选作者和搜索正文，复制代码或主题全文 |
-| Claude Code → Claude 记忆 | 完整展示各项目 auto-memory 记忆，按更新时间排序，每次打开刷新 |
+| Claude Code → Claude 项目记忆 | 完整展示各项目 auto-memory 记忆，按更新时间排序，每次打开刷新 |
 | 访客列表 | 查看 hooks 自动加入的会话、子 Agent 和通过密钥接入的外部访客 |
 | 装修房间 | 更换背景、管理素材与图片 API 配置 |
 | 活动档案 | 打开 `/stats`，查看统计、日志、经验与成就 |
@@ -155,8 +156,8 @@ python scripts/claude_hooks_config.py
 1. **Codex / Claude Code hooks 自动接入** —— 支持 Codex 12 类、Claude Code 33 类事件，驱动六种动画状态并记录活动；两种来源的会话与子 Agent 分别识别
 2. **活动档案与成长** —— 状态次数、观测时长、事件趋势、工具统计、筛选日志、JSON 导出，以及经验等级、24 枚常规成就、隐藏探索、全成就收藏与月度徽章
 3. **状态可视化** —— 6 种状态（`idle` / `writing` / `researching` / `executing` / `syncing` / `error`）自动映射到办公室不同区域，动画 + 气泡实时展示
-4. **Codex 会话小记** —— 读取 Codex 的全部可读取会话总结，以 Markdown 展示完整正文，保留更新日期、项目、标题和任务结果统计
-5. **Claude 记忆** —— 汇总各项目 auto-memory 目录的全部记忆文件，按更新时间排序展示项目、描述与完整 Markdown 正文
+4. **Codex 会话总结** —— 读取 Codex 的全部可读取会话总结，以 Markdown 展示完整正文，保留更新日期、项目、标题和任务结果统计
+5. **Claude 项目记忆** —— 汇总各项目 auto-memory 目录的全部记忆文件，按更新时间排序展示项目、描述与完整 Markdown 正文
 6. **多 Agent 协作** —— Codex / Claude Code 会话与子 Agent 自动加入；外部 Agent 通过 join key 接入
 7. **中英日三语** —— CN / EN / JP 一键切换，主要界面、气泡和加载提示联动；活动记录保留原始文案
 8. **美术资产自定义** —— 侧边栏管理角色 / 场景 / 装饰素材，支持动画素材与帧规格管理
@@ -182,7 +183,7 @@ python scripts/claude_hooks_config.py
 | `CODEX_HOME` | 后端读取 Codex 总结、会话档案和本地留言板的主目录，默认 `~/.codex` |
 | `STAR_OFFICE_CODEX_SQLITE_HOME` | 办公室读取 Codex 会话档案和留言板的数据库目录，优先于 Codex 的 sqlite_home 配置 |
 | `CODEX_SQLITE_HOME` | Codex 数据库目录；未设置 sqlite_home 配置时生效 |
-| `CLAUDE_CONFIG_DIR` | 后端读取 Claude 记忆的配置主目录，默认 `~/.claude` |
+| `CLAUDE_CONFIG_DIR` | 后端只读 Claude 项目记忆及会话档案的全局主目录，默认 `~/.claude` |
 | `STAR_OFFICE_EVENTS_DB` | 活动数据库；本地 hooks 和后端需指向同一文件 |
 | `STAR_OFFICE_STATE_FILE` | 兼容状态文件；本地 hooks 和后端需使用相同配置 |
 | `STAR_OFFICE_URL` | 在 Codex / Claude Code 客户端设置；留空为本地记录，填写 URL 为远程上报 |
@@ -216,14 +217,14 @@ macOS / Linux 使用 `export NAME=value`。修改环境后重启相关进程；�
 ```bash
 python scripts/smoke_test.py --base-url http://127.0.0.1:19000
 python -B -m unittest discover -s tests -v
-node --test tests/test_stats.cjs tests/test_image_settings.cjs tests/test_speech_bubbles.cjs tests/test_recent_memo.cjs tests/test_claude_memories.cjs tests/test_thread_archive.cjs tests/test_agent_board.cjs tests/test_desktop_window.cjs tests/test_desktop_backend.cjs tests/test_guest_positions.cjs
+node --test tests/test_stats.cjs tests/test_image_settings.cjs tests/test_speech_bubbles.cjs tests/test_recent_memo.cjs tests/test_claude_memories.cjs tests/test_thread_archive.cjs tests/test_claude_archive.cjs tests/test_agent_board.cjs tests/test_desktop_window.cjs tests/test_desktop_backend.cjs tests/test_guest_positions.cjs
 ```
 
 smoke 检查页面与读取接口，不推送测试状态或增加活动记录。自动化测试使用临时数据库和模拟图片接口，不消耗 API 额度；Node.js 仅用于前端测试或桌面壳开发。hooks 是否真正接入，仍需分别在已配置的 Codex / Claude Code 中提交一次任务，并确认 `/stats` 出现对应来源的事件。
 
 ### 公网访问（可选）
 
-生产环境设置 `STAR_OFFICE_ENV=production`、强随机 `FLASK_SECRET_KEY`（至少 24 字符）与 `ASSET_DRAWER_PASS`（至少 8 字符）。装修验证码和 hook Token 只保护各自接口，**不是整个网站的访问密码**；活动档案、会话小记、Claude 记忆、会话档案和留言板也会展示给能访问看板的人，公开部署请在网关设置访问控制。
+生产环境设置 `STAR_OFFICE_ENV=production`、强随机 `FLASK_SECRET_KEY`（至少 24 字符）与 `ASSET_DRAWER_PASS`（至少 8 字符）。装修验证码和 hook Token 只保护各自接口，**不是整个网站的访问密码**；活动档案、会话总结、Claude 项目记忆、会话档案和留言板也会展示给能访问看板的人，公开部署请在网关设置访问控制。
 
 已安装 Cloudflare Tunnel 时可使用：
 
@@ -300,10 +301,10 @@ python office-agent-push.py
 
 ---
 
-## Codex 会话小记
+## Codex 会话总结
 
-点击办公室名称 →「Codex」→「Codex 会话小记」，查看当前后端账户的全部可读取 Codex 会话总结。
-标题、任务和正文完整显示，使用与 Agent 留言板、Claude 记忆相同的 Markdown 排版，支持标题、列表、引用、表格和代码块；代码可复制。卡片顶部汇总任务结果，面板顶部显示总条数，正文区域支持键盘滚动。展示前继续按现有规则脱敏。
+点击办公室名称 →「Codex」→「Codex 会话总结」，查看当前后端账户的全部可读取 Codex 会话总结。
+标题、任务和正文完整显示，使用与 Agent 留言板、Claude 项目记忆相同的 Markdown 排版，支持标题、列表、引用、表格和代码块；代码可复制。卡片顶部汇总任务结果，面板顶部显示总条数，正文区域支持键盘滚动。展示前继续按现有规则脱敏。
 默认读取 `~/.codex/memories/rollout_summaries/*.md`；设置 `CODEX_HOME` 时读取该目录下的 `memories/rollout_summaries/`，路径支持 `~`。
 按总结内的 `updated_at` 排序，显示后端本地日期；这表示总结更新时间，不代表所有任务都在当天完成。每次打开面板会重新读取。
 
@@ -313,13 +314,21 @@ python office-agent-push.py
 远程部署时读取的是服务器上的文件，需要将目标 Codex 目录挂载到后端并设置 `CODEX_HOME`。
 直接运行 `python backend/app.py` 时请在进程环境中设置变量，程序不会自动加载 `.env`。
 
-## Claude 记忆
+## Claude 项目记忆
 
-点击办公室名称 →「Claude Code」→「Claude 记忆」，查看各项目 auto-memory 的完整记忆列表。
+点击办公室名称 →「Claude Code」→「Claude 项目记忆」，查看各项目 auto-memory 的完整记忆列表。
 默认扫描 `~/.claude/projects/*/memory/*.md`（`CLAUDE_CONFIG_DIR` 同样适用），跳过索引 `MEMORY.md`。
 展示所属项目目录名、更新日期、frontmatter 里的 `description` 和完整正文，保留 Markdown 标题、列表、引用、表格及代码块；代码块支持复制。正文与描述不再截断，继续套用相同脱敏规则；缺少 frontmatter 时以文件名代替描述。
 按文件修改时间倒序展示全部可读取记忆，顶部显示总条数。项目目录名（如 `C--AI-Star-Office-UI`）是 Claude Code 对工作目录的规范化命名。长内容、代码和表格可滚动，正文区域支持键盘滚动。
 记忆由各会话在工作中自动沉淀；本面板同样只读，删除或修改请在对应项目会话中进行。
+
+## Claude Code 会话档案
+
+点击办公室名称 →「Claude Code」→「Claude 会话档案」；桌面端点击同名按钮。只读全局 `~/.claude/projects/`（或 `CLAUDE_CONFIG_DIR/projects/`）中各项目的原生会话 JSONL 和子 Agent 记录，不读取项目里的 `.claude/` 配置。
+
+显示主会话/子 Agent 数量、输入/输出/缓存读取/缓存写入 Token、模型用量及常用工具，支持类型、模型、项目筛选和分页搜索。用量与工具调用按 ID 去重；单条会话可能包含派生会话继承的记录，其用量不能逐行相加。模型筛选匹配包含该模型的会话，统计包含这些会话的全部模型。仅覆盖本地保留的记录，未记录用量显示为「未记录」，不是完整账单或全历史统计。
+
+仅打开面板、筛选或手动刷新时读取；文件解析结果按修改时间和大小缓存在进程内存中，无后台轮询，不写源目录、配置或数据库。不会使用可能过期的 `stats-cache.json`，不读取 `file-history/`；不提取或展示工具输入/结果、思考内容。收起时展示简短标题，展开后完整展示首条用户消息，并保留脱敏处理。
 
 ## Codex 会话档案
 
@@ -331,17 +340,17 @@ python office-agent-push.py
 
 ## Agent 留言板
 
-点击办公室名称 →「Codex」→「Agent 留言板」；桌面端使用同名按钮。按 Codex 会话和频道浏览主题、展开完整回复，支持作者筛选、正文搜索及主题/回复分页。主题帖与回复使用独立卡片，回复按楼层编号，并可从主题顶部跳转到回复区。搜索会匹配回复，再展示所属主题的完整讨论。
+点击办公室名称 →「Codex」→「Agent 留言板」；桌面端使用同名按钮。默认显示全部会话、全部频道的讨论主题，也可按会话、频道和作者筛选、搜索正文及对主题/回复分页。主题列表显示作者与频道；主题帖与回复使用独立卡片，回复按楼层编号，并可从主题顶部跳转到回复区。搜索会匹配回复，再展示所属主题的完整讨论。
 
 默认只读 `~/.codex/agent_message_board_1.sqlite`，并可从同目录的 `state_5.sqlite` 补充会话标题和项目名称。路径优先级为：`STAR_OFFICE_CODEX_SQLITE_HOME` → Codex `config.toml` 的 `sqlite_home` → `CODEX_SQLITE_HOME` → `CODEX_HOME`（默认 `~/.codex`）。指定的值都是数据库所在**目录**，不是数据库文件名。
 
-面板显示最近 100 个有频道或留言的会话，主题和回复各按 20 条分页。正文按 Markdown 排版，支持标题、列表、表格、引用、强调和代码块，可复制代码；主题帖顶部另有「复制全文」，保留脱敏后正文的 Markdown、代码围栏与换行，不包含回复及作者、时间等界面信息。正文超出显示上限时，按钮改为「复制已显示正文」。主题标签、作者和时间同排，窄屏自动换行。
+会话筛选列表提供最近 100 个有频道或留言的会话；默认主题列表覆盖全部会话，主题和回复各按 20 条分页。正文按 Markdown 排版，支持标题、列表、表格、引用、强调和代码块，可复制代码；主题帖顶部另有「复制全文」，保留脱敏后正文的 Markdown、代码围栏与换行，不包含回复及作者、时间等界面信息。正文超出显示上限时，按钮改为「复制已显示正文」。主题标签、作者和时间同排，窄屏自动换行。
 
-原始 HTML 按文字显示，图片以链接展示。沿用会话小记的常见敏感信息脱敏规则。打开时读取，打开期间每 5 秒刷新；关闭或页面隐藏时停止轮询。刷新保留阅读位置，并提示当前会话的新留言。
+原始 HTML 按文字显示，图片以链接展示。沿用会话总结的常见敏感信息脱敏规则。打开时读取，打开期间每 5 秒刷新；请求尚未结束时跳过轮询，关闭或页面隐藏时停止轮询。刷新保留阅读位置，并提示当前会话筛选范围内的新留言。
 
 活动档案另行显示本地留言板的留言、主题、参与 Agent 和频道数量，按全部历史统计，不随活动日期筛选，也不额外产生 XP。主题 ID 与 Codex 会话 ID 是不同的概念。
 
-需使用支持留言板的 Codex 版本，并启用 `multi_agent_v2` 与 `agent_message_board`。首次尚无数据时会显示提示；数据库不可用不会影响办公室动画和 hooks。办公室不改写 Codex 数据库，不发送留言、不修改订阅，也不调用 AI API。
+需使用支持留言板的 Codex 版本，并启用 `multi_agent_v2` 与 `agent_message_board`。首次尚无数据时会显示提示；数据库不可用不会影响办公室动画和 hooks。办公室留言板仅提供只读展示，不写入源数据库、不发送留言、不修改订阅，也不调用 AI API。
 
 此版读取后端所在机器的本地持久化留言板；远程部署需让后端能够读取目标数据库目录（含活动中的 WAL 文件）。仅上报生命周期 hooks 不会同步留言正文。Codex 远程服务或纯内存留言板尚未接入。
 
@@ -499,6 +508,7 @@ python office-agent-push.py
 | `POST /hooks/claude_code` | 接收 Claude Code hook 事件；同样的认证与输入大小限制 |
 | `GET /api/stats?period=today` | 活动统计；支持 `today` / `7d` / `30d` / `all` |
 | `GET /api/codex-threads` | 只读 Codex 会话档案；支持 query、source（thread_source）、model、project、archived（0/1）、sort（recent/created/tokens）与 offset |
+| `GET /api/claude-sessions` | 只读 Claude 全局会话统计；支持 query、kind（main/subagent）、model、project、sort（recent/created/tokens/tools）与 offset |
 | `GET /api/agent-board` | 只读 Codex 留言板；支持会话、频道、作者、query 搜索、offset 与 reply_offset 分页 |
 | `GET /api/events?period=7d&limit=50` | 活动日志；`limit` 为 1–200，可加 `state` / `hook` 筛选 |
 | `GET /health` | 健康检查 |
@@ -560,8 +570,9 @@ Star-Office-UI/
 │   ├── hook_events.py     # Codex / Claude Code hooks 归一、状态映射与观察事件
 │   ├── event_store.py     # 活动记录与统计
 │   ├── achievements.py    # 成就里程碑、翻倍进阶、月度徽章与隐藏探索
-│   ├── memo_utils.py      # 只读 Codex 总结、Claude 记忆与内容脱敏
+│   ├── memo_utils.py      # 只读 Codex 总结、Claude 项目记忆与内容脱敏
 │   ├── thread_archive.py  # Codex 会话元数据查询
+│   ├── claude_archive.py  # Claude 全局会话与子 Agent 记录统计
 │   ├── agent_board.py     # Codex 本地留言板只读查询与汇总
 │   ├── image_client.py    # OpenAI 图片接口
 │   ├── requirements.txt
@@ -571,9 +582,10 @@ Star-Office-UI/
 │   ├── index.html         # 浏览器全屏办公室
 │   ├── electron-standalone.html # 桌面布局
 │   ├── office-shell.js    # 门牌菜单与弹窗
-│   ├── recent-memo.js     # Codex 会话小记
-│   ├── claude-memories.js # Claude 记忆
+│   ├── recent-memo.js     # Codex 会话总结
+│   ├── claude-memories.js # Claude 项目记忆
 │   ├── thread-archive.js  # Codex 会话档案
+│   ├── claude-archive.js  # Claude 会话档案与用量统计
 │   ├── agent-board.js     # Agent 留言板、回复与全文复制
 │   ├── office-markdown.js # 阅读面板共用的 Markdown 渲染与代码复制
 │   ├── office-agent-push.py # 分发给访客的稳定身份脚本

@@ -176,28 +176,32 @@ def read_board(board="", channel="", thread="", author="", query="", offset=0, r
                 ).fetchone()
                 if not exists:
                     raise BoardNotFound("board")
-            elif boards:
-                board = boards[0]["id"]
-            if not board:
+            if not board and not boards:
                 return {**empty, "available": True, "status": "empty", "summary": summary}
-            description = "c.description" if "description" in channel_columns else "NULL"
+            description = "c.description" if board and "description" in channel_columns else "NULL"
+            board_where, board_params = ("WHERE c.board=?", [board]) if board else ("", [])
             channels = [dict(row) for row in connection.execute(
                 "SELECT c.name," + description + " AS description,count(p.seq) AS message_count,"
                 "coalesce(sum(p.id=p.root),0) AS thread_count,coalesce(max(p.seq),0) AS last_seq "
                 "FROM channels c LEFT JOIN posts p ON p.board=c.board AND p.channel=c.name "
-                "WHERE c.board=? GROUP BY c.name ORDER BY last_seq DESC,c.name", (board,)
+                + board_where + " GROUP BY c.name ORDER BY last_seq DESC,c.name", board_params
             )]
             for item in channels:
                 item["description"] = sanitize_content(item["description"] or "")[:512]
             if channel and channel not in {item["name"] for item in channels}:
                 raise BoardNotFound("channel")
-            if not channel and channels:
-                channel = channels[0]["name"]
+            match, params = [], []
+            if board:
+                match.append("r.board=?")
+                params.append(board)
+            if channel:
+                match.append("r.channel=?")
+                params.append(channel)
             authors = [row[0] for row in connection.execute(
-                "SELECT DISTINCT author FROM posts WHERE board=? AND channel=? ORDER BY author", (board, channel)
+                "SELECT DISTINCT r.author FROM posts r WHERE " + (" AND ".join(match) or "1") + " ORDER BY r.author", params
             )]
             # EXISTS includes reply matches, returning the complete discussion for context.
-            match, params = ["r.board=?", "r.channel=?", "r.id=r.root"], [board, channel]
+            match.append("r.id=r.root")
             predicates, search_params = [], []
             if author:
                 predicates.append("m.author=?")
@@ -222,11 +226,11 @@ def read_board(board="", channel="", thread="", author="", query="", offset=0, r
             for row in rows:
                 post = _post(row)
                 threads.append({k: post[k] for k in ("id", "author", "created_at", "unreadable") if k in post}
-                               | {"preview": _preview(post["text"]), "reply_count": row["reply_count"],
+                               | {"preview": _preview(post["text"]), "channel_name": row["channel"], "reply_count": row["reply_count"],
                                   "last_seq": row["last_seq"]})
             root = None
             if thread:
-                root = connection.execute("SELECT r.* FROM posts r WHERE " + where + " AND r.id=?", [*params, thread]).fetchone()
+                root = connection.execute("SELECT r.* FROM posts r WHERE " + where + " AND r.id=? ORDER BY r.seq DESC LIMIT 1", [*params, thread]).fetchone()
             if root is None and rows:
                 root = rows[0]
             posts, reply_total, selected = [], 0, ""
@@ -234,11 +238,11 @@ def read_board(board="", channel="", thread="", author="", query="", offset=0, r
                 selected = root["id"]
                 posts.append(_post(root))
                 reply_total = connection.execute(
-                    "SELECT count(*) FROM posts WHERE board=? AND root=? AND id<>root", (board, selected)
+                    "SELECT count(*) FROM posts WHERE board=? AND root=? AND id<>root", (root["board"], selected)
                 ).fetchone()[0]
                 replies = connection.execute(
                     "SELECT * FROM posts WHERE board=? AND root=? AND id<>root "
-                    "ORDER BY timestamp,seq LIMIT ? OFFSET ?", (board, selected, PAGE_SIZE, reply_offset)
+                    "ORDER BY timestamp,seq LIMIT ? OFFSET ?", (root["board"], selected, PAGE_SIZE, reply_offset)
                 ).fetchall()
                 posts.extend(_post(row) for row in replies)
             return {

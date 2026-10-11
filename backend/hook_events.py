@@ -162,7 +162,7 @@ def normalize_hook(payload, provider="codex"):
         raise ValueError("occurred_at is outside the accepted range")
     return {
         "event_id": event_id, "source": provider, "event_name": name,
-        "actor_id": actor, "actor_name": (("Agent " if agent else "Codex ") if provider == "codex" else "Claude Code " + ("Agent " if agent else "")) + (agent or session)[-8:],
+        "actor_id": actor, "actor_name": (("Codex Agent " if agent else "Codex ") if provider == "codex" else "Claude Code " + ("Agent " if agent else "")) + (agent or session)[-8:],
         "session_id": session, "turn_id": turn, "tool_id": tool_id,
         "tool_name": tool, "state": state, "detail": detail,
         "occurred_at": float(timestamp), "outcome": "error" if failed else "ok",

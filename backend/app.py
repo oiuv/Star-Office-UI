@@ -28,6 +28,7 @@ from security_utils import is_production_mode, is_strong_secret, is_strong_drawe
 from memo_utils import load_claude_memories, load_recent_memos
 from agent_board import board_summary, register_board_routes
 from thread_archive import register_thread_routes
+from claude_archive import register_claude_archive_routes
 from store_utils import (
     load_agents_state as _store_load_agents_state,
     save_agents_state as _store_save_agents_state,
@@ -1068,6 +1069,7 @@ def health():
 
 register_board_routes(app)
 register_thread_routes(app)
+register_claude_archive_routes(app)
 
 
 @app.route("/recent-memo", methods=["GET"])

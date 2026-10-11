@@ -80,7 +80,7 @@ test('all returned summaries and their total count are shown',async()=>{
     const f=fixture();f.set(Array.from({length:7},(_,i)=>({...entry,title:'小记 '+i})));
     await f.memo.load('zh');assert.equal(f.nodes.get('memo-content').children.length,7);
     assert.ok(f.text().includes('小记 6'));
-    assert.ok(f.nodes.get('memo-date').textContent.includes('共 7 份小记'));
+    assert.ok(f.nodes.get('memo-date').textContent.includes('共 7 份总结'));
 });
 test('task outcomes are counted across every task and translate without losing the full body',async()=>{
     const f=fixture();f.set([{...entry,tasks:['success','success','partial','failed','unknown'].map((outcome,i)=>({title:'任务 '+i,outcome}))}]);

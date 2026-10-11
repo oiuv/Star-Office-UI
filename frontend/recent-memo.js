@@ -2,9 +2,9 @@
 (() => {
     'use strict';
     const words = {
-        zh: { source: 'Codex · 全部会话总结 · 按更新时间排序', empty: '暂无 Codex 会话总结', loading: '正在读取会话总结…', error: '会话总结加载失败，请稍后重新打开', project: '未标注项目', updated: '总结更新', success: '已完成', partial: '部分完成', failed: '未完成', unknown: '待确认', count: '共 {count} 份小记', results: '任务结果' },
-        en: { source: 'Codex · All session summaries · Latest updates first', empty: 'No Codex session summaries yet', loading: 'Loading session summaries…', error: 'Could not load summaries. Reopen to retry.', project: 'Unspecified project', updated: 'Summary updated', success: 'Completed', partial: 'Partial', failed: 'Failed', unknown: 'Unconfirmed', count: '{count} notes', results: 'Task outcomes' },
-        ja: { source: 'Codex · 全セッション要約 · 更新順', empty: 'Codex の会話要約はまだありません', loading: '会話要約を読み込み中…', error: '読み込めませんでした。開き直して再試行してください。', project: 'プロジェクト未指定', updated: '要約更新', success: '完了', partial: '一部完了', failed: '未完了', unknown: '未確認', count: '{count} 件のメモ', results: 'タスク結果' }
+        zh: { source: 'Codex · 全部会话总结 · 按更新时间排序', empty: '暂无 Codex 会话总结', loading: '正在读取会话总结…', error: '会话总结加载失败，请稍后重新打开', project: '未标注项目', updated: '总结更新', success: '已完成', partial: '部分完成', failed: '未完成', unknown: '待确认', count: '共 {count} 份总结', results: '任务结果' },
+        en: { source: 'Codex · All session summaries · Latest updates first', empty: 'No Codex session summaries yet', loading: 'Loading session summaries…', error: 'Could not load summaries. Reopen to retry.', project: 'Unspecified project', updated: 'Summary updated', success: 'Completed', partial: 'Partial', failed: 'Failed', unknown: 'Unconfirmed', count: '{count} summaries', results: 'Task outcomes' },
+        ja: { source: 'Codex · 全セッション要約 · 更新順', empty: 'Codex の会話要約はまだありません', loading: '会話要約を読み込み中…', error: '読み込めませんでした。開き直して再試行してください。', project: 'プロジェクト未指定', updated: '要約更新', success: '完了', partial: '一部完了', failed: '未完了', unknown: '未確認', count: '{count} 件の要約', results: 'タスク結果' }
     };
     const panel = document.getElementById('memo-panel');
     const content = document.getElementById('memo-content');
