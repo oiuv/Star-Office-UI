@@ -193,7 +193,7 @@ cloudflared tunnel --url http://127.0.0.1:19000
 
 如果用户想查看 Codex 会话总结：
 - 后端读取 `~/.codex/memories/rollout_summaries/*.md`；设置 `CODEX_HOME` 可指定 Codex 目录
-- 按总结中的更新时间排列，支持翻页和展开完整正文，不修改 Codex 记忆
+- 按总结中的更新时间倒序展示全部可读取总结，完整正文直接按 Markdown 排版，可滚动阅读及复制代码，不修改 Codex 记忆
 - 没有记录时显示空状态；远程后端需要能访问对应文件，打开面板会刷新内容
 
 ---
