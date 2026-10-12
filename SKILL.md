@@ -1,303 +1,176 @@
 ---
 name: star-office-ui
-description: Star Office UI 一键化 Skill：部署像素办公室看板并优先配置 Codex hooks，支持其他 Agent 脚本/API 接入、活动记录与公网访问。
+description: 安装、配置接入或升级 Star Office UI 像素办公室。为用户启动看板，配置 Codex 或 Claude Code hooks，并按需设置其他 Agent 接入、图片 API 与远程访问。
 ---
 
-# Star Office UI Skill
+# Star Office UI 安装与接入
 
-当前开发与部署仓库为 [oiuv/Star-Office-UI](https://github.com/oiuv/Star-Office-UI)，本项目基于 [ringhyacinth/Star-Office-UI](https://github.com/ringhyacinth/Star-Office-UI) 修改。部署时克隆当前仓库。
+面向帮助用户部署办公室的 AI Agent。目标是启动可访问的看板、接入用户实际使用的 Agent，并验证活动记录。
 
-本 Skill 面向帮助用户部署像素办公室的 AI Agent，推荐优先配置 Codex hooks：
-- 目标：用户只需"看到效果"，尽量少问问题
-- 你可以按下面的步骤，一步一步帮用户跑起来并对外访问
+部署仓库为 [oiuv/Star-Office-UI](https://github.com/oiuv/Star-Office-UI)，基于 [ringhyacinth/Star-Office-UI](https://github.com/ringhyacinth/Star-Office-UI) 修改。下文命令都在部署仓库根目录执行；安装了本 Skill 后，仍需获取项目代码。
 
-使用当前环境中的 Python 3.10+。以下示例使用 `python3`，Windows 可替换为 `python`；按操作系统使用对应的环境变量设置方式。
+## 1. 确定环境与安装位置
 
----
+- 使用 Python 3.10+。网页无需构建；Node.js 仅在使用 Electron 客户端或开发测试时需要。
+- 优先沿用用户指定的目录、Python 环境和 Agent。接入方式未指定且上下文无法判断时，以 Codex hooks 为默认。
+- 已有项目先检查 Git 状态与运行配置，按第 6 节升级；首次安装再克隆。
+- 默认访问地址为 `http://127.0.0.1:19000`。需要其他端口时，在启动进程环境中设置 `STAR_BACKEND_PORT`，后续检查和链接使用实际地址。
 
-## 0. 一句话告诉用户这是什么
+详细配置以部署仓库的 [README.md](./README.md) 和 [.env.example](./.env.example) 为准。直接执行 Python 不会自动加载 `.env`，环境变量应注入启动进程或服务配置。
 
-你可以先和用户说：
-> 这是一个多人协作的像素办公室仪表盘，你的 AI 助手会根据状态自动走到不同位置，还能查看 Codex 会话总结与 Codex、Claude 会话档案！
+## 2. 安装并启动看板
 
----
-
-## 1. 启动看板
-
-在你这台机器执行（按顺序）：
+首次安装：
 
 ```bash
-# 1) 下载仓库
 git clone https://github.com/oiuv/Star-Office-UI.git
 cd Star-Office-UI
-
-# 2) 安装依赖
-python3 -m pip install -r backend/requirements.txt
-
-# 3) 准备状态文件（首次）
-cp state.sample.json state.json
-
-# 4) 启动后端
-python3 backend/app.py
 ```
 
-然后告诉用户：
-> 好了，你现在打开 [http://127.0.0.1:19000](http://127.0.0.1:19000) 就能看到像素办公室了！
+可复用已有 Python 环境；首次安装使用项目虚拟环境：
 
----
+**Windows / PowerShell**
 
-## 2. 配置状态接入：Codex hooks 优先
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r backend\requirements.txt
+.\.venv\Scripts\python.exe -B backend\app.py
+```
 
-### 2.1 Codex hooks（推荐）
-
-在 Star Office 项目根目录执行：
+**macOS / Linux**
 
 ```bash
-python3 scripts/codex_hooks_config.py
+python3 -m venv .venv
+.venv/bin/python -m pip install -r backend/requirements.txt
+.venv/bin/python -B backend/app.py
 ```
 
-把输出合并到用户使用 Codex 的项目 `.codex/hooks.json`，或用户目录的 `~/.codex/hooks.json`。保留已有配置并合并各事件数组。需要指定 Python 时，使用生成器的 `--python` 参数。
+后端首次启动会初始化缺失的运行文件，无需复制样例覆盖 `state.json` 或 `join-keys.json`。
 
-引导用户在 Codex 中用 `/hooks` 检查并信任配置，然后提交任务验证动画与 [活动档案](http://127.0.0.1:19000/stats)。该集成自动记录 12 种生命周期事件，配置后不需要 Agent 再主动调用状态脚本。
+用当前环境支持的后台任务或服务保持后端运行，记录启动方式和日志位置。Windows 后台启动使用隐藏窗口。随后在另一任务会话或终端中继续配置 hooks，不要让前台服务阻塞剩余安装步骤。
 
-本地默认直接写数据库，Flask 停止时也能记录。远程部署使用 `STAR_OFFICE_URL`，并在客户端与后端设置相同的 `STAR_OFFICE_HOOK_TOKEN`。详细说明见 [README](./README.md)。
+读取 `GET /health`，确认返回 `status: "ok"` 和 `service: "star-office-ui"`。已有健康的办公室服务可复用；端口由其他服务占用时选择其他端口。
 
-### 2.2 其他 Agent 的脚本/API 接入
+## 3. 配置 Agent 接入
 
-没有配置 Codex hooks 的 Agent，可在项目根目录执行：
+用安装后端依赖的同一 Python 解释器运行生成器，确保观察器可读取本地数据库。生成配置中的解释器和脚本路径均为绝对路径，可从其他项目触发。
+
+选择用户正在使用的接入方式。已经配置 hooks 的 Agent 由 hooks 更新状态，无需额外添加手动状态同步规则。
+
+### Codex hooks
+
+运行生成器：
+
+| 系统 | 命令 |
+| --- | --- |
+| Windows | `.\.venv\Scripts\python.exe -B scripts\codex_hooks_config.py` |
+| macOS / Linux | `.venv/bin/python -B scripts/codex_hooks_config.py` |
+
+生成器只输出 JSON。将 `hooks` 合并到用户实际使用 Codex 的项目 `.codex/hooks.json`，或用户目录 `~/.codex/hooks.json`；自定义主目录使用 `CODEX_HOME/hooks.json`。
+
+保留已有配置及其他 hooks，合并事件数组。同一份办公室集成只放在项目或用户配置中的一个层级，避免重复上报。引导用户在 Codex 的 `/hooks` 中检查并信任配置。
+
+### Claude Code hooks
+
+运行生成器：
+
+| 系统 | 命令 |
+| --- | --- |
+| Windows | `.\.venv\Scripts\python.exe -B scripts\claude_hooks_config.py` |
+| macOS / Linux | `.venv/bin/python -B scripts/claude_hooks_config.py` |
+
+将生成的 `hooks` 合并到用户实际使用 Claude Code 的项目 `.claude/settings.json`、`.claude/settings.local.json`，或用户的 `~/.claude/settings.json`。设置了 `CLAUDE_CONFIG_DIR` 时使用对应用户配置目录。
+
+保留其他设置和已有事件数组，同一份办公室集成只配置在一个层级。沿用生成器的 `command` 与 `args`，不要套用 Codex 的 `commandWindows`。引导用户在 Claude Code 的 `/hooks` 中检查配置；事件支持与额外监视文件选项见 README 的「Claude Code hooks 接入」。
+
+### 其他 Agent：脚本或 API
+
+为能执行脚本的 Agent 添加任务状态同步规则，在真实任务开始和结束时调用：
 
 ```bash
-python3 set_state.py writing "正在整理文档"
-python3 set_state.py idle "任务完成，待命中"
+python set_state.py writing "正在整理文档"
+python set_state.py idle "任务完成，待命中"
 ```
 
-也可发送 `POST /set_state`，字段为 `state` 和 `detail`；远程访客使用 join key 与 `office-agent-push.py`。这些状态更新同样进入活动档案。
+使用实际的项目 Python 解释器；macOS / Linux 可使用 `python3`。可用状态为 `idle`、`writing`、`researching`、`executing`、`syncing`、`error`。也可调用 `POST /set_state`，JSON 字段为 `state` 和 `detail`。
 
----
+需要以独立访客加入时，使用稳定身份的 `frontend/office-agent-push.py`，安装 `requests` 并配置 `JOIN_KEY`、`AGENT_NAME`、`OFFICE_URL`。明确客户端状态来源 `OFFICE_LOCAL_STATE_FILE`，或按需设置 `OFFICE_LOCAL_STATUS_URL`。接入细节见 [访客接入指南](./frontend/join-office-skill.md)。
 
-## 3. 侧边栏验证码设置（首次部署时说明）
+根目录的同名 `office-agent-push.py` 用于本机新访客测试，每次运行生成新身份；分发稳定访客脚本时使用 `frontend/` 下的版本。密钥的并发和有效期以服务端 `join-keys.json` 的实际配置为准。
 
-当前默认验证码是：`1234`。
+## 4. 验证安装和接入
 
-你需要这样引导用户：
+使用项目 Python 运行只读验收，例如默认端口下：
 
-1. 默认密码是 `1234`，可以先直接体验；
-2. 当用户愿意时，可随时和你沟通修改密码；
-3. 你应主动推荐改成强密码（更安全，防止他人误改资产和布局）。
+| 系统 | 命令 |
+| --- | --- |
+| Windows | `.\.venv\Scripts\python.exe -B scripts\smoke_test.py --base-url http://127.0.0.1:19000` |
+| macOS / Linux | `.venv/bin/python -B scripts/smoke_test.py --base-url http://127.0.0.1:19000` |
 
-修改方式（示例）：
+验收脚本检查页面和读取接口，不写测试事件。hooks 的实际接入还需在已配置的 Codex 或 Claude Code 中完成一次简单任务，确认办公室状态变化且 `/stats` 收到对应来源的事件。客户端需要用户完成 `/hooks` 操作或提交任务时，明确说明这一待办，不把接口检查通过当作 hooks 已验证。
 
-```bash
-export ASSET_DRAWER_PASS="your-strong-pass"
-```
+向用户交付：
 
-如果是长期运行（systemd / pm2 / 容器），请把该环境变量写入服务配置，而不是只在当前 shell 临时设置。
+- 办公室与 `/stats` 的实际访问地址。
+- 后端的运行方式、日志位置及停止/重启方法。
+- 已配置的 Agent 类型和配置文件位置，以及实际完成的验证。
+- 尚需用户完成的步骤。
 
----
+## 5. 按需配置
 
-## 4. 生图功能（OpenAI gpt-image-2）—— 可选
+### 图片 API
 
-"搬新家 / 找中介"装修功能使用 OpenAI 兼容 Image API，默认模型为 `gpt-image-2`。基础看板不依赖生图 API。
+仅在用户需要 AI 装修时配置。基础看板、hooks、统计和本地档案不依赖图片 API。
 
-### 4.1 使用项目内的生图接口
+优先引导用户在「装修房间 → API 设置」保存地址、密钥、模型和生成方式。也可在后端进程设置：
 
-安装 `backend/requirements.txt` 后即可使用页面的生图功能。后端通过 `backend/image_client.py` 直接发送请求，无需复制脚本到外部 Skill 目录或安装额外的模型 SDK。
+| 变量 | 用途 |
+| --- | --- |
+| `OPENAI_API_KEY` | 图片服务密钥 |
+| `AI_BASE_URL` | OpenAI 兼容接口前缀，默认 `https://api.openai.com/v1` |
+| `AI_IMAGE_MODEL` | 默认 `gpt-image-2`，可使用服务实际支持的图片模型 |
+| `AI_IMAGE_MODE` | `edit` 参考图编辑，或 `generate` 纯文生图 |
 
-命令行入口为 `scripts/image_generate.py`。在项目根目录执行以下示例，环境中需要已经设置 `OPENAI_API_KEY`：
+页面保存的配置优先于环境变量。服务需支持 `/images/edits` 或 `/images/generations`；按服务支持的能力选择生成方式。详细用法见 README 的图片 API 配置和 `scripts/image_generate.py`。
 
-```bash
-python3 scripts/image_generate.py \
-  --prompt "A cozy pixel-art office" \
-  --model gpt-image-2 \
-  --mode generate \
-  --out-dir output
-```
+### 公网访问与远程 hooks
 
-如需保持房间布局，使用 `--mode edit --reference-image assets/room-reference.webp`；仅支持文生图的服务使用 `--mode generate`。
+仅在用户需要远程访问时配置。公网部署按 [.env.example](./.env.example) 设置：
 
-### 4.2 配置图片 API
+- `STAR_OFFICE_ENV=production`。
+- 随机 `FLASK_SECRET_KEY`，至少 24 字符。
+- `ASSET_DRAWER_PASS`，至少 8 字符，本地体验默认值为 `1234`。
+- 网关访问控制：装修验证码与 hook Token 各自保护对应接口，不是整个网站的访问密码；记忆、档案和留言板同样可通过看板访问。
 
-推荐在装修侧边栏的「API 设置」中配置：
-
-- **API 地址**：默认 `https://api.openai.com/v1`，可填写自定义服务的完整前缀。
-- **API Key**：使用该服务的密钥；留空保存会保留已有密钥，已保存的密钥只显示掩码。
-- **图片模型**：默认 `gpt-image-2`，可填写服务实际支持的名称。
-- **生成方式**：默认参考图编辑；仅支持文生图时选择「纯文生图」。
-
-也可通过后端进程的环境变量配置：
-
-```bash
-export OPENAI_API_KEY="your-key"
-export AI_BASE_URL="https://api.openai.com/v1"
-export AI_IMAGE_MODEL="gpt-image-2"
-export AI_IMAGE_MODE="edit"
-```
-
-页面保存的配置优先于环境变量。配置接口统一为 `GET /config/ai` 和 `POST /config/ai`，需要先通过资产侧边栏认证。
-
-服务需要支持 `/images/edits` 或 `/images/generations`；仅提供 `/chat/completions` 的服务无法用于此功能。缺少密钥时，引导用户在侧边栏填写并保存。
-
----
-
-## 5. 安装成功后，必须提醒用户的三件事
-
-### 5.1 告知临时公网链接
-
-推荐先用 Cloudflare Tunnel（最快）：
+已安装 Cloudflare Tunnel 时，可为用户启动临时隧道：
 
 ```bash
 cloudflared tunnel --url http://127.0.0.1:19000
 ```
 
-拿到 `https://xxx.trycloudflare.com` 后发给用户，并补一句：
-> 这是临时公网链接；如果你愿意，后续我可以一步步带你部署到本地域名。
+使用实际后端端口，告知用户隧道需要持续运行、地址为临时地址。长期运行按用户已有的域名、网关或服务方式部署。
 
-### 5.2 装修房子入口
+远程 hooks 在客户端进程中设置 `STAR_OFFICE_URL`，客户端与后端设置相同的 `STAR_OFFICE_HOOK_TOKEN`。经反向代理访问 hooks 时设置 Token；未设 Token 仅接受直接来自 loopback 的请求。未设置 `STAR_OFFICE_URL` 时观察器直接写本地账本，后端停止时也能记录。
 
-提醒用户：
-- 现在可以点击"装修房间"开始装饰；
-- 侧边栏默认密码是 `1234`；
-- 当他想改密码时，可随时告诉你，你来帮他改；
-- 推荐改成强密码，安全性更高。
+### 本地总结、记忆与档案
 
-### 5.3 生图 API 配置
+按用户实际数据位置配置后端进程：
 
-提醒用户：
-- 生图功能需要自己的 API；
-- 当前接入的是 **OpenAI 兼容 Image API**，默认模型为 `gpt-image-2`；
-- 地址、模型和生成方式可在侧边栏配置；
-- 自定义服务需要支持图片生成或参考图编辑接口。
+| 数据 | 默认位置 / 配置 |
+| --- | --- |
+| Codex 会话总结 | `~/.codex/memories/rollout_summaries/`；可用 `CODEX_HOME` 指定主目录 |
+| Codex 会话档案、留言板 | Codex 的 SQLite 目录；可用 `STAR_OFFICE_CODEX_SQLITE_HOME` 指定，其他解析规则见 README |
+| Claude 项目记忆、会话档案 | `~/.claude/projects/`；可用 `CLAUDE_CONFIG_DIR` 指定主目录 |
 
----
+这些功能读取后端所在机器的文件。远程部署需让后端能够访问对应目录；仅上报 hooks 不会同步总结、会话或留言正文。只读已有资料，不修改 Codex / Claude 的记忆和源数据库，也不为填充面板编造记录。
 
-## 6. 邀请其他 Agent 加入（可选）
+## 6. 升级已有部署
 
-其他能够执行脚本或发送 HTTP 请求的 AI Agent，也可以加入用户的办公室：
+1. 检查工作区与现有启动方式，保留用户未提交的修改、配置和自定义素材。备份本地运行数据；活动数据库用 SQLite 备份机制或暂停写入后备份。
+2. 在部署仓库执行 `git pull --ff-only`。遇到本地修改或历史分叉时保留现场，解决具体冲突后继续。
+3. 用原项目 Python 安装更新后的 `backend/requirements.txt`。
+4. 保留 `state.json`、`join-keys.json`、`runtime-config.json`、活动数据库、资产位置/默认配置和用户自定义素材，不用样例文件覆盖。
+5. 若接入脚本路径、Python 环境或配置需要更新，重新生成并合并对应 hooks，替换已有办公室处理器，避免追加重复集成。
+6. 重启后端并重新执行第 4 节验收。后端会缓存 `frontend/index.html`，更新后只刷新浏览器不足以载入新 HTML。
 
-### 步骤 A：告诉其他 Agent 用 office-agent-push.py
-
-你可以让其他 Agent：
-1) 下载 `office-agent-push.py`（可以直接从你这个仓库拿）
-2) 让它调用 `join-agent` + 周期 `agent-push`
-3) 用户那边就能看到它进办公室了
-
-### 步骤 B：join key 说明
-
-- 后端首次启动时根据 `join-keys.sample.json` 生成运行时的 `join-keys.json`；在该文件中管理接入密钥
-- 同一个 key 最多 3 人同时在线
-- 你也可以帮用户新建自己的 key
-
----
-
-## 7. Codex 会话总结（可选）
-
-如果用户想查看 Codex 会话总结：
-- 后端读取 `~/.codex/memories/rollout_summaries/*.md`；设置 `CODEX_HOME` 可指定 Codex 目录
-- 按总结中的更新时间倒序展示全部可读取总结，完整正文直接按 Markdown 排版，可滚动阅读及复制代码，不修改 Codex 记忆
-- 没有记录时显示空状态；远程后端需要能访问对应文件，打开面板会刷新内容
-
----
-
-## 8. 常见问题（用户可能问你的）
-
-### Q1："我可以商用吗？"
-> 代码玩法可以基于 MIT 用，但美术资产（包括角色/场景）禁止商用；如果你要商用，请务必换成你自己的原创美术资产。
-
-### Q2："其他 Agent 怎么加入？"
-> 用 join key 加入，然后持续推送状态就行；仓库里有 `office-agent-push.py` 可以给其他 Agent 用。
-
----
-
-## 9. 给你的提示
-
-- 尽量帮用户把"启动步骤"做完，让用户只负责"看"和"体验"
-- 如果用户要对外访问，优先用 Cloudflare Tunnel（最快最方便）
-- 已配置 Codex hooks 时，由 hooks 自动更新状态，不额外调用状态脚本。
-- 使用脚本/API 接入的其他 Agent：
-  - 接任务前切换到工作状态（如 `writing` / `researching` / `executing`）；
-  - 完成任务后切回 `idle`。
-- 注意不要暴露用户的内网地址或私有信息
-
----
-
-## 10. 2026-03 增量补充（仅新增项）
-
-> 本次重制核心请按四条理解：
-> 1) 新增中英日三语
-> 2) 新增资产管理（全量美术可自定义）
-> 3) 接入生图 API（Agent 自动改房间 + 用户手动装修）
-> 4) 美术资产替换与优化（含命名与索引重建）
-
-### 10.1 当前生图配置（房间装修）
-
-当前默认使用 OpenAI `gpt-image-2`。参考图编辑会上传办公室参考图；纯文生图按提示词生成，布局保持效果相应改变。
-
-配置项为 `OPENAI_API_KEY`、`AI_BASE_URL`、`AI_IMAGE_MODEL`、`AI_IMAGE_MODE`，也可在侧边栏直接保存。
-
-### 10.2 侧边栏验证码安全提醒（必须）
-
-默认验证码为 `1234`，但生产/公网场景必须改强密码：
-
-```bash
-export ASSET_DRAWER_PASS="your-strong-pass"
-```
-
-理由：防止外部访问者修改房间布局、装饰和资产配置。
-
-### 10.3 版权口径更新
-
-主角状态素材已切换为无版权争议的小猫，不再沿用旧角色版权说明。
-
-保留统一口径：
-- 代码：MIT
-- 美术资产：禁止商用
-
-### 10.4 安装时必须提醒（API 可选）
-
-在帮助用户安装时，需明确提醒：
-
-- 现在支持接入自己的生图 API 来改美术资产与背景（可持续更换）。
-- 但基础功能（状态看板、多 Agent、资产替换/布局、三语切换）**不依赖 API**，不开 API 也能正常使用。
-
-建议对用户口径：
-> 先把基础看板跑起来；需要"无限换背景/AI 生图装修"再接入自己的 API。
-
-### 10.5 老用户更新指南（从旧版本升级）
-
-如果用户之前已经下载过旧版，按以下步骤升级：
-
-1. 进入项目目录并备份本地配置（如 `state.json`、自定义资产）。
-2. 拉取最新代码（`git pull` 或重新克隆到新目录）。
-3. 确认依赖：`python3 -m pip install -r backend/requirements.txt`。
-4. 保留并检查本地运行配置：
-   - `ASSET_DRAWER_PASS`
-   - `OPENAI_API_KEY` / `AI_BASE_URL` / `AI_IMAGE_MODEL` / `AI_IMAGE_MODE`（如需生图）
-5. 如有自定义位置，确认：
-   - `asset-positions.json`
-   - `asset-defaults.json`
-6. 重启后端并验收关键功能：
-   - `/health`
-   - 三语切换（CN/EN/JP）
-   - 资产侧栏（选择、替换、设默认）
-   - 生图入口（有 key 时可用）
-
-### 10.6 功能更新提醒清单（对用户口播）
-
-本次更新以后，至少提醒用户以下变化：
-
-1. 已支持 **CN/EN/JP 三语切换**（含 loading 与气泡实时联动）。
-2. 已支持 **自定义美术资产替换**（含动态素材切帧同步，减少闪烁）。
-3. 已支持 **接入自有生图 API** 持续更换背景（默认使用 `gpt-image-2`）。
-4. 新增/强化了安全项：`ASSET_DRAWER_PASS` 生产环境建议改强密码。
-
-### 10.7 2026-03-05 稳定性修复
-
-本次更新修复了多个影响线上稳定运行的问题：
-
-1. **CDN 缓存修复**：静态资源 404 不再被 CDN 长缓存（之前导致 `phaser.js` 被缓存为 404 达 2.7 天）。
-2. **前端加载修复**：修复 `fetchStatus()` 中的 JS 语法错误（多余 `else` 块），解决页面卡 loading 问题。
-3. **生图异步化**：生图接口改为后台任务 + 轮询模式，避免 Cloudflare 524 超时（100s 限制）。前端显示实时等待进度。
-4. **移动端侧边栏**：新增遮罩层、body 滚动锁定、`100dvh` 适配、`overscroll-behavior: contain`。
-5. **Join Key 增强**：支持 key 级别过期时间（`expiresAt`）和并发上限（`maxConcurrent`），`join-keys.json` 不再入库。
-
-> 详细说明见：`docs/UPDATE_REPORT_2026-03-05.md`
+Electron 和 Tauri 的启动、构建与端口配置按需读取 [electron-shell/README.md](./electron-shell/README.md) 或 [desktop-pet/README.md](./desktop-pet/README.md)。许可证与美术使用范围以 [LICENSE](./LICENSE) 和仓库 README 为准。
